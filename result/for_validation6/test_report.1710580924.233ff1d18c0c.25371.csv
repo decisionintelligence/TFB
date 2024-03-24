@@ -1,9 +1,0 @@
-strategy_args,metric_name,VAR_model;{}
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mae,53577.08299517178
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mse,408385734651.07153
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",rmse,352268.11910420674
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mape,inf
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",smape,66.23652889226169
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mase,-1.0
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",wape,107.03514593182412
-"{""num_rollings"": 48000, ""pred_len"": 60, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",msmape,65.99379245618779
