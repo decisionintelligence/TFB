@@ -6,8 +6,6 @@ from typing import Union, NoReturn, List
 import pandas as pd
 
 from ts_benchmark.common.constant import FORECASTING_DATASET_PATH
-from ts_benchmark.common.constant import ANOMALY_DETECT_DATASET_PATH
-from ts_benchmark.common.constant import META_DETECTION_DATA_PATH
 from ts_benchmark.common.constant import META_FORECAST_DATA_PATH
 from ts_benchmark.utils.data_processing import read_data
 from ts_benchmark.utils.design_pattern import Singleton
@@ -21,9 +19,6 @@ SIZE = {
     "large_forecast": ["large", "medium", "small"],
     "medium_forecast": ["medium", "small"],
     "small_forecast": ["small"],
-    "large_detect": ["large", "medium", "small"],
-    "medium_detect": ["medium", "small"],
-    "small_detect": ["small"],
 }
 
 
@@ -54,12 +49,7 @@ def filter_data(data_loader_config: dict) -> List[str]:
         "small_forecast",
     ]:
         META_DATA_PATH = META_FORECAST_DATA_PATH
-    elif data_set_name in [
-        "large_detect",
-        "medium_detect",
-        "small_detect",
-    ]:
-        META_DATA_PATH = META_DETECTION_DATA_PATH
+
     else:
         raise ValueError("Please enter the correct data_setname")
 
@@ -86,7 +76,6 @@ class DataPool(metaclass=Singleton):
         Constructor, initialize DataPool instance.
         """
         self._forecast_data_meta = None
-        self._detect_data_meta = None
         self.data_pool = {}  # Create a dictionary for storing data
 
     @property
@@ -96,12 +85,6 @@ class DataPool(metaclass=Singleton):
             self._forecast_data_meta.set_index(self._DATA_KEY, drop=False, inplace=True)
         return self._forecast_data_meta
 
-    @property
-    def detect_data_meta(self) -> pd.DataFrame:
-        if self._detect_data_meta is None:
-            self._detect_data_meta = pd.read_csv(META_DETECTION_DATA_PATH)
-            self._detect_data_meta.set_index(self._DATA_KEY, drop=False, inplace=True)
-        return self._detect_data_meta
 
     def _load_meta_info(self, series_name: str) -> Union[pd.Series, None]:
         """
@@ -113,8 +96,6 @@ class DataPool(metaclass=Singleton):
         """
         if series_name in self.forecast_data_meta.index:
             return self.forecast_data_meta.loc[[series_name]]
-        elif series_name in self.detect_data_meta.index:
-            return self.detect_data_meta.loc[[series_name]]
         else:
             raise ValueError("do not have {}'s meta data".format(series_name))
 
@@ -126,9 +107,6 @@ class DataPool(metaclass=Singleton):
         """
         self._forecast_data_meta = pd.read_csv(META_FORECAST_DATA_PATH)
         self._forecast_data_meta.set_index(self._DATA_KEY, drop=False, inplace=True)
-
-        self._detect_data_meta = pd.read_csv(META_DETECTION_DATA_PATH)
-        self._detect_data_meta.set_index(self._DATA_KEY, drop=False, inplace=True)
 
         with ThreadPoolExecutor() as executor:
             futures = [
@@ -145,12 +123,9 @@ class DataPool(metaclass=Singleton):
         :param series_name: Data file name.
         :return: A binary containing the file name and metadata.
         """
-        try:
-            datafile_path = os.path.join(FORECASTING_DATASET_PATH, series_name)
-            data = read_data(datafile_path)
-        except:
-            datafile_path = os.path.join(ANOMALY_DETECT_DATASET_PATH, series_name)
-            data = read_data(datafile_path)
+        datafile_path = os.path.join(FORECASTING_DATASET_PATH, series_name)
+        data = read_data(datafile_path)
+
         return data, self._load_meta_info(series_name)
 
     def get_series(self, series_name: str) -> pd.DataFrame:
@@ -184,7 +159,6 @@ class DataPool(metaclass=Singleton):
         :param storage: the storage to share data with
         """
         storage.put("forecast_meta", self.forecast_data_meta)
-        storage.put("detect_meta", self.detect_data_meta)
         storage.put("data_pool", self.data_pool)
 
     def sync_data(self, storage: SharedStorage) -> NoReturn:
@@ -194,5 +168,4 @@ class DataPool(metaclass=Singleton):
         :param storage: the shared storage to get data from
         """
         self._forecast_data_meta = storage.get("forecast_meta")
-        self._detect_data_meta = storage.get("detect_meta")
         self.data_pool.update(storage.get("data_pool", {}))
