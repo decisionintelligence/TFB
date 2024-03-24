@@ -1,6 +1,6 @@
 # Time seires Forecasting Benchmark（TFB）
 
-**OTB is an open-source library designed for time series researchers.**
+**TFB is an open-source library designed for time series researchers.**
 
 **We provide a clean codebase for end-to-end evaluation of time series models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.**
 
@@ -16,7 +16,17 @@ pip install -r requirements.txt
 
 ### Data preparation
 
-Prepare Data. You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1xph1pkaZPYxAGNV_ljTrHdbRio4wiMAJ/view?usp=drive_link).Then place the downloaded data under the folder `./dataset`. 
+Prepare Data. You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/drive/folders/1NFPGjCIX-aV1D0qeME4yQNGuv3fUVz7Y?usp=sharing).Then place the downloaded data under the folder `./dataset`. 
+
+### Experiment scripts
+
+We provide the experiment scripts for all benchmarks under the folder ./scripts/multivariate_forecast and ./scripts/univariate_forecast. You can reproduce the experiment results as the following examples:
+
+```
+sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
+```
+
+### 
 
 ### Example Usage
 
