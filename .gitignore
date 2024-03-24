@@ -1,0 +1,7 @@
+dataset/
+result/
+.idea/
+.vscode/
+.git
+*.DS_Store
+venv/
