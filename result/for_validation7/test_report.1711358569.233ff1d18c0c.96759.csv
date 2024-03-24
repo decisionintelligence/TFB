@@ -1,9 +1,0 @@
-strategy_args,metric_name,"Triformer;{""batch_size"": 16, ""d_ff"": 64, ""d_model"": 32, ""lr"": 0.001, ""normalization"": false, ""num_epochs"": 5, ""pred_len"": 96, ""seq_len"": 96}"
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",mae,2021.0811230468748
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",mse,4619016.294173354
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",rmse,2021.5840266622408
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",mape,80.95888857746047
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",smape,51.57568973553766
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",mase;seasonality:1,32.47444170030684
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",wape,80.96547570326668
-"{""pred_len"": 13, ""strategy_name"": ""fixed_forecast""}",msmape,51.57497878668307
