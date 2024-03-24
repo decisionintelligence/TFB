@@ -1,0 +1,9 @@
+strategy_args,metric_name,"Triformer;{""batch_size"": 32, ""d_ff"": 64, ""d_model"": 32, ""normalization"": true, ""pred_len"": 96, ""seq_len"": 96}"
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mae,86041.35872171824
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mse,55595282924.23481
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",rmse,225406.3933761718
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mape,55.96192979407967
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",smape,60.41418660753163
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mase,-1.0
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",wape,48.628751647163256
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",msmape,60.021846060915394

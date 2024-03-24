@@ -1,0 +1,9 @@
+strategy_args,metric_name,"TCNModel;{""input_chunk_length"": 96, ""n_epochs"": 100, ""normalization"": true, ""output_chunk_length"": 24}"
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mae,44242.7426632367
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mse,15801531311.855392
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",rmse,117094.20922185028
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mape,48.55191298801817
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",smape,65.25990862684088
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",mase,-1.0
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",wape,24.753243808794707
+"{""num_rollings"": 48000, ""pred_len"": 24, ""strategy_name"": ""rolling_forecast"", ""stride"": 1, ""train_test_split"": 0.8}",msmape,63.87150310692949

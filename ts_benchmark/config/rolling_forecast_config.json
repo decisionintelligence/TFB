@@ -1,0 +1,41 @@
+{
+    "data_loader_config" : {
+        "feature_dict": {
+            "if_univariate": true,
+            "if_trend": null,
+            "has_timestamp": null,
+            "if_season": null
+        },
+        "data_set_name": "large_forecast"
+    },
+
+	"model_config": {
+        "models": [
+        ],
+        "recommend_model_hyper_params": {
+            "input_chunk_length": 96,
+            "output_chunk_length": 336,
+            "add_relative_index": true,
+            "norm": true
+        }
+    },
+
+    "model_eval_config" : {
+        "metrics": "all",
+        "strategy_args": {
+            "strategy_name": "rolling_forecast",
+            "pred_len": 336,
+            "train_test_split": 0.8,
+            "train_valid_split": 0.875,
+            "stride": 1,
+            "num_rollings": 48000
+    }
+    },
+
+    "report_config" : {
+        "aggregate_type": "mean",
+        "report_metrics": ["mae", "mse", "rmse", "mape", "smape", "mase", "wape", "msmape"],
+        "fill_type": "mean_value",
+        "null_value_threshold": "0.3"
+    }
+}

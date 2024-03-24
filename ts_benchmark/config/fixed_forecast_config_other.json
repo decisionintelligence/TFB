@@ -1,0 +1,40 @@
+{
+    "data_loader_config" : {
+        "feature_dict": {
+            "if_univariate": true,
+            "if_trend": null,
+            "has_timestamp": null,
+            "if_season": null,
+            "freq": "other"
+        },
+        "data_set_name": "large_forecast"
+    },
+
+    	"model_config": {
+        "models": [
+        ],
+        "recommend_model_hyper_params": {
+            "input_chunk_length":10,
+            "output_chunk_length": 8,
+            "norm": false
+
+        }
+    },
+
+    "model_eval_config" : {
+        "metrics": ["mae", "mse", "rmse", "mape", "smape", {"name": "mase", "seasonality": 1}, "wape", "msmape"],
+        "strategy_args": {
+            "strategy_name": "fixed_forecast",
+            "pred_len": 8,
+            "train_valid_split": 1
+        }
+    },
+
+
+    "report_config" : {
+        "aggregate_type": "mean",
+        "report_metrics": ["mae", "mse", "rmse", "mape", "smape", "mase", "wape", "msmape"],
+        "fill_type": "mean_value",
+        "null_value_threshold": "0.3"
+    }
+}
