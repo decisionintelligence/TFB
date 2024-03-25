@@ -112,7 +112,7 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 ## Example Usage
 
 - **Define the model class or factory**
-  - We demonstrated what functions need to be implemented for time series forecasting  using the VAR algorithm. You can find the complete code in ` ./ts_benchmark/baselines/self_implementation/VAR/VAR.py`.
+  - We demonstrated what functions need to be implemented for time series forecasting  using the VAR algorithm. You can find the complete code in `./ts_benchmark/baselines/self_implementation/VAR/VAR.py`.
 
 ```
 class VAR_model:
