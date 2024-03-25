@@ -81,7 +81,7 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       """
       ```
     
-    - __repr __ String representation of function model name
+    - __repr __ string representation of function model name
     
       ```
       """
