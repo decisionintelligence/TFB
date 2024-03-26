@@ -149,14 +149,12 @@ class VAR_model:
         return {}
 
     def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float):
-        """
-        Train the model.
-
-        :param train_data: Time series data used for training.
-        :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means 					that the validation set is not partitioned.
-        :return: The fitted model object.
-        """
-
+       """
+      Train the model.
+      
+      :param train_valid_data: Time series data used for training.
+      :param train_val_ratio: Represents the splitting ratio of the training         set validation set. If it is equal to 1, it means that the validation           set is not partitioned.
+      """
         self.scaler.fit(train_data.values)
         train_data_value = pd.DataFrame(
             self.scaler.transform(train_data.values),
@@ -167,14 +165,17 @@ class VAR_model:
         self.results = model.fit(13)
 
     def forecast(self, pred_len: int, testdata: pd.DataFrame) -> np.ndarray:
-        """
-        Make predictions.
-
-        :param pred_len: The predicted length.
-        :param testdata: Time series data used for prediction.
-        :return: An array of predicted results.
-        """
-        
+       """
+      Use models for forecasting
+      
+      :param pred_len: Predict length
+      :type pred_len: int
+      :param train: Training data used to fit the model
+      :type train: pd.DataFrame
+      
+      :return: Forecasting results
+      :rtype: np.ndarray
+      """       
         train = pd.DataFrame(
             self.scaler.transform(testdata.values),
             columns=testdata.columns,
