@@ -69,7 +69,6 @@ def parse_model_eval_config(args: object, config_data: dict) -> dict:
     model_eval_config = config_data["model_eval_config"]
 
     metric_list = []
-    print(args.metrics)
     if args.metrics != "all" and args.metrics != None:
         for metric in args.metrics:
             metric = json.loads(metric)

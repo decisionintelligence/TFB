@@ -63,6 +63,7 @@ class DartsModelAdapter:
         self.model_name = model_name
         self.allow_fit_on_eval = allow_fit_on_eval
         self.scaler = StandardScaler()
+        self.train_val_ratio = 1
 
     def forecast_fit(
         self, train_valid_data: pd.DataFrame, train_val_ratio: float
@@ -100,13 +101,14 @@ class DartsModelAdapter:
         #             "Multi-gpu training is not supported, using only gpu %s",
         #             self.model_args["pl_trainer_kwargs"]["devices"],
         #         )
+        self.train_val_ratio = train_val_ratio
         if self.allow_fit_on_eval or self.model_name == "RegressionModel":
             # If it is true, it means that statistical learning methods use retraining to predict future values, because statistical learning does not require partitioning the validation set.
             # Therefore, the segmentation ratio is set to 1, which means that the validation set is not segmented
-            train_val_ratio = 1
+            self.train_val_ratio = 1
         train_data, valid_data = train_val_split(
             train_valid_data,
-            train_val_ratio,
+            self.train_val_ratio,
             self.config.__getattr__("input_chunk_length"),
         )
 
@@ -121,7 +123,7 @@ class DartsModelAdapter:
             )
         train_data = TimeSeries.from_dataframe(train_data)
 
-        if train_val_ratio != 1:
+        if self.train_val_ratio != 1:
             if self.config.normalization:
                 valid_data = pd.DataFrame(
                     self.scaler.transform(valid_data.values),
@@ -148,7 +150,7 @@ class DartsModelAdapter:
                 index=train.index,
             )
         if self.allow_fit_on_eval:
-            self.forecast_fit(train)
+            self.forecast_fit(train, self.train_val_ratio)
             fsct_result = self.model.predict(pred_len)
         else:
             train = TimeSeries.from_dataframe(train)
