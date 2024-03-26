@@ -47,7 +47,6 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       :return: A dictionary that represents the hyperparameters required by the model
       :rtype: dict
       """
-      
       # For example
       @staticmethod
       def required_hyper_params() -> dict:
@@ -71,7 +70,7 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       """
       # For example
       def forecast_fit(self, train_valid_data: pd.DataFrame, train_val_ratio: float):
-      		pass
+          pass
       ```
     
     - forecast function utilizing the model for inference
@@ -160,6 +159,7 @@ class VAR_model:
       set validation set. If it is equal to 1, it means that the validation
       set is not partitioned.
       """
+
         self.scaler.fit(train_data.values)
         train_data_value = pd.DataFrame(
             self.scaler.transform(train_data.values),
@@ -180,7 +180,8 @@ class VAR_model:
       
       :return: Forecasting results
       :rtype: np.ndarray
-      """       
+      """
+
         train = pd.DataFrame(
             self.scaler.transform(testdata.values),
             columns=testdata.columns,
