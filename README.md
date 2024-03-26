@@ -223,7 +223,7 @@ If you find this repo useful, please cite our paper.
 
 If you have any questions or suggestions, feel free to contact:
 
-- Xiangfei Qiu ( xfqiu@stu.ecnu.edu.cn)
+- Xiangfei Qiu (xfqiu@stu.ecnu.edu.cn)
 - Lekui Zhou (zhoulekui@huawei.com)
 - Xingjian Wu (xjwu@stu.ecnu.edu.cn)
 - Buang Zhang (buazhang@stu.ecnu.edu.cn)
