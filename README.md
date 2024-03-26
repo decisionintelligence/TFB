@@ -52,7 +52,8 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       @staticmethod
       def required_hyper_params() -> dict:
           """
-          An empty dictionary indicating that model does not require 		                 additional hyperparameters.
+          An empty dictionary indicating that model does not require
+          additional hyperparameters.
           """
           return {}
       ```
@@ -64,7 +65,9 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       Train the model.
       
       :param train_valid_data: Time series data used for training.
-      :param train_val_ratio: Represents the splitting ratio of the training         set validation set. If it is equal to 1, it means that the validation           set is not partitioned.
+      :param train_val_ratio: Represents the splitting ratio of the training
+      set validation set. If it is equal to 1, it means that the validation
+      set is not partitioned.
       """
       # For example
       def forecast_fit(self, train_valid_data: pd.DataFrame, train_val_ratio: float):
@@ -153,7 +156,9 @@ class VAR_model:
       Train the model.
       
       :param train_valid_data: Time series data used for training.
-      :param train_val_ratio: Represents the splitting ratio of the training         set validation set. If it is equal to 1, it means that the validation           set is not partitioned.
+      :param train_val_ratio: Represents the splitting ratio of the training
+      set validation set. If it is equal to 1, it means that the validation
+      set is not partitioned.
       """
         self.scaler.fit(train_data.values)
         train_data_value = pd.DataFrame(
