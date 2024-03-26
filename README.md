@@ -12,7 +12,7 @@
 
 Given a python environment (**note**: this project is fully tested under python 3.8), install the dependencies with the following command:
 
-```
+```shell
 pip install -r requirements.txt
 ```
 
@@ -24,27 +24,22 @@ Prepare Data. You can obtained the well pre-processed datasets from [Google Driv
 
 We provide the experiment scripts for all benchmarks under the folder ./scripts/multivariate_forecast and ./scripts/univariate_forecast. For example，you can reproduce a experiment result as the following:
 
-```
+```shell
 sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
 ```
 
 ### Steps to develop your own method
 
-- **Define you model class or factory**
-  
-  - For different strategies, the user implemented model should implement the following functions in order to adapt to this benchmark.
-  - For all strategies，required_hyper_params function is optional，__repr__ functions is necessary.
-  - The matching relationship between other functions and policies is shown in the table below:
-  
-  |  strategy_name   | Strategic implications                                       | forecast_fit | forecast |
-  | :--------------: | :----------------------------------------------------------- | :----------: | :------: |
-  |  fixed_forecast  | Fixed_forecast, with a total of n time points. If the defined prediction step size is f time points, then (n-f) time points are used as training data to predict future f time points. |      √       |    √     |
-  | rolling_forecast | Rolling_forecast mirrors the cross-validation approach commonly utilized in machine learning. Here, the term 'origin' pertains to the training set within the time series, which is gradually expanded. In simpler terms, this technique enables the generation of multiple forecasts, each produced using an increasingly larger training set extracted from a single time series. |      √       |    √     |
+1. **Define you model or adapter class**
+
+  - The user-implemented model or adapter class should implement the following functions in order to adapt to this benchmark.
+  - required_hyper_params function is optional，__repr__ functions is necessary.
+
   - **The function prototype is as follows：**
-  
+
     - required_hyper_params  function:
-  
-      ```
+
+      ```python
       """
       Return the hyperparameters required by the model
       This function is optional and static
@@ -52,48 +47,65 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
       :return: A dictionary that represents the hyperparameters required by the model
       :rtype: dict
       """
+      
+      # For example
+      @staticmethod
+      def required_hyper_params() -> dict:
+          """
+          An empty dictionary indicating that model does not require 		                 additional hyperparameters.
+          """
+          return {}
       ```
     
     - forecast_fit  function training model
     
-      ```
+      ```python
       """
-      Fitting models on time series data
+      Train the model.
       
-      :param series: time series data
-      :type series: pd.DataFrame
+      :param train_valid_data: Time series data used for training.
+      :param train_val_ratio: Represents the splitting ratio of the training         set validation set. If it is equal to 1, it means that the validation           set is not partitioned.
       """
+      # For example
+      def forecast_fit(self, train_valid_data: pd.DataFrame, train_val_ratio: float):
+      		pass
       ```
     
-    - forecast function predicts the model
+    - forecast function utilizing the model for inference
     
-      ```
+      ```python
       """
-      Use models for prediction
+      Use models for forecasting
       
       :param pred_len: Predict length
       :type pred_len: int
       :param train: Training data used to fit the model
       :type train: pd.DataFrame
       
-      :return: Prediction results
+      :return: Forecasting results
       :rtype: np.ndarray
       """
+      # For example
+      def forecast(self, pred_len: int, train: pd.DataFrame) -> np.ndarray:
+          pass
       ```
     
     - __repr __ string representation of function model name
     
-      ```
+      ```python
       """
       Returns a string representation of the model name
       
       :return: Returns a string representation of the model name
       :rtype: str
       """
+      # For example
+      def __repr__(self) -> str:
+          return self.model_name
       ```
     
 
-- **Configure your Configuration File**
+2. **Configure your Configuration File**
 
   - modify the corresponding config under the folder `./ts_benchmark/config/`.
 
@@ -101,9 +113,9 @@ sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
 
   - **We strongly recommend using the pre-defined configurations in `./ts_benchmark/config/`. Create your own  configuration file only when you have a clear understanding of the configuration items.**
 
-- **The benchmark can be run in the following format：**
+3. **The benchmark can be run in the following format：**
 
-```
+```shell
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"pred_len":96}' --model-name "time_series_library.Triformer" --model-hyper-params '{"d_ff": 64, "d_model": 32, "pred_len": 96, "seq_len": 96}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/Triformer"
 ```
 
@@ -114,7 +126,7 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 - **Define the model class or factory**
   - We demonstrated what functions need to be implemented for time series forecasting  using the VAR algorithm. You can find the complete code in `./ts_benchmark/baselines/self_implementation/VAR/VAR.py`.
 
-```
+```python
 class VAR_model:
     """
     VAR class.
@@ -184,7 +196,7 @@ class VAR_model:
 
 - **Run benchmark using VAR**
 
-  ```
+  ```shell
   python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"pred_len":96}' --model-name "self_implementation.VAR_model" --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/VAR_model"
   ```
 
