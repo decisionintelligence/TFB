@@ -227,6 +227,7 @@ If you have any questions or suggestions, feel free to contact:
 - Lekui Zhou (zhoulekui@huawei.com)
 - Xingjian Wu (xjwu@stu.ecnu.edu.cn)
 - Buang Zhang (buazhang@stu.ecnu.edu.cn)
+- Junyang Du (jydu818@issbd2014.com)
 
 
 Or describe it in Issues.
