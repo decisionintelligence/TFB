@@ -155,9 +155,7 @@ class VAR_model:
        Train the model.
       
        :param train_valid_data: Time series data used for training.
-       :param train_val_ratio: Represents the splitting ratio of the training
-       set validation set. If it is equal to 1, it means that the validation
-       set is not partitioned.
+       :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
        """
 
         self.scaler.fit(train_data.values)
