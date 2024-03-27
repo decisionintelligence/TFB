@@ -25,7 +25,7 @@ Prepare Data. You can obtained the well pre-processed datasets from [Google Driv
 We provide the experiment scripts for all benchmarks under the folder ./scripts/multivariate_forecast and ./scripts/univariate_forecast. For example，you can reproduce a experiment result as the following:
 
 ```shell
-sh ./scripts/multivariate_forecast/AQShunyi_script/Triformer.sh
+sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
 ### Steps to develop your own method
