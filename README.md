@@ -152,13 +152,13 @@ class VAR_model:
 
     def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float):
        """
-      Train the model.
+       Train the model.
       
-      :param train_valid_data: Time series data used for training.
-      :param train_val_ratio: Represents the splitting ratio of the training
-      set validation set. If it is equal to 1, it means that the validation
-      set is not partitioned.
-      """
+       :param train_valid_data: Time series data used for training.
+       :param train_val_ratio: Represents the splitting ratio of the training
+       set validation set. If it is equal to 1, it means that the validation
+       set is not partitioned.
+       """
 
         self.scaler.fit(train_data.values)
         train_data_value = pd.DataFrame(
