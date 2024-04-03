@@ -1,4 +1,4 @@
-# <u>T</u>ime Seires <u>F</u>orecasting <u>B</u>enchmark (TFB)
+# <ins>T</ins>ime Seires <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
 
 **TFB is an open-source library designed for time series researchers.**
 
