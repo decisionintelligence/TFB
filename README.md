@@ -4,6 +4,7 @@
 
 **We provide a clean codebase for end-to-end evaluation of time series forecasting models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.**
 
+**We are further optimizing our code and welcome any suggestions for modifications.**
 
 
 ## Quickstart
