@@ -1,6 +1,5 @@
 # <u>T</u>ime Seires <u>F</u>orecasting <u>B</u>enchmark (TFB)
 
-
 **TFB is an open-source library designed for time series researchers.**
 
 **We provide a clean codebase for end-to-end evaluation of time series forecasting models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.**
