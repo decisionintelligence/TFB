@@ -1,4 +1,4 @@
-# Time seires Forecasting Benchmark (TFB)
+# Time Seires Forecasting Benchmark (TFB)
 
 **TFB is an open-source library designed for time series researchers.**
 
