@@ -214,11 +214,10 @@ If you find this repo useful, please cite our paper.
 
 ```
 @article{qiu2024tfb,
-    title={TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods},
-    author={Xiangfei Qiu and Jilin Hu and Lekui Zhou and Xingjian Wu and Junyang Du and Buang Zhang and Chenjuan Guo and Aoying Zhou and Christian S. Jensen and Zhenli Sheng and Bin Yang},
-    year={2024},
-    eprint={2403.20150},
-    archivePrefix={arXiv}
+  title={TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods},
+  author={Qiu, Xiangfei and Hu, Jilin and Zhou, Lekui and Wu, Xingjian and Du, Junyang and Zhang, Buang and Guo, Chenjuan and Zhou, Aoying and Jensen, Christian S and Sheng, Zhenli and others},
+  journal={arXiv preprint arXiv:2403.20150},
+  year={2024}
 }
 ```
 
