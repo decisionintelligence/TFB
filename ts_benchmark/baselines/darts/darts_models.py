@@ -1,16 +1,20 @@
+# -*- coding: utf-8 -*-
+import contextlib
+import functools
 import logging
 import os
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple, NoReturn, ContextManager
 
 import darts
+import darts.models as darts_models
 import numpy as np
 import pandas as pd
 from darts import TimeSeries
-import darts.models as model
 from sklearn.preprocessing import StandardScaler
 
 from ts_benchmark.baselines.utils import train_val_split
 from ts_benchmark.common.constant import ROOT_PATH
+from ts_benchmark.models.model_base import ModelBase
 
 if darts.__version__ >= "0.25.0":
     from darts.models.utils import NotImportedModule
@@ -29,17 +33,63 @@ class DartsConfig:
         }
 
     def __getattr__(self, key: str) -> Any:
-        return self.params.get(key, 0)
+        return self.get(key)
 
-    def get_param_dict(self) -> dict:
+    def __getitem__(self, key: str) -> Any:
+        return self.get(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.params.get(key, default)
+
+    def get_darts_class_params(self) -> dict:
         ret = self.params.copy()
         ret.pop("normalization")
+        self._fix_multi_gpu(ret)
         return ret
 
+    def _fix_multi_gpu(self, args_dict: Dict) -> NoReturn:
+        """
+        Check and disable using multi-gpu per task
 
-class DartsModelAdapter:
+        training and inferencing on multiple gpus with 'ddp' strategy (default in lightning)
+        is error-prone in complicated work flow, the problems include but not limited to:
+
+        - do heavy initialization in all processes (e.g. full data loading)
+        - hangs when the program is interrupted (e.g. exceptions that are caught elsewhere)
+        - not compatible with the parallel paradigm of ray
+
+        As a result, we disallow a single worker to work on multiple gpus by changing
+        gpu settings in the the input argument dictionary.
+
+        TODO: what if we want to evaluate huge-sized models in the future?
+
+        :param args_dict: argument dictionary to be passed to Darts models.
+        """
+        # CUDA_VISIBLE_DEVICES should be set by the parallel backend
+        gpu_devices = list(
+            filter(None, os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","))
+        )
+        if len(gpu_devices) > 1:
+            pl_args = args_dict.get("pl_trainer_kwargs", {})
+            device_args = pl_args.get("devices", None)
+            if (
+                device_args is None
+                or (isinstance(device_args, list) and len(device_args) > 1)
+                or (isinstance(device_args, int) and device_args > 1)
+            ):
+                args_dict.setdefault("pl_trainer_kwargs", {})
+                args_dict["pl_trainer_kwargs"]["devices"] = [0]
+                logger.warning(
+                    "Multi-gpu training is not supported, using only gpu %s",
+                    gpu_devices[0],
+                )
+
+
+class DartsModelAdapter(ModelBase):
     """
-    Darts model adapter class, used to adapt models in the Darts framework to meet the requirements of prediction strategies.
+    Darts model adapter class
+
+    Adapts Darts models to OTB forecasting interface.
     """
 
     def __init__(
@@ -48,6 +98,7 @@ class DartsModelAdapter:
         model_args: dict,
         model_name: Optional[str] = None,
         allow_fit_on_eval: bool = False,
+        **kwargs
     ):
         """
         Initialize the Darts model adapter object.
@@ -56,110 +107,101 @@ class DartsModelAdapter:
         :param model_args: Model initialization parameters.
         :param model_name: Model name.
         :param allow_fit_on_eval: Is it allowed to fit the model during the prediction phase.
+        :param kwargs: other arguments added to model_args.
         """
         self.model = None
         self.model_class = model_class
-        self.config = DartsConfig(**model_args)
+        self.config = DartsConfig(**{**model_args, **kwargs})
         self.model_name = model_name
         self.allow_fit_on_eval = allow_fit_on_eval
         self.scaler = StandardScaler()
         self.train_val_ratio = 1
 
-    def forecast_fit(
-        self, train_valid_data: pd.DataFrame, train_val_ratio: float
-    ) -> object:
+    def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float) -> "DartsModelAdapter":
         """
         Fit a suitable Darts model on time series data.
 
-        :param series: Time series data.
-        :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
+        :param train_data: Time series data.
+        :param train_val_ratio: Represents the splitting ratio of the training set validation set.
+            If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        # TODO: training and inferencing on multiple gpus with 'ddp' strategy is error prone
-        #  in complicated work flow, the problems include but not limited to:
-        #  - do heavy initialization in all processes (e.g. full data loading)
-        #  - hangs when the program is interrupted (e.g. exceptions that are caught
-        #  elsewhere)
-        #  - not compatible with the parallel paradigm of ray
-        #  As a result, we disallow a single worker to work on multiple gpus by now, but what if
-        #  evaluating large-scale models is required in the future?
-        # gpu_devices = list(
-        #     filter(None, os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","))
-        # )
-        # if gpu_devices:
-        #     pl_args = self.model_args.get("pl_trainer_kwargs", {})
-        #     device_args = pl_args.get("devices", None)
-        #     if (
-        #             device_args is None
-        #             or (isinstance(device_args, list) and len(device_args) > 1)
-        #             or (isinstance(device_args, int) and device_args > 1)
-        #     ):
-        #         self.model_args.setdefault("pl_trainer_kwargs", {})
-        #         # self.model_args["pl_trainer_kwargs"]["devices"] = [int(gpu_devices[0])]
-        #         self.model_args["pl_trainer_kwargs"]["devices"] = [0]
-        #         logger.warning(
-        #             "Multi-gpu training is not supported, using only gpu %s",
-        #             self.model_args["pl_trainer_kwargs"]["devices"],
-        #         )
         self.train_val_ratio = train_val_ratio
         if self.allow_fit_on_eval or self.model_name == "RegressionModel":
-            # If it is true, it means that statistical learning methods use retraining to predict future values, because statistical learning does not require partitioning the validation set.
-            # Therefore, the segmentation ratio is set to 1, which means that the validation set is not segmented
-            self.train_val_ratio = 1
-        train_data, valid_data = train_val_split(
-            train_valid_data,
-            self.train_val_ratio,
-            self.config.__getattr__("input_chunk_length"),
-        )
+            # If it is true, it means that statistical learning methods use retraining to predict
+            # future values, because statistical learning does not require partitioning the validation set.
+            # Therefore, the segmentation ratio is set to 1, which means that the validation set
+            # is not segmented
+            valid_data = None
+        else:
+            train_data, valid_data = train_val_split(
+                train_data,
+                self.train_val_ratio,
+                self.config.get("input_chunk_length", 0),
+            )
 
-        config_copy = self.config.get_param_dict()
-        self.model = self.model_class(**config_copy)
-        self.scaler.fit(train_data.values)
+        self.model = self.model_class(**self.config.get_darts_class_params())
         if self.config.normalization:
+            self.scaler.fit(train_data.values)
             train_data = pd.DataFrame(
                 self.scaler.transform(train_data.values),
                 columns=train_data.columns,
                 index=train_data.index,
             )
-        train_data = TimeSeries.from_dataframe(train_data)
-
-        if self.train_val_ratio != 1:
-            if self.config.normalization:
+            if valid_data is not None:
                 valid_data = pd.DataFrame(
                     self.scaler.transform(valid_data.values),
                     columns=valid_data.columns,
                     index=valid_data.index,
                 )
-            valid_data = TimeSeries.from_dataframe(valid_data)
-            return self.model.fit(train_data, val_series=valid_data)
-        else:
-            return self.model.fit(train_data)
 
-    def forecast(self, pred_len: int, train: pd.DataFrame) -> np.ndarray:
+        with self._suppress_lightning_logs():
+            train_data = TimeSeries.from_dataframe(train_data)
+            if valid_data is not None:
+                valid_data = TimeSeries.from_dataframe(valid_data)
+                self.model.fit(train_data, val_series=valid_data)
+            else:
+                self.model.fit(train_data)
+        return self
+
+    def forecast(self, horizon: int, series: pd.DataFrame) -> np.ndarray:
         """
         Use the adapted Darts model for prediction.
 
-        :param pred_len: Predict length.
-        :param train: Used to fit the training data of the model.
-        :return: Predicted result.
+        :param horizon: Forecast length.
+        :param series: Time series data to make inferences on.
+        :return: Forecast result.
         """
         if self.config.normalization:
-            train = pd.DataFrame(
-                self.scaler.transform(train.values),
-                columns=train.columns,
-                index=train.index,
+            series = pd.DataFrame(
+                self.scaler.transform(series.values),
+                columns=series.columns,
+                index=series.index,
             )
-        if self.allow_fit_on_eval:
-            self.forecast_fit(train, self.train_val_ratio)
-            fsct_result = self.model.predict(pred_len)
-        else:
-            train = TimeSeries.from_dataframe(train)
-            fsct_result = self.model.predict(pred_len, train)
+
+        with self._suppress_lightning_logs():
+            if self.allow_fit_on_eval:
+                self.forecast_fit(series, self.train_val_ratio)
+                fsct_result = self.model.predict(horizon)
+            else:
+                series = TimeSeries.from_dataframe(series)
+                fsct_result = self.model.predict(horizon, series)
         predict = fsct_result.values()
 
         if self.config.normalization:
             predict = self.scaler.inverse_transform(predict)
+
         return predict
+
+    @contextlib.contextmanager
+    def _suppress_lightning_logs(self) -> ContextManager:
+        pl_logger = logging.getLogger("pytorch_lightning")
+        old_level = pl_logger.level
+        pl_logger.setLevel(logging.CRITICAL)
+        try:
+            yield
+        finally:
+            pl_logger.setLevel(old_level)
 
     def __repr__(self):
         """
@@ -168,7 +210,7 @@ class DartsModelAdapter:
         return self.model_name
 
 
-def generate_model_factory(
+def _generate_model_factory(
     model_class: type,
     model_args: dict,
     model_name: str,
@@ -185,150 +227,176 @@ def generate_model_factory(
     :param allow_fit_on_eval: Is it allowed to fit the model during the prediction phase.
     :return: A dictionary containing the model factory and required parameters.
     """
-
-    def model_factory(**kwargs) -> DartsModelAdapter:
-        """
-        Model factory, used to create Darts model adapter objects.
-
-        :param kwargs: Model initialization parameters.
-        :return: Darts Darts model adapter object.
-        """
-        return DartsModelAdapter(
-            model_class=model_class,
-            model_args={**model_args, **kwargs},
-            model_name=model_name,
-            allow_fit_on_eval=allow_fit_on_eval,
-        )
+    model_factory = functools.partial(
+        DartsModelAdapter,
+        model_class=model_class,
+        model_args=model_args,
+        model_name=model_name,
+        allow_fit_on_eval=allow_fit_on_eval,
+    )
 
     return {"model_factory": model_factory, "required_hyper_params": required_args}
 
 
-DARTS_DEEP_MODEL_REQUIRED_ARGS1 = {
+# predefined model_args and required_args for darts models
+DEEP_MODEL_REQUIRED_ARGS = {
     "input_chunk_length": "input_chunk_length",
     "output_chunk_length": "output_chunk_length",
     "normalization": "norm",
 }
-DARTS_DEEP_MODEL_REQUIRED_ARGS2 = {
-    "lags": "input_chunk_length",
-    "normalization": "norm",
-}
-DARTS_DEEP_MODEL_REQUIRED_ARGS3 = {
+REGRESSION_MODEL_REQUIRED_ARGS = {
     "lags": "input_chunk_length",
     "output_chunk_length": "output_chunk_length",
     "normalization": "norm",
 }
-DARTS_STAT_MODEL_REQUIRED_ARGS1 = {
+STAT_MODEL_REQUIRED_ARGS = {
     "normalization": "norm",
 }
-DARTS_DEEP_MODEL_ARGS = {
+DEEP_MODEL_ARGS = {
     "pl_trainer_kwargs": {
         "enable_progress_bar": False,
     }
 }
 
+
+def _get_model_info(model_name: str, required_args: Dict, model_args: Dict) -> Tuple:
+    """
+    Helper function to retrieve darts model information by name
+
+    :param model_name: name of the model.
+    :param required_args: arguments that the model requires from the pipeline.
+    :param model_args: specified model arguments.
+    :return: a tuple including model name, model_class, required args and model args.
+    """
+    model_class = getattr(darts_models, model_name, None)
+    if darts.__version__ >= "0.25.0" and isinstance(model_class, NotImportedModule):
+        model_class = None
+    return model_name, model_class, required_args, model_args
+
+
+# darts model that does not retrain during prediction
 DARTS_MODELS = [
-    (model.KalmanForecaster, {}, {}),
-    (model.TCNModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (
-        model.TFTModel,
-        DARTS_DEEP_MODEL_REQUIRED_ARGS1,
-        DARTS_DEEP_MODEL_ARGS,
+    _get_model_info("KalmanForecaster", {}, {}),
+    _get_model_info("TCNModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info(
+        "TFTModel",
+        DEEP_MODEL_REQUIRED_ARGS,
+        DEEP_MODEL_ARGS,
     ),
-    (model.TransformerModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.NHiTSModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.TiDEModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.BlockRNNModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.RNNModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.DLinearModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.NBEATSModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.NLinearModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
-    (model.RandomForest, DARTS_DEEP_MODEL_REQUIRED_ARGS2, {}),
-    (model.XGBModel, DARTS_DEEP_MODEL_REQUIRED_ARGS2, DARTS_DEEP_MODEL_ARGS),
-    (model.CatBoostModel, DARTS_DEEP_MODEL_REQUIRED_ARGS2, {}),
-    (model.LightGBMModel, DARTS_DEEP_MODEL_REQUIRED_ARGS3, {}),
-    (model.LinearRegressionModel, DARTS_DEEP_MODEL_REQUIRED_ARGS2, {}),
-    (model.RegressionModel, DARTS_DEEP_MODEL_REQUIRED_ARGS2, {}),
-    (model.TiDEModel, DARTS_DEEP_MODEL_REQUIRED_ARGS1, DARTS_DEEP_MODEL_ARGS),
+    _get_model_info("TransformerModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("NHiTSModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("TiDEModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("BlockRNNModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("RNNModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("DLinearModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("NBEATSModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("NLinearModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+    _get_model_info("RandomForest", REGRESSION_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("XGBModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("CatBoostModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("LightGBMModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("LinearRegressionModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("RegressionModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
 ]
 
 # The following models specifically allow for retraining during inference
 DARTS_STAT_MODELS = [
-    (model.ARIMA, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.VARIMA, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.AutoARIMA, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.StatsForecastAutoCES, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.StatsForecastAutoTheta, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.StatsForecastAutoETS, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.ExponentialSmoothing, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.StatsForecastAutoARIMA, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.FFT, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.FourTheta, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.Croston, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.NaiveDrift, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.NaiveMean, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.NaiveSeasonal, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
-    (model.NaiveMovingAverage, DARTS_STAT_MODEL_REQUIRED_ARGS1, {}),
+    _get_model_info("ARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("VARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("AutoARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("StatsForecastAutoCES", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("StatsForecastAutoTheta", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("StatsForecastAutoETS", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("ExponentialSmoothing", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("StatsForecastAutoARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("FFT", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("FourTheta", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("Croston", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("NaiveDrift", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("NaiveMean", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("NaiveSeasonal", STAT_MODEL_REQUIRED_ARGS, {}),
+    _get_model_info("NaiveMovingAverage", STAT_MODEL_REQUIRED_ARGS, {}),
 ]
 
-# Generate model factories for each model class and required parameters in DARTS-MODELS and add them to global variables
-for model_class, required_args, model_args in DARTS_MODELS:
-    if darts.__version__ >= "0.25.0" and isinstance(model_class, NotImportedModule):
-        logger.warning("NotImportedModule encountered, skipping")
+# Generate model factories for each model class and required parameters in DARTS_MODELS
+# and add them to global variables
+for _model_name, _model_class, _required_args, _model_args in DARTS_MODELS:
+    if _model_class is None:
+        logger.warning(
+            "Model %s is not available, skipping model registration", _model_name
+        )
         continue
-    globals()[model_class.__name__] = generate_model_factory(
-        model_class=model_class,
-        model_args=model_args,
-        model_name=model_class.__name__,
-        required_args=required_args,
+    globals()[_model_name] = _generate_model_factory(
+        model_class=_model_class,
+        model_args=_model_args,
+        model_name=_model_name,
+        required_args=_required_args,
         allow_fit_on_eval=False,
     )
 
-# Generate model factories for each model class and required parameters in DARTS-STAT-MODELS and add them to global variables
-for model_class, required_args, model_args in DARTS_STAT_MODELS:
-    if darts.__version__ >= "0.25.0" and isinstance(model_class, NotImportedModule):
-        logger.warning("NotImportedModule encountered, skipping")
+# Generate model factories for each model class and required parameters in DARTS_STAT_MODELS
+# and add them to global variables
+for _model_name, _model_class, _required_args, _model_args in DARTS_STAT_MODELS:
+    if _model_class is None:
+        logger.warning(
+            "Model %s is not available, skipping model registration", _model_name
+        )
         continue
-    globals()[model_class.__name__] = generate_model_factory(
-        model_class=model_class,
-        model_args=model_args,
-        model_name=model_class.__name__,
-        required_args=required_args,
+    globals()[_model_class.__name__] = _generate_model_factory(
+        model_class=_model_class,
+        model_args=_model_args,
+        model_name=_model_class.__name__,
+        required_args=_required_args,
         allow_fit_on_eval=True,
     )
 
 
-# TODO：darts 应该不止这两个 adapter，例如有些应该输入 DARTS_DEEP_MODEL_REQUIRED_ARGS2
-#   而非 DARTS_DEEP_MODEL_REQUIRED_ARGS1。
-#   因此暂时注释这两个 adapter，后续看是去掉这些 adapter 还是通过 inspect 来分析模型参数
-#   还是预先定义好模型与 adapter 之间的映射关系。
-# def deep_darts_model_adapter(model_info: Type[object]) -> object:
-#     """
-#     适配深度 DARTS 模型。
-#
-#     :param model_info: 要适配的深度 DARTS 模型类。必须是一个类或类型对象。
-#     :return: 生成的模型工厂，用于创建适配的 DARTS 模型。
-#     """
-#     if not isinstance(model_info, type):
-#         raise ValueError()
-#
-#     return generate_model_factory(
-#         model_info.__name__,
-#         model_info,
-#         DARTS_DEEP_MODEL_REQUIRED_ARGS1,
-#         allow_fit_on_eval=False,
-#     )
-#
-#
-# def statistics_darts_model_adapter(model_info: Type[object]) -> object:
-#     """
-#     适配统计学 DARTS 模型。
-#
-#     :param model_info: 要适配的统计学 DARTS 模型类。必须是一个类或类型对象。
-#     :return: 生成的模型工厂，用于创建适配的 DARTS 模型。
-#     """
-#     if not isinstance(model_info, type):
-#         raise ValueError()
-#
-#     return generate_model_factory(
-#         model_info.__name__, model_info, {}, allow_fit_on_eval=True
-#     )
+# Adapters for general darts models
+
+
+def darts_deep_model_adapter(model_class: type) -> Dict:
+    """
+    Adapts a Darts deep model class to OTB protocol
+
+    :param model_class: a class of deep forecasting model from Darts library.
+    :return: model factory that follows the OTB protocol.
+    """
+    return _generate_model_factory(
+        model_class,
+        DEEP_MODEL_ARGS,
+        model_class.__name__,
+        DEEP_MODEL_REQUIRED_ARGS,
+        allow_fit_on_eval=False,
+    )
+
+
+def darts_statistical_model_adapter(model_class: type) -> Dict:
+    """
+    Adapts a Darts statistical model class to OTB protocol
+
+    :param model_class: a class of statistical forecasting model from Darts library.
+    :return: model factory that follows the OTB protocol.
+    """
+    return _generate_model_factory(
+        model_class,
+        {},
+        model_class.__name__,
+        STAT_MODEL_REQUIRED_ARGS,
+        allow_fit_on_eval=True,
+    )
+
+
+def darts_regression_model_adapter(model_class: type) -> Dict:
+    """
+    Adapts a Darts regression model class to OTB protocol
+
+    :param model_class: a class of regression forecasting model from Darts library.
+    :return: model factory that follows the OTB protocol.
+    """
+    return _generate_model_factory(
+        model_class,
+        {},
+        model_class.__name__,
+        REGRESSION_MODEL_REQUIRED_ARGS,
+        allow_fit_on_eval=True,
+    )
