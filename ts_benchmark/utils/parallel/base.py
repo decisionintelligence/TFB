@@ -30,7 +30,7 @@ class SharedStorage(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def get(self, name: str, default_value: Any) -> Any:
+    def get(self, name: str, default_value: Any = None) -> Any:
         """
         get variable from storage
         """

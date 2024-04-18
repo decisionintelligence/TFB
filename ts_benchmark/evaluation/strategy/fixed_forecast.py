@@ -4,10 +4,10 @@ import pickle
 import time
 import traceback
 from typing import Any, List
+
 import pandas as pd
 
-from ts_benchmark.baselines.utils import train_val_split
-from ts_benchmark.data_loader.data_pool import DataPool
+from ts_benchmark.data.data_pool import DataPool
 from ts_benchmark.evaluation.evaluator import Evaluator
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
@@ -32,7 +32,6 @@ class FixedForecast(Strategy):
         super().__init__(strategy_config, evaluator)
         self.pred_len = self.strategy_config["pred_len"]
 
-
     def execute(self, series_name: str, model_factory: ModelFactory) -> Any:
         """
         Implement a fixed prediction strategy.
@@ -43,17 +42,15 @@ class FixedForecast(Strategy):
         """
         fix_random_seed()
         model = model_factory()
-        data = DataPool().get_series(series_name)
+        data = DataPool().get_pool().get_series(series_name)
         try:
             train_length = len(data) - self.pred_len
             if train_length <= 0:
                 raise ValueError("The prediction step exceeds the data length")
             train_valid_data, test_data = split_before(data, train_length)
 
-
             train_data, rest = split_before(train_valid_data, int(train_length * self.strategy_config["train_valid_split"]))
             self.scaler.fit(train_data.values)
-
 
             start_fit_time = time.time()
             if hasattr(model, "forecast_fit"):

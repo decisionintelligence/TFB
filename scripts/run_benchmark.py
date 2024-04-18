@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import warnings
+from typing import Dict, NoReturn
 
 import torch
 
@@ -15,7 +16,7 @@ sys.path.insert(
 )
 from ts_benchmark.utils.get_file_name import get_log_file_name
 from ts_benchmark.report import report_dash, report_csv
-from ts_benchmark.common.constant import CONFIG_PATH
+from ts_benchmark.common.constant import CONFIG_PATH, ROOT_PATH
 from ts_benchmark.pipeline import pipeline
 from ts_benchmark.utils.parallel import ParallelBackend
 
@@ -92,6 +93,11 @@ def parse_report_config(args: object, config_data: dict) -> dict:
     report_config["save_path"] = args.save_path
 
     return report_config
+
+
+def init_worker(env: Dict) -> NoReturn:
+    sys.path.insert(0, os.path.join(ROOT_PATH, "ts_benchmark", "baselines", "third_party"))
+    torch.set_num_threads(1)
 
 
 if __name__ == "__main__":
@@ -251,7 +257,8 @@ if __name__ == "__main__":
         n_cpus=args.num_cpus,
         gpu_devices=args.gpus,
         default_timeout=args.timeout,
-        max_tasks_per_child=5,
+        max_tasks_per_child=100,
+        worker_initializers=[init_worker],
     )
 
     try:

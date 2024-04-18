@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 import os
 import warnings
-from typing import Tuple, Any, NoReturn, Callable, Optional, List
+from typing import Tuple, Any, NoReturn, Callable, Optional, List, Dict
 
 from ts_benchmark.utils.parallel.base import TaskResult, SharedStorage
 
@@ -29,7 +29,7 @@ class SequentialSharedStorage(SharedStorage):
     def put(self, name: str, value: Any) -> NoReturn:
         self.storage[name] = value
 
-    def get(self, name: str, default_value: Any) -> Any:
+    def get(self, name: str, default_value: Any = None) -> Any:
         return self.storage.get(name, default_value)
 
 
@@ -58,5 +58,14 @@ class SequentialBackend:
     def shared_storage(self) -> SharedStorage:
         return self.storage
 
-    def notify_data_shared(self) -> NoReturn:
+    @property
+    def env(self) -> Dict:
+        return {
+            "storage": self.shared_storage,
+        }
+
+    def execute_on_workers(self, func: Callable) -> NoReturn:
+        func(self.env)
+
+    def add_worker_initializer(self, func: Callable) -> NoReturn:
         pass

@@ -86,7 +86,10 @@ def eval_model(
         # result_list.append(single_series_results)
 
     collector = strategy.get_collector()
-    for i, result in enumerate(tqdm.tqdm(result_list, desc="collecting...")):
+    min_interval = 0 if len(result_list) < 100 else 0.1  # improves visual effect
+    for i, result in enumerate(
+        tqdm.tqdm(result_list, desc="collecting...", mininterval=min_interval)
+    ):
         collector.add(
             _safe_execute(
                 result.result,

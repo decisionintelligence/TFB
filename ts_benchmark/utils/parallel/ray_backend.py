@@ -11,7 +11,6 @@ import time
 from typing import Callable, Tuple, Any, List, NoReturn, Optional, Dict, Union
 
 import ray
-import torch
 from ray import ObjectRef
 from ray.actor import ActorHandle
 from ray.exceptions import RayActorError
@@ -29,12 +28,12 @@ def is_actor() -> bool:
 
 
 class RayActor:
-    def __init__(self, env: Dict):
+    def __init__(self, env: Dict, initializers: Optional[List[Callable]] = None):
         self._idle = True
         self._start_time = None
-        sys.path.insert(0, "ts_benchmark/baselines/third_party")
-        torch.set_num_threads(1)
-        sync_data(env["storage"])
+        if initializers is not None:
+            for func in initializers:
+                func(env)
 
     def run(self, fn: Callable, args: Tuple) -> Any:
         self._start_time = time.time()
@@ -121,6 +120,7 @@ class RayActorPool:
         env: Dict,
         per_worker_resources: Optional[Dict] = None,
         max_tasks_per_child: Optional[int] = None,
+        worker_initializers: Optional[List[Callable]] = None,
     ):
         if per_worker_resources is None:
             per_worker_resources = {}
@@ -128,6 +128,7 @@ class RayActorPool:
         self.env = env
         self.per_worker_resources = per_worker_resources
         self.max_tasks_per_child = max_tasks_per_child
+        self.worker_initializers = worker_initializers
         self.actor_class = ray.remote(
             max_restarts=0,
             num_cpus=per_worker_resources.get("num_cpus", 1),
@@ -163,11 +164,14 @@ class RayActorPool:
             100
             if sys.platform == "win32"
             and self.per_worker_resources.get("num_gpus", 0) > 0
-            else 100
+            else 2
         )
-        return self.actor_class.options(max_concurrency=max_concurrency).remote(
-            self.env
+        handle = self.actor_class.options(max_concurrency=max_concurrency).remote(
+            self.env,
+            self.worker_initializers,
         )
+
+        return handle
 
     def schedule(self, fn: Callable, args: Tuple, timeout: float = -1) -> RayResult:
         self._idle_event.clear()
@@ -201,7 +205,8 @@ class RayActorPool:
                 and self._actor_tasks[task_info.actor_id] >= self.max_tasks_per_child
             ):
                 logger.info(
-                    "max_tasks_per_child reached in actor %s, restarting", task_info.actor_id
+                    "max_tasks_per_child reached in actor %s, restarting",
+                    task_info.actor_id,
                 )
                 self._restart_actor(task_info.actor_id)
             else:
@@ -335,11 +340,17 @@ class RayBackend:
         n_cpus: Optional[int] = None,
         gpu_devices: Optional[List[int]] = None,
         max_tasks_per_child: Optional[int] = None,
+        worker_initializers: Optional[Union[List[Callable], Callable]] = None,
     ):
         self.n_cpus = n_cpus if n_cpus is not None else os.cpu_count()
         self.n_workers = n_workers if n_workers is not None else self.n_cpus
         self.gpu_devices = gpu_devices if gpu_devices is not None else []
         self.max_tasks_per_child = max_tasks_per_child
+        self.worker_initializers = (
+            worker_initializers
+            if isinstance(worker_initializers, list)
+            else [worker_initializers]
+        )
         self.pool = None
         self._storage = None
         self.initialized = False
@@ -364,19 +375,30 @@ class RayBackend:
         # so the storage is safe to be accessed in multiple processes
         self._storage = RaySharedStorage(ObjectRefStorageActor.remote())
 
-        env = {
-            "storage": self.shared_storage,
-        }
         self.pool = RayActorPool(
             self.n_workers,
-            env,
+            self.env,
             {
                 "num_cpus": cpu_per_worker,
                 "num_gpus": gpu_per_worker,
             },
             max_tasks_per_child=self.max_tasks_per_child,
+            worker_initializers=self.worker_initializers,
         )
         self.initialized = True
+
+    def add_worker_initializer(self, func: Callable) -> NoReturn:
+        # TODO: check if the pool is idle before updating initializer
+        if self.worker_initializers is None:
+            self.worker_initializers = []
+        self.worker_initializers.append(func)
+        self.pool.worker_initializers = self.worker_initializers
+
+    @property
+    def env(self) -> Dict:
+        return {
+            "storage": self.shared_storage,
+        }
 
     def _get_cpus_per_worker(self, n_cpus: int, n_workers: int) -> Union[int, float]:
         if n_cpus > n_workers and n_cpus % n_workers != 0:
@@ -423,9 +445,9 @@ class RayBackend:
     def shared_storage(self) -> RaySharedStorage:
         return self._storage
 
-    def notify_data_shared(self) -> NoReturn:
+    def execute_on_workers(self, func: Callable) -> NoReturn:
         """
-        notify all workers that new data have been shared
+        execute function on all workers when the pool is in idle mode
         """
         # TODO: sharing data while there are active tasks is not yet supported
         self.pool.wait()
@@ -433,14 +455,8 @@ class RayBackend:
         # TODO: fix encapsulation problem by implementing pool.map
         tasks = []
         for actor in self.pool.actors:
-            tasks.append(actor.run.remote(sync_data, (self._storage,)))
+            tasks.append(actor.run.remote(func, (self.env,)))
         ray.wait(tasks, num_returns=len(tasks))
-
-
-def sync_data(storage):
-    from ts_benchmark.data_loader.data_pool import DataPool
-
-    DataPool().sync_data(storage)
 
 
 if __name__ == "__main__":

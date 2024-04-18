@@ -8,7 +8,7 @@ from typing import List, Any
 import numpy as np
 import pandas as pd
 
-from ts_benchmark.data_loader.data_pool import DataPool
+from ts_benchmark.data.data_pool import DataPool
 from ts_benchmark.evaluation.evaluator import Evaluator
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
@@ -81,9 +81,10 @@ class RollingForecast(Strategy):
         fix_random_seed()
         model = model_factory()
 
-        data = DataPool().get_series(series_name)
+        data_pool = DataPool().get_pool()
+        data = data_pool.get_series(series_name)
         self.data_lens = int(
-            DataPool().get_series_meta_info(series_name)["length"].item()
+            data_pool.get_series_meta_info(series_name)["length"].item()
         )
         try:
             all_test_results = []
