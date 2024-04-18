@@ -1,3 +1,6 @@
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=decisionintelligence)](https://github.com/anuraghazra/github-readme-stats)
+
+
 # <ins>T</ins>ime Series <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
 
 **TFB is an open-source library designed for time series researchers.**
