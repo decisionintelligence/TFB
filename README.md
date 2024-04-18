@@ -1,5 +1,4 @@
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=decisionintelligence)](https://github.com/anuraghazra/github-readme-stats)
-
+！[Total visitor](https://visitor-count-badge.herokuapp.com/total.svg?repo_id=$decisionintelligence/TFB)
 
 # <ins>T</ins>ime Series <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
 
