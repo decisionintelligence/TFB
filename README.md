@@ -1,5 +1,5 @@
-![GitHub stars](https://img.shields.io/github/stars/decisionintelligence/TFB?style=social)
-![visitors](https://visitor-badge.glitch.me/badge?page_id=decisionintelligence.TFB)
+![GitHub stars](https://img.shields.io/github/stars/decisionintelligence/TFB?style=social) ![visitors](https://visitor-badge.glitch.me/badge?page_id=decisionintelligence.TFB)
+
 
 # <ins>T</ins>ime Series <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
 
