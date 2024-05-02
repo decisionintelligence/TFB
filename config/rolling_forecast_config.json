@@ -1,0 +1,42 @@
+{
+    "data_config" : {
+        "feature_dict": {
+            "if_univariate": true,
+            "if_trend": null,
+            "has_timestamp": null,
+            "if_season": null
+        },
+        "data_set_name": "large_forecast"
+    },
+
+	"model_config": {
+        "models": [
+        ],
+        "recommend_model_hyper_params": {
+            "input_chunk_length": 96,
+            "output_chunk_length": 336,
+            "add_relative_index": true,
+            "norm": true
+        }
+    },
+
+    "evaluation_config" : {
+        "metrics": "all",
+        "strategy_args": {
+            "strategy_name": "rolling_forecast",
+            "horizon": 336,
+            "tv_ratio": 0.8,
+            "train_ratio_in_tv": {"ETTm1.csv": 0.75, "ETTm2.csv": 0.75, "PEMS04.csv": 0.75, "PEMS08.csv": 0.75, "AQShunyi.csv": 0.75, "AQWan.csv": 0.75, "ETTh1.csv": 0.75, "ETTh2.csv": 0.75, "Solar.csv": 0.75, "__default__": 0.875},
+            "stride": 1,
+            "num_rollings": 48000,
+            "seed": 2021 
+        }
+    },
+
+    "report_config" : {
+        "aggregate_type": "mean",
+        "report_metrics": ["mae", "mse", "rmse", "mape", "smape", "mase", "wape", "msmape"],
+        "fill_type": "mean_value",
+        "null_value_threshold": "0.3"
+    }
+}

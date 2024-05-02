@@ -13,6 +13,7 @@ from ts_benchmark.baselines.utils import (
     train_val_split,
     anomaly_detection_data_provider,
 )
+from ...models.model_base import ModelBase
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
@@ -60,9 +61,11 @@ class TransformerConfig:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+    @property
+    def pred_len(self):
+        return self.horizon
 
-
-class TransformerAdapter:
+class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__()
         self.config = TransformerConfig(**kwargs)
@@ -120,7 +123,7 @@ class TransformerAdapter:
         self.config.dec_in = column_num
         self.config.c_out = column_num
 
-        setattr(self.config, "label_len", self.config.pred_len)
+        setattr(self.config, "label_len", self.config.horizon)
 
     def detect_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
@@ -141,13 +144,13 @@ class TransformerAdapter:
         time_column_data = test.index
         data_colums = test.columns
         start = time_column_data[-1]
-        # padding_zero = [0] * (self.config.pred_len + 1)
+        # padding_zero = [0] * (self.config.horizon + 1)
         date = pd.date_range(
-            start=start, periods=self.config.pred_len + 1, freq=self.config.freq.upper()
+            start=start, periods=self.config.horizon + 1, freq=self.config.freq.upper()
         )
         df = pd.DataFrame(columns=data_colums)
 
-        df.iloc[: self.config.pred_len + 1, :] = 0
+        df.iloc[: self.config.horizon + 1, :] = 0
 
         df["date"] = date
         df = df.set_index("date")
@@ -169,7 +172,7 @@ class TransformerAdapter:
                 target_mark.to(device),
             )
             # decoder input
-            dec_input = torch.zeros_like(target[:, -config.pred_len :, :]).float()
+            dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
             dec_input = (
                 torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                 .float()
@@ -178,8 +181,8 @@ class TransformerAdapter:
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = target[:, -config.pred_len :, :]
-            output = output[:, -config.pred_len :, :]
+            target = target[:, -config.horizon :, :]
+            output = output[:, -config.horizon :, :]
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
 
@@ -187,12 +190,12 @@ class TransformerAdapter:
         self.model.train()
         return total_loss
 
-    def forecast_fit(self, train_valid_data: pd.DataFrame, train_val_ratio: float):
+    def forecast_fit(self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float) -> "ModelBase":
         """
         Train the model.
 
         :param train_data: Time series data used for training.
-        :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
+        :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
         if train_valid_data.shape[1] == 1:
@@ -211,7 +214,7 @@ class TransformerAdapter:
         )
         config = self.config
         train_data, valid_data = train_val_split(
-            train_valid_data, train_val_ratio, config.seq_len
+            train_valid_data, train_ratio_in_tv, config.seq_len
         )
 
         self.scaler.fit(train_data.values)
@@ -223,7 +226,7 @@ class TransformerAdapter:
                 index=train_data.index,
             )
 
-        if train_val_ratio != 1:
+        if train_ratio_in_tv != 1:
             if config.normalization:
                 valid_data = pd.DataFrame(
                     self.scaler.transform(valid_data.values),
@@ -278,7 +281,7 @@ class TransformerAdapter:
                     target_mark.to(device),
                 )
                 # decoder input
-                dec_input = torch.zeros_like(target[:, -config.pred_len :, :]).float()
+                dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
                 dec_input = (
                     torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                     .float()
@@ -287,14 +290,14 @@ class TransformerAdapter:
 
                 output = self.model(input, input_mark, dec_input, target_mark)
 
-                target = target[:, -config.pred_len :, :]
-                output = output[:, -config.pred_len :, :]
+                target = target[:, -config.horizon :, :]
+                output = output[:, -config.horizon :, :]
                 loss = criterion(output, target)
 
                 loss.backward()
                 optimizer.step()
 
-            if train_val_ratio != 1:
+            if train_ratio_in_tv != 1:
                 valid_loss = self.validate(valid_data_loader, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
@@ -302,11 +305,11 @@ class TransformerAdapter:
 
             adjust_learning_rate(optimizer, epoch + 1, config)
 
-    def forecast(self, pred_len: int, train: pd.DataFrame) -> np.ndarray:
+    def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
         """
         Make predictions.
 
-        :param pred_len: The predicted length.
+        :param horizon: The predicted length.
         :param testdata: Time series data used for prediction.
         :return: An array of predicted results.
         """
@@ -339,7 +342,7 @@ class TransformerAdapter:
 
         with torch.no_grad():
             answer = None
-            while answer is None or answer.shape[0] < pred_len:
+            while answer is None or answer.shape[0] < horizon:
                 for input, target, input_mark, target_mark in test_data_loader:
                     input, target, input_mark, target_mark = (
                         input.to(device),
@@ -348,7 +351,7 @@ class TransformerAdapter:
                         target_mark.to(device),
                     )
                     dec_input = torch.zeros_like(
-                        target[:, -config.pred_len :, :]
+                        target[:, -config.horizon :, :]
                     ).float()
                     dec_input = (
                         torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
@@ -358,25 +361,25 @@ class TransformerAdapter:
                     output = self.model(input, input_mark, dec_input, target_mark)
 
                 column_num = output.shape[-1]
-                temp = output.cpu().numpy().reshape(-1, column_num)[-config.pred_len :]
+                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
 
                 if answer is None:
                     answer = temp
                 else:
                     answer = np.concatenate([answer, temp], axis=0)
 
-                if answer.shape[0] >= pred_len:
+                if answer.shape[0] >= horizon:
                     if self.config.normalization:
-                        answer[-pred_len:] = self.scaler.inverse_transform(
-                            answer[-pred_len:]
+                        answer[-horizon:] = self.scaler.inverse_transform(
+                            answer[-horizon:]
                         )
-                    return answer[-pred_len:]
+                    return answer[-horizon:]
 
-                output = output.cpu().numpy()[:, -config.pred_len :, :]
-                for i in range(config.pred_len):
+                output = output.cpu().numpy()[:, -config.horizon :, :]
+                for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
-                test = test.iloc[config.pred_len :]
+                test = test.iloc[config.horizon :]
                 test = self.padding_data_for_forecast(test)
 
                 test_data_set, test_data_loader = forecasting_data_provider(
@@ -399,7 +402,7 @@ class TransformerAdapter:
 
             output = self.model(input, None, None, None)
 
-            output = output[:, -config.pred_len :, :]
+            output = output[:, -config.horizon :, :]
 
             output = output.detach().cpu()
             true = input.detach().cpu()
@@ -475,7 +478,7 @@ class TransformerAdapter:
 
                 output = self.model(input, None, None, None)
 
-                output = output[:, -config.pred_len :, :]
+                output = output[:, -config.horizon :, :]
                 loss = criterion(output, input)
 
                 loss.backward()
@@ -651,7 +654,7 @@ def transformer_adapter(model_info: Type[object]) -> object:
         model_class=model_info,
         required_args={
             "seq_len": "input_chunk_length",
-            "pred_len": "output_chunk_length",
+            "horizon": "output_chunk_length",
             "normalization": "norm",
         },
     )

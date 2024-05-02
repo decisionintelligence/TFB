@@ -9,27 +9,33 @@ from typing import Dict, NoReturn
 
 import torch
 
-
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "../ts_benchmark/baselines/third_party")
-)
+
 from ts_benchmark.utils.get_file_name import get_log_file_name
 from ts_benchmark.report import report_dash, report_csv
-from ts_benchmark.common.constant import CONFIG_PATH, ROOT_PATH
+from ts_benchmark.common.constant import CONFIG_PATH, THIRD_PARTY_PATH
 from ts_benchmark.pipeline import pipeline
 from ts_benchmark.utils.parallel import ParallelBackend
+
+
+sys.path.insert(0, THIRD_PARTY_PATH)
 
 warnings.filterwarnings("ignore")
 
 
-def parse_data_loader_config(args: object, config_data: dict) -> dict:
-    data_loader_config = config_data["data_loader_config"]
-    data_loader_config["data_name_list"] = args.data_name_list
-    return data_loader_config
+def build_data_config(args: argparse.Namespace, config_data: Dict) -> Dict:
+    """
+    Builds the data loader config from commandline arguments and configuration dict
+    """
+    data_config = config_data["data_config"]
+    data_config["data_name_list"] = args.data_name_list
+    return data_config
 
 
-def parse_model_config(args: object, config_data: dict) -> dict:
+def build_model_config(args: argparse.Namespace, config_data: Dict) -> Dict:
+    """
+    Builds the model config from commandline arguments and configuration dict
+    """
     model_config = config_data.get("model_config", None)
 
     if args.adapter is not None:
@@ -66,17 +72,20 @@ def parse_model_config(args: object, config_data: dict) -> dict:
     return model_config
 
 
-def parse_model_eval_config(args: object, config_data: dict) -> dict:
-    model_eval_config = config_data["model_eval_config"]
+def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict:
+    """
+    Builds the evaluation config from commandline arguments and configuration dict
+    """
+    evaluation_config = config_data["evaluation_config"]
 
     metric_list = []
-    if args.metrics != "all" and args.metrics != None:
+    if args.metrics != "all" and args.metrics is not None:
         for metric in args.metrics:
             metric = json.loads(metric)
             metric_list.append(metric)
-        model_eval_config["metrics"] = metric_list
+        evaluation_config["metrics"] = metric_list
 
-    default_strategy_args = model_eval_config["strategy_args"]
+    default_strategy_args = evaluation_config["strategy_args"]
     strategy_args_updates = (
         json.loads(args.strategy_args) if args.strategy_args else None
     )
@@ -84,10 +93,16 @@ def parse_model_eval_config(args: object, config_data: dict) -> dict:
     if strategy_args_updates is not None:
         default_strategy_args.update(strategy_args_updates)
 
-    return model_eval_config
+    if args.seed is not None:
+        default_strategy_args["seed"] = args.seed
+
+    return evaluation_config
 
 
-def parse_report_config(args: object, config_data: dict) -> dict:
+def build_report_config(args: argparse.Namespace, config_data: Dict) -> Dict:
+    """
+    Builds the report config from commandline arguments and configuration dict
+    """
     report_config = config_data["report_config"]
     report_config["aggregate_type"] = args.aggregate_type
     report_config["save_path"] = args.save_path
@@ -96,7 +111,10 @@ def parse_report_config(args: object, config_data: dict) -> dict:
 
 
 def init_worker(env: Dict) -> NoReturn:
-    sys.path.insert(0, os.path.join(ROOT_PATH, "ts_benchmark", "baselines", "third_party"))
+    """
+    An initializer function for each worker that does some global setup
+    """
+    sys.path.insert(0, THIRD_PARTY_PATH)
     torch.set_num_threads(1)
 
 
@@ -148,7 +166,7 @@ if __name__ == "__main__":
         ),
     )
 
-    # model_eval_config
+    # evaluation_config
     parser.add_argument(
         "--metrics",
         type=str,
@@ -156,12 +174,18 @@ if __name__ == "__main__":
         default=None,
         help="Evaluation metrics that need to be calculated",
     )
-
     parser.add_argument(
         "--strategy-args",
         type=str,
         default=None,
         help="Parameters required for evaluating strategies",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed that is set before evaluating any model-series pair, "
+             "by default, use the seed value in the config file"
     )
 
     # evaluation engine
@@ -197,6 +221,12 @@ if __name__ == "__main__":
         type=float,
         default=600,
         help="Time limit for each evaluation task, in seconds",
+    )
+    parser.add_argument(
+        "--max-tasks-per-child",
+        type=int,
+        default=100,
+        help="Max tasks to run on a single worker when using parallel backends",
     )
 
     # report_config
@@ -237,19 +267,19 @@ if __name__ == "__main__":
         config_data = json.load(file)
 
     required_configs = [
-        "data_loader_config",
+        "data_config",
         "model_config",
-        "model_eval_config",
+        "evaluation_config",
         "report_config",
     ]
     for config_name in required_configs:
         if config_data.get(config_name) is None:
             raise ValueError(f"{config_name} is none")
 
-    data_loader_config = parse_data_loader_config(args, config_data)
-    model_config = parse_model_config(args, config_data)
-    model_eval_config = parse_model_eval_config(args, config_data)
-    report_config = parse_report_config(args, config_data)
+    data_config = build_data_config(args, config_data)
+    model_config = build_model_config(args, config_data)
+    evaluation_config = build_evaluation_config(args, config_data)
+    report_config = build_report_config(args, config_data)
 
     ParallelBackend().init(
         backend=args.eval_backend,
@@ -257,16 +287,16 @@ if __name__ == "__main__":
         n_cpus=args.num_cpus,
         gpu_devices=args.gpus,
         default_timeout=args.timeout,
-        max_tasks_per_child=100,
+        max_tasks_per_child=args.max_tasks_per_child,
         worker_initializers=[init_worker],
     )
 
     try:
         log_filenames = pipeline(
-            data_loader_config,
+            data_config,
             model_config,
-            model_eval_config,
-            report_config["save_path"],
+            evaluation_config,
+            save_path=args.save_path,
         )
 
     finally:

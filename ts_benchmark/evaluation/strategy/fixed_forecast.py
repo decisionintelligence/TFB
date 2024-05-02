@@ -1,109 +1,94 @@
 # -*- coding: utf-8 -*-
-import base64
-import pickle
 import time
-import traceback
-from typing import Any, List
+from typing import List, Optional
 
 import pandas as pd
 
-from ts_benchmark.data.data_pool import DataPool
-from ts_benchmark.evaluation.evaluator import Evaluator
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
-from ts_benchmark.evaluation.strategy.strategy import Strategy
+from ts_benchmark.evaluation.strategy.forecasting import ForecastingStrategy
 from ts_benchmark.models.get_model import ModelFactory
 from ts_benchmark.utils.data_processing import split_before
-from ts_benchmark.utils.random_utils import fix_random_seed
 
 
-class FixedForecast(Strategy):
+class FixedForecast(ForecastingStrategy):
     """
-    Fixed forecast strategy class, used to perform fixed predictions on time series data.
+    Fixed forecast strategy class
+
+    This strategy defines a forecasting task with fixed prediction length.
+
+    The required strategy configs include:
+
+    - horizon (int): The length to predict, i.e. the length of the test series;
+    - train_ratio_in_tv (float): The ratio of the training series when performing train-validation split.
+
+    The accepted metrics include all regression metrics.
+
+    The return fields other than the specified metrics are (in order):
+
+    - FieldNames.FILE_NAME: The name of the series;
+    - FieldNames.FIT_TIME: The training time;
+    - FieldNames.INFERENCE_TIME: The inference time;
+    - FieldNames.ACTUAL_DATA: The true test data, encoded as a string.
+    - FieldNames.INFERENCE_DATA: The predicted data, encoded as a string.
+    - FieldNames.LOG_INFO: Any log returned by the evaluator.
     """
 
-    REQUIRED_FIELDS = ["pred_len"]
+    REQUIRED_CONFIGS = ["horizon", "train_ratio_in_tv"]
 
-    def __init__(self, strategy_config: dict, evaluator: Evaluator):
-        """
-        Initialize fixed forecast policy objects.
-        :param strategy_config: Model evaluation configuration.
-        """
-        super().__init__(strategy_config, evaluator)
-        self.pred_len = self.strategy_config["pred_len"]
-
-    def execute(self, series_name: str, model_factory: ModelFactory) -> Any:
-        """
-        Implement a fixed prediction strategy.
-
-        :param series_name: The name of the sequence to be predicted.
-        :param model_factory: Construction of model objects/factory functions.
-        :return: Evaluation results.
-        """
-        fix_random_seed()
+    def _execute(
+        self,
+        series: pd.DataFrame,
+        meta_info: Optional[pd.Series],
+        model_factory: ModelFactory,
+        series_name: str,
+    ) -> List:
         model = model_factory()
-        data = DataPool().get_pool().get_series(series_name)
-        try:
-            train_length = len(data) - self.pred_len
-            if train_length <= 0:
-                raise ValueError("The prediction step exceeds the data length")
-            train_valid_data, test_data = split_before(data, train_length)
 
-            train_data, rest = split_before(train_valid_data, int(train_length * self.strategy_config["train_valid_split"]))
-            self.scaler.fit(train_data.values)
+        horizon = self._get_scalar_config_value("horizon", series_name)
+        train_ratio_in_tv = self._get_scalar_config_value(
+            "train_ratio_in_tv", series_name
+        )
 
-            start_fit_time = time.time()
-            if hasattr(model, "forecast_fit"):
-                model.forecast_fit(train_valid_data, self.strategy_config["train_valid_split"])
-            else:
-                model.fit(train_valid_data, self.strategy_config["train_valid_split"])
-            end_fit_time = time.time()
-            predict = model.forecast(self.pred_len, train_valid_data)
+        data_len = int(self._get_meta_info(meta_info, "length", len(series)))
+        train_length = data_len - horizon
+        if train_length <= 0:
+            raise ValueError("The prediction step exceeds the data length")
 
-            end_inference_time = time.time()
+        train_valid_data, test_data = split_before(series, train_length)
+        start_fit_time = time.time()
+        fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
+        fit_method(train_valid_data, train_ratio_in_tv=train_ratio_in_tv)
+        end_fit_time = time.time()
+        predicted = model.forecast(horizon, train_valid_data)
+        end_inference_time = time.time()
 
-            actual = test_data.to_numpy()
+        single_series_results, log_info = self.evaluator.evaluate_with_log(
+            test_data.to_numpy(),
+            predicted,
+            # TODO: add configs to control scaling behavior
+            self._get_eval_scaler(train_valid_data, train_ratio_in_tv),
+            train_valid_data.values,
+        )
+        inference_data = pd.DataFrame(
+            predicted, columns=test_data.columns, index=test_data.index
+        )
+        actual_data_encoded = self._encode_data(test_data)
+        inference_data_encoded = self._encode_data(inference_data)
 
-            single_series_results, log_info = self.evaluator.evaluate_with_log(
-                actual, predict, self.scaler, train_valid_data.values
-            )
-
-            inference_data = pd.DataFrame(
-                predict, columns=test_data.columns, index=test_data.index
-            )
-            actual_data_pickle = pickle.dumps(test_data)
-            # Encoding using base64
-            actual_data_pickle = base64.b64encode(actual_data_pickle).decode("utf-8")
-
-            inference_data_pickle = pickle.dumps(inference_data)
-            # Encoding using base64
-            inference_data_pickle = base64.b64encode(inference_data_pickle).decode(
-                "utf-8"
-            )
-
-            single_series_results += [
-                series_name,
-                end_fit_time - start_fit_time,
-                end_inference_time - end_fit_time,
-                actual_data_pickle,
-                inference_data_pickle,
-                log_info,
-            ]
-
-        except Exception as e:
-            log = f"{traceback.format_exc()}\n{e}"
-            single_series_results = self.get_default_result(
-                **{FieldNames.LOG_INFO: log}
-            )
+        single_series_results += [
+            series_name,
+            end_fit_time - start_fit_time,
+            end_inference_time - end_fit_time,
+            actual_data_encoded,
+            inference_data_encoded,
+            log_info,
+        ]
 
         return single_series_results
+
     @staticmethod
     def accepted_metrics():
-        """
-        Obtain a list of evaluation metrics accepted by fixed forecast strategies.
-
-        :return: List of evaluation metrics.
-        """
         return regression_metrics.__all__
 
     @property

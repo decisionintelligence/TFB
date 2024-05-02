@@ -30,7 +30,7 @@ def _safe_execute(fn: Callable, args: Tuple, get_default_result: Callable):
 
 
 def eval_model(
-    model_factory: ModelFactory, series_list: list, model_eval_config: dict
+    model_factory: ModelFactory, series_list: list, evaluation_config: dict
 ) -> Generator[pd.DataFrame, None, None]:
     """
     Evaluate the performance of the model on time series data.
@@ -38,16 +38,16 @@ def eval_model(
 
     :param model_factory: Model factory object used to create model instances.
     :param series_list: A list containing time series names.
-    :param model_eval_config: Evaluate configuration information, including strategies, evaluation metrics, etc.
+    :param evaluation_config: Evaluate configuration information, including strategies, evaluation metrics, etc.
     :return: The DataFrame containing the evaluation results.
     """
     # 获取策略类
-    strategy_class = STRATEGY.get(model_eval_config["strategy_args"]["strategy_name"])
+    strategy_class = STRATEGY.get(evaluation_config["strategy_args"]["strategy_name"])
     if strategy_class is None:
         raise RuntimeError("strategy_class is none")
 
     # 解析评价指标配置
-    metric = model_eval_config["metrics"]
+    metric = evaluation_config["metrics"]
     if metric == "all":
         metric = list(strategy_class.accepted_metrics())
     elif isinstance(metric, (str, dict)):
@@ -74,7 +74,7 @@ def eval_model(
     # Create an evaluator instance
     evaluator = Evaluator(metric)
 
-    strategy = strategy_class(model_eval_config["strategy_args"], evaluator)  # 创建评估策略对象
+    strategy = strategy_class(evaluation_config["strategy_args"], evaluator)  # 创建评估策略对象
 
     eval_backend = ParallelBackend()
     result_list = []

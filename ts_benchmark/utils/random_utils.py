@@ -1,28 +1,31 @@
+import os
 import random
+from typing import Optional, NoReturn
 
 import numpy as np
 import torch
-SEED = 2021
-
-def fix_random_seed():
-    random.seed(SEED)
-    torch.manual_seed(SEED)
-    np.random.seed(SEED)
 
 
-    # torch.manual_seed(SEED)
-    # torch.cuda.manual_seed_all(SEED)
-    # np.random.seed(SEED)
-    # random.seed(SEED)
-    # torch.cuda.manual_seed(SEED)
+def fix_random_seed(seed: Optional[int] = 2021) -> NoReturn:
+    if seed is None:
+        return
 
-    # torch.manual_seed(SEED)
-    # torch.cuda.manual_seed_all(SEED)
-    # np.random.seed(SEED)
-    # random.seed(SEED)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
-    # torch.backends.cudnn.enabled = False
-    # torch.cuda.manual_seed(SEED)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
-    # os.environ['PYTHONHASHSEED'] = str(1)
+
+def fix_all_random_seed(seed: Optional[int] = 2021) -> NoReturn:
+    if seed is None:
+        return
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.enabled = False
+    torch.cuda.manual_seed(seed)
+
+    os.environ['PYTHONHASHSEED'] = str(1)

@@ -35,7 +35,7 @@ PREDEFINED_DATASETS = {
     ),
     "small_forecast": DatasetInfo(
         size_value=["small"], datasrc_class=LocalForecastingDataSource
-    ),
+    )
 }
 
 
@@ -67,9 +67,9 @@ def filter_data(
 
 
 def pipeline(
-    data_loader_config: dict,
+    data_config: dict,
     model_config: dict,
-    model_eval_config: dict,
+    evaluation_config: dict,
     save_path: str,
 ) -> List[str]:
     """
@@ -77,21 +77,21 @@ def pipeline(
 
     The pipline includes loading data, building models, evaluating models, and generating reports.
 
-    :param data_loader_config: Configuration for data loading.
+    :param data_config: Configuration for data loading.
     :param model_config: Configuration for model construction.
-    :param model_eval_config: Configuration for model evaluation.
+    :param evaluation_config: Configuration for model evaluation.
     :param save_path: The relative path for saving evaluation results, relative to the result folder.
     """
     # prepare data
     # TODO: move these code into the data module, after the pipeline interface is unified
-    dataset_name = data_loader_config.get("data_set_name", "small_forecast")
+    dataset_name = data_config.get("data_set_name", "small_forecast")
     if dataset_name not in PREDEFINED_DATASETS:
         raise ValueError(f"Unknown dataset {dataset_name}.")
     data_src: DataSource = PREDEFINED_DATASETS[dataset_name].datasrc_class()
-    data_name_list = data_loader_config.get("data_name_list", None)
+    data_name_list = data_config.get("data_name_list", None)
     if not data_name_list:
         size_value = PREDEFINED_DATASETS[dataset_name].size_value
-        feature_dict = data_loader_config.get("feature_dict", None)
+        feature_dict = data_config.get("feature_dict", None)
         data_name_list = filter_data(
             data_src.dataset.metadata, size_value, feature_dict=feature_dict
         )
@@ -109,7 +109,7 @@ def pipeline(
     for index, model_factory in enumerate(model_factory_list):
         # evaluation model
         for i, result_df in enumerate(
-            eval_model(model_factory, data_name_list, model_eval_config)
+            eval_model(model_factory, data_name_list, evaluation_config)
         ):
             # Name of the model being evaluated
             model_name = model_config["models"][index]["model_name"].split(".")[-1]

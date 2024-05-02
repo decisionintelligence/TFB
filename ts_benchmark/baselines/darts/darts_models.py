@@ -115,18 +115,20 @@ class DartsModelAdapter(ModelBase):
         self.model_name = model_name
         self.allow_fit_on_eval = allow_fit_on_eval
         self.scaler = StandardScaler()
-        self.train_val_ratio = 1
+        self.train_ratio_in_tv = 1
 
-    def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float) -> "DartsModelAdapter":
+    def forecast_fit(
+        self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs
+    ) -> "ModelBase":
         """
         Fit a suitable Darts model on time series data.
 
         :param train_data: Time series data.
-        :param train_val_ratio: Represents the splitting ratio of the training set validation set.
+        :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
             If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        self.train_val_ratio = train_val_ratio
+        self.train_ratio_in_tv = train_ratio_in_tv
         if self.allow_fit_on_eval or self.model_name == "RegressionModel":
             # If it is true, it means that statistical learning methods use retraining to predict
             # future values, because statistical learning does not require partitioning the validation set.
@@ -136,7 +138,7 @@ class DartsModelAdapter(ModelBase):
         else:
             train_data, valid_data = train_val_split(
                 train_data,
-                self.train_val_ratio,
+                self.train_ratio_in_tv,
                 self.config.get("input_chunk_length", 0),
             )
 
@@ -164,7 +166,7 @@ class DartsModelAdapter(ModelBase):
                 self.model.fit(train_data)
         return self
 
-    def forecast(self, horizon: int, series: pd.DataFrame) -> np.ndarray:
+    def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
         """
         Use the adapted Darts model for prediction.
 
@@ -181,7 +183,7 @@ class DartsModelAdapter(ModelBase):
 
         with self._suppress_lightning_logs():
             if self.allow_fit_on_eval:
-                self.forecast_fit(series, self.train_val_ratio)
+                self.forecast_fit(series, train_ratio_in_tv=self.train_ratio_in_tv)
                 fsct_result = self.model.predict(horizon)
             else:
                 series = TimeSeries.from_dataframe(series)

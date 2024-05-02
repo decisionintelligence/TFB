@@ -119,7 +119,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 3. **The benchmark can be run in the following format：**
 
 ```shell
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"pred_len":96}' --model-name "time_series_library.Triformer" --model-hyper-params '{"d_ff": 64, "d_model": 32, "pred_len": 96, "seq_len": 96}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/Triformer"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.Triformer" --model-hyper-params '{"d_ff": 64, "d_model": 32, "horizon": 96, "seq_len": 96}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/Triformer"
 ```
 
 
@@ -203,7 +203,7 @@ class VAR_model:
 - **Run benchmark using VAR**
 
   ```shell
-  python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"pred_len":96}' --model-name "self_implementation.VAR_model" --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/VAR_model"
+  python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":96}' --model-name "self_implementation.VAR_model" --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/VAR"
   ```
 
 
@@ -235,7 +235,7 @@ If you have any questions or suggestions, feel free to contact:
 - Lekui Zhou (zhoulekui@huawei.com)
 - Xingjian Wu (xjwu@stu.ecnu.edu.cn)
 - Buang Zhang (buazhang@stu.ecnu.edu.cn)
-- Junyang Du (jydu818@issbd2014.com)
+- Junyang Du (jydu818@stu.ecnu.edu.cn)
 
 
 Or describe it in Issues.

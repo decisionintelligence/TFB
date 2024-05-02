@@ -4,9 +4,10 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from statsmodels.tsa.api import VAR
 from ts_benchmark.baselines.utils import train_val_split
+from ts_benchmark.models.model_base import ModelBase
 
 
-class VAR_model:
+class VAR_model(ModelBase):
     """
     VAR class.
 
@@ -28,12 +29,12 @@ class VAR_model:
         """
         return {}
 
-    def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float):
+    def forecast_fit(self, train_data: pd.DataFrame, train_ratio_in_tv: float) -> "ModelBase":
         """
         Train the model.
 
         :param train_data: Time series data used for training.
-        :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
+        :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
 
@@ -46,11 +47,11 @@ class VAR_model:
         model = VAR(train_data_value)
         self.results = model.fit(13)
 
-    def forecast(self, pred_len: int, testdata: pd.DataFrame) -> np.ndarray:
+    def forecast(self, horizon: int, testdata: pd.DataFrame) -> np.ndarray:
         """
         Make predictions.
 
-        :param pred_len: The predicted length.
+        :param horizon: The predicted length.
         :param testdata: Time series data used for prediction.
         :return: An array of predicted results.
         """
@@ -59,7 +60,7 @@ class VAR_model:
             columns=testdata.columns,
             index=testdata.index,
         )
-        z = self.results.forecast(train.values, steps=pred_len)
+        z = self.results.forecast(train.values, steps=horizon)
 
         predict = self.scaler.inverse_transform(z)
         return predict

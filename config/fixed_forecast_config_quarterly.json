@@ -1,11 +1,11 @@
 {
-    "data_loader_config" : {
+    "data_config" : {
         "feature_dict": {
             "if_univariate": true,
             "if_trend": null,
             "has_timestamp": null,
             "if_season": null,
-            "freq": "other"
+            "freq": "quarterly"
         },
         "data_set_name": "large_forecast"
     },
@@ -21,12 +21,13 @@
         }
     },
 
-    "model_eval_config" : {
-        "metrics": ["mae", "mse", "rmse", "mape", "smape", {"name": "mase", "seasonality": 1}, "wape", "msmape"],
+    "evaluation_config" : {
+        "metrics": ["mae", "mse", "rmse", "mape", "smape", {"name": "mase", "seasonality": 4}, "wape", "msmape"],
         "strategy_args": {
             "strategy_name": "fixed_forecast",
-            "pred_len": 8,
-            "train_valid_split": 1
+            "horizon": 8,
+            "train_ratio_in_tv": 1,
+            "seed": 2021
         }
     },
 
