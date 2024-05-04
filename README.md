@@ -1,6 +1,7 @@
 # <ins>T</ins>ime Series <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
 ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)
 ![Visits Badge](https://badges.pufler.dev/visits/decisionintelligence/TFB)
+
 **TFB is an open-source library designed for time series researchers.**
 
 **We provide a clean codebase for end-to-end evaluation of time series forecasting models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.**
