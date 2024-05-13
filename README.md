@@ -127,7 +127,7 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 
 **Such as:**
 
-**'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\":512,\"d_model\":256,\"horizon\":24}**
+**'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\\"d_model\\":256,\\"horizon\\":24}**
 ```shell
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
