@@ -93,7 +93,7 @@ class TransformerAdapter(ModelBase):
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
         if freq == None:
-            raise ValueError("不规则的时间间隔")
+            raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
             self.config.freq = "s"
         else:
@@ -112,7 +112,7 @@ class TransformerAdapter(ModelBase):
     def single_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
         if freq == None:
-            raise ValueError("不规则的时间间隔")
+            raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
             self.config.freq = "s"
         else:
@@ -128,7 +128,7 @@ class TransformerAdapter(ModelBase):
     def detect_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
         if freq == None:
-            raise ValueError("不规则的时间间隔")
+            raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
             self.config.freq = "s"
         else:
@@ -254,7 +254,6 @@ class TransformerAdapter(ModelBase):
         # Define the loss function and optimizer
         criterion = nn.MSELoss()
         # criterion = nn.L1Loss()
-        print("mse loss")
         optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -198,7 +198,7 @@ class DatasetForTransformer:
                                 )
 
             data_stamp = df_stamp.drop(["date"], axis=1).values
-            # TODO：看一下时间戳更细时能不能提取更多数据
+            # TODO：Can we extract more data when the timestamp is finer
         elif self.timeenc == 1:
             data_stamp = time_features(
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq

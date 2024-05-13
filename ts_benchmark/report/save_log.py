@@ -15,14 +15,19 @@ def save_log(
     compress_method: str = "gz",
 ) -> str:
     """
-    保存日志数据。
+    Save log data.
 
-    将评估结果、模型超参数、模型评估配置和模型名称保存到日志文件中。
+    Save the evaluation results, model hyperparameters, model evaluation configuration, and model name to a log file.
 
-    :param result_df: 评估结果的 DataFrame。
-    :param model_name: 模型名称。
-    :param compress_method: 输出文件压缩方式。
+    :param save_path: saved path.
+    :param result_df: dataframe of the evaluation result.
+    :param model_name: model name
+    :param compress_method: the compression method for the output file.
     """
+    if result_df["log_info"].values.any():
+        error_message = result_df["log_info"].values
+        for line in error_message:
+            print(line)
     if save_path is not None:
         result_path = os.path.join(ROOT_PATH, "result", save_path)
     else:
@@ -31,15 +36,5 @@ def save_log(
 
     log_filename = get_log_file_name()
     file_path = os.path.join(result_path, model_name + log_filename)
-    # print("------------------------------2-------------------------------")
-    # # result_df = pd.concat([result_df] * 600)
-    # repeated_values = result_df.loc[0, 'actual_data'] * 2
-    # repeated_values1 = result_df.loc[0, 'inference_data'] * 2
-    #
-    # # 更新DataFrame中该列的值
-    # result_df['actual_data'] = repeated_values
-    # result_df['inference_data'] = repeated_values1
-    # print(result_df)
-    #
-    # print("------------------------------2.5-------------------------------")
+
     return write_log_file(result_df, file_path, compress_method)

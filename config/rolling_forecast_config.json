@@ -1,7 +1,7 @@
 {
     "data_config" : {
         "feature_dict": {
-            "if_univariate": true,
+            "if_univariate": false,
             "if_trend": null,
             "has_timestamp": null,
             "if_season": null
