@@ -1,13 +1,40 @@
-# <ins>T</ins>ime Series <ins>F</ins>orecasting <ins>B</ins>enchmark (TFB)
-![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)
-[![Visits Badge](https://badges.pufler.dev/visits/decisionintelligence/TFB)](https://badges.pufler.dev)
+<div align="center">
+<img alt="Logo" src="figures/TFB-LOGO.png" width="80%"/>
+</div>
 
-**TFB is an open-source library designed for time series researchers.**
 
-**We provide a clean codebase for end-to-end evaluation of time series forecasting models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.**
+[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-1.11.0-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  [![Visits Badge](https://badges.pufler.dev/visits/decisionintelligence/TFB)](https://badges.pufler.dev/visits/decisionintelligence/TFB)
+
+# TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
 **We are further optimizing our code and welcome any suggestions for modifications.**
 
+## Table of Contents
+
+1. [Introduction](#introduction)
+1. [Quickstart](#Quickstart)
+1. [Steps to develop your own method](#Steps-to-develop-your-own-method)
+1. [FAQ](#FAQ)
+1. [Citation](#Citation)
+1. [Acknowledgement](#Acknowledgement)
+1. [Contact](#Contact)
+
+## Introduction
+
+TFB is an open-source library designed for time series forecasting researchers.
+
+We provide a clean codebase for end-to-end evaluation of time series forecasting models, comparing their performance with baseline algorithms under various evaluation strategies and metrics.
+
+The below figure provides a visual overview of TFB's pipeline.
+
+<div align="center">
+<img alt="Logo" src="figures/Pipeline.png" width="80%"/>
+</div>
+
+
+The table below provides a visual overview of how TFB's key features compare to other libraries for time series forecasting.
+
+![image-20240514151134923](figures/Comparison_with_Related_Libraries.png)
 
 ## Quickstart
 
@@ -21,200 +48,120 @@ pip install -r requirements.txt
 
 ### Data preparation
 
-Prepare Data. You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1oq5sX_FLc3mkjzd0dt27q_5EqxRKbgDS/view?usp=drive_link).Then place the downloaded data under the folder `./dataset`. 
+You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1oq5sX_FLc3mkjzd0dt27q_5EqxRKbgDS/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
 
-### Train and evaluate model.
+### Train and evaluate model
 
-We provide the experiment scripts for all benchmarks under the folder ./scripts/multivariate_forecast and ./scripts/univariate_forecast. For example，you can reproduce a experiment result as the following:
+We provide the experiment scripts for all benchmarks under the folder `./scripts/multivariate_forecast`, and `./scripts/univariate_forecast`. For example you can reproduce a experiment result as the following:
 
 ```shell
 sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
-### Steps to develop your own method
+## Steps to develop your own method
 
-1. **Define you model or adapter class**
+### Define you model or adapter class
 
-  - The user-implemented model or adapter class should implement the following functions in order to adapt to this benchmark.
-  - required_hyper_params function is optional，__repr__ functions is necessary.
+The user-implemented model or adapter class should implement the following functions in order to adapt to this benchmark.
 
-  - **The function prototype is as follows：**
+"required_hyper_params" function is optional，__repr__ functions is necessary.
 
-    - required_hyper_params  function:
+**The function prototypes are as follows：**
 
-      ```python
+- required_hyper_params  function:
+
+  ```python
+  """
+  Return the hyperparameters required by the model
+  This function is optional and static
+  
+  :return: A dictionary that represents the hyperparameters required by the model
+  :rtype: dict
+  """
+  # For example
+  @staticmethod
+  def required_hyper_params() -> dict:
       """
-      Return the hyperparameters required by the model
-      This function is optional and static
-      
-      :return: A dictionary that represents the hyperparameters required by the model
-      :rtype: dict
+      An empty dictionary indicating that model does not require
+      additional hyperparameters.
       """
-      # For example
-      @staticmethod
-      def required_hyper_params() -> dict:
-          """
-          An empty dictionary indicating that model does not require
-          additional hyperparameters.
-          """
-          return {}
-      ```
-    
-    - forecast_fit  function training model
-    
-      ```python
-      """
-      Train the model.
-      
-      :param train_valid_data: Time series data used for training.
-      :param train_val_ratio: Represents the splitting ratio of the training
-      set validation set. If it is equal to 1, it means that the validation
-      set is not partitioned.
-      """
-      # For example
-      def forecast_fit(self, train_valid_data: pd.DataFrame, train_val_ratio: float):
-          pass
-      ```
-    
-    - forecast function utilizing the model for inference
-    
-      ```python
-      """
-      Use models for forecasting
-      
-      :param pred_len: Predict length
-      :type pred_len: int
-      :param train: Training data used to fit the model
-      :type train: pd.DataFrame
-      
-      :return: Forecasting results
-      :rtype: np.ndarray
-      """
-      # For example
-      def forecast(self, pred_len: int, train: pd.DataFrame) -> np.ndarray:
-          pass
-      ```
-    
-    - __repr __ string representation of function model name
-    
-      ```python
-      """
-      Returns a string representation of the model name
-      
-      :return: Returns a string representation of the model name
-      :rtype: str
-      """
-      # For example
-      def __repr__(self) -> str:
-          return self.model_name
-      ```
-    
+      return {}
+  ```
 
-2. **Configure your Configuration File**
+- forecast_fit  function training model
 
-  - modify the corresponding config under the folder `./ts_benchmark/config/`.
+  ```python
+  """
+  Train the model.
+  
+  :param train_data: Time series data used for training.
+  :param train_ratio_in_tv: Represents the splitting ratio of the training
+  set validation set. If it is equal to 1, it means that the validation
+  set is not partitioned.
+  """
+  # For example
+  def forecast_fit(self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs) -> "ModelBase":
+      pass
+  ```
+  
+- forecast function utilizing the model for inference
 
-  - modify the contents in  `./scripts/run_benchmark.py/`.
+  ```python
+  """
+  Use models for forecasting
+  
+  :param horizon: Predict length
+  :type horizon: int
+  :param series: Training data used to fit the model
+  :type series: pd.DataFrame
+  
+  :return: Forecasting results
+  :rtype: np.ndarray
+  """
+  # For example
+  def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
+      pass
+  ```
 
-  - **We strongly recommend using the pre-defined configurations in `./ts_benchmark/config/`. Create your own  configuration file only when you have a clear understanding of the configuration items.**
+- __repr __ string representation of function model name
 
-3. **The benchmark can be run in the following format：**
+  ```python
+  """
+  Returns a string representation of the model name
+  
+  :return: Returns a string representation of the model name
+  :rtype: str
+  """
+  # For example
+  def __repr__(self) -> str:
+      return self.model_name
+  ```
+
+### Configure your Configuration File
+
+  - Modify the corresponding config under the folder `./config/`.
+
+  - Modify the contents in  `./scripts/run_benchmark.py/`.
+
+  - **We strongly recommend using the pre-defined configurations in `./config/`. Create your own  configuration file only when you have a clear understanding of the configuration items.**
+
+### Run it
 
 ```shell
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args '{"horizon":24}' --model-name "time_series_library.DLinear" --model-hyper-params '{"batch_size": 16, "d_ff": 512, "d_model": 256, "lr": 0.01, "horizon": 24, "seq_len": 104}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
-**Note： When running under pycharm，please escape the double quotes, remove the spaces, and remove the single quotes at the beginning and end.** 
 
-**Such as:**
+## FAQ
 
-**'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\\"d_model\\":256,\\"horizon\\":24}**
+### How to use Pycharm to run code？
+
+When running under pycharm，please escape the double quotes, remove the spaces, and remove the single quotes at the beginning and end.
+
+Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\\"d_model\\":256,\\"horizon\\":24}**
+
 ```shell
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
-
-## Example Usage
-
-- **Define the model class or factory**
-  - We demonstrated what functions need to be implemented for time series forecasting  using the VAR algorithm. You can find the complete code in `./ts_benchmark/baselines/self_implementation/VAR/VAR.py`.
-
-```python
-class VAR_model:
-    """
-    VAR class.
-
-    This class encapsulates a process of using VAR models for time series forecasting.
-    """
-
-    def __init__(self):
-        self.scaler = StandardScaler()
-        self.model_args = {}
-
-    @staticmethod
-    def required_hyper_params() -> dict:
-        """
-        Return the hyperparameters required by VAR.
-
-        :return: An empty dictionary indicating that VAR does not require additional hyperparameters.
-        """
-        
-        return {}
-
-    def forecast_fit(self, train_data: pd.DataFrame, train_val_ratio: float):
-       """
-       Train the model.
-      
-       :param train_valid_data: Time series data used for training.
-       :param train_val_ratio: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
-       """
-
-        self.scaler.fit(train_data.values)
-        train_data_value = pd.DataFrame(
-            self.scaler.transform(train_data.values),
-            columns=train_data.columns,
-            index=train_data.index,
-        )
-        model = VAR(train_data_value)
-        self.results = model.fit(13)
-
-    def forecast(self, pred_len: int, testdata: pd.DataFrame) -> np.ndarray:
-       """
-      Use models for forecasting
-      
-      :param pred_len: Predict length
-      :type pred_len: int
-      :param train: Training data used to fit the model
-      :type train: pd.DataFrame
-      
-      :return: Forecasting results
-      :rtype: np.ndarray
-      """
-
-        train = pd.DataFrame(
-            self.scaler.transform(testdata.values),
-            columns=testdata.columns,
-            index=testdata.index,
-        )
-        z = self.results.forecast(train.values, steps=pred_len)
-
-        predict = self.scaler.inverse_transform(z)
-        return predict
-
-    def __repr__(self) -> str:
-        """
-        Returns a string representation of the model name.
-        """
-        
-        return self.model_name
-
-```
-
-- **Run benchmark using VAR**
-
-  ```shell
-  python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":96}' --model-name "self_implementation.VAR_model" --gpus 0  --num-workers 1  --timeout 60000  --save-path "ETTh1/VAR"
-  ```
-
-
 
 ## Citation
 
