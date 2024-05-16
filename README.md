@@ -187,7 +187,6 @@ The development of this library has been supported by **Huawei Cloud**, and we w
 If you have any questions or suggestions, feel free to contact:
 
 - Xiangfei Qiu (xfqiu@stu.ecnu.edu.cn)
-- Lekui Zhou (zhoulekui@huawei.com)
 - Xingjian Wu (xjwu@stu.ecnu.edu.cn)
 - Buang Zhang (buazhang@stu.ecnu.edu.cn)
 - Junyang Du (jydu818@stu.ecnu.edu.cn)
