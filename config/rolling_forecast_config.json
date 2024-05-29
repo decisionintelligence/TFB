@@ -35,7 +35,7 @@
 
     "report_config" : {
         "aggregate_type": "mean",
-        "report_metrics": ["mae", "mse", "rmse", "mape", "smape", "mase", "wape", "msmape"],
+        "report_metrics": ["mae_norm", "mse_norm", "rmse_norm", "mape_norm", "smape_norm", "wape_norm", "msmape_norm"],
         "fill_type": "mean_value",
         "null_value_threshold": "0.3"
     }
