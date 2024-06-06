@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 __all__ = [
     "ARIMA",
     "DLinearModel",
@@ -20,7 +21,7 @@ __all__ = [
     "RandomForest",
     "LinearRegressionModel",
     "LightGBMModel",
-    # "CatBoostModel",
+    "CatBoostModel",
     "XGBModel",
     "BlockRNNModel",
     "NHiTSModel",
@@ -31,38 +32,46 @@ __all__ = [
     "VARIMA",
     "NaiveMean",
     "NaiveSeasonal",
-    "NaiveMovingAverage"
+    "NaiveMovingAverage",
+    "darts_deep_model_adapter",
+    "darts_statistical_model_adapter",
+    "darts_regression_model_adapter",
 ]
 
 
-from ts_benchmark.baselines.darts.darts_models import ARIMA
-from ts_benchmark.baselines.darts.darts_models import DLinearModel
-from ts_benchmark.baselines.darts.darts_models import NBEATSModel
-from ts_benchmark.baselines.darts.darts_models import NLinearModel
-from ts_benchmark.baselines.darts.darts_models import RNNModel
-from ts_benchmark.baselines.darts.darts_models import TCNModel
-from ts_benchmark.baselines.darts.darts_models import AutoARIMA
-from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoARIMA
-from ts_benchmark.baselines.darts.darts_models import ExponentialSmoothing
-from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoETS
-from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoCES
-from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoTheta
-from ts_benchmark.baselines.darts.darts_models import FFT
-from ts_benchmark.baselines.darts.darts_models import KalmanForecaster
-from ts_benchmark.baselines.darts.darts_models import Croston
-from ts_benchmark.baselines.darts.darts_models import RegressionModel
-from ts_benchmark.baselines.darts.darts_models import RandomForest
-from ts_benchmark.baselines.darts.darts_models import LinearRegressionModel
-from ts_benchmark.baselines.darts.darts_models import LightGBMModel
-# from ts_benchmark.baselines.darts.darts_models import CatBoostModel
-from ts_benchmark.baselines.darts.darts_models import XGBModel
-from ts_benchmark.baselines.darts.darts_models import BlockRNNModel
-from ts_benchmark.baselines.darts.darts_models import NHiTSModel
-from ts_benchmark.baselines.darts.darts_models import TransformerModel
-from ts_benchmark.baselines.darts.darts_models import TFTModel
-from ts_benchmark.baselines.darts.darts_models import TiDEModel
-from ts_benchmark.baselines.darts.darts_models import NaiveDrift
-from ts_benchmark.baselines.darts.darts_models import VARIMA
-from ts_benchmark.baselines.darts.darts_models import NaiveMean
-from ts_benchmark.baselines.darts.darts_models import NaiveSeasonal
-from ts_benchmark.baselines.darts.darts_models import NaiveMovingAverage
+from ts_benchmark.baselines.darts.darts_models import ARIMA  # noqa
+from ts_benchmark.baselines.darts.darts_models import AutoARIMA  # noqa
+from ts_benchmark.baselines.darts.darts_models import BlockRNNModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import CatBoostModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import Croston  # noqa
+from ts_benchmark.baselines.darts.darts_models import DLinearModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import ExponentialSmoothing  # noqa
+from ts_benchmark.baselines.darts.darts_models import FFT  # noqa
+from ts_benchmark.baselines.darts.darts_models import KalmanForecaster  # noqa
+from ts_benchmark.baselines.darts.darts_models import LightGBMModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import LinearRegressionModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import NBEATSModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import NHiTSModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import NLinearModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import NaiveDrift  # noqa
+from ts_benchmark.baselines.darts.darts_models import NaiveMean  # noqa
+from ts_benchmark.baselines.darts.darts_models import NaiveMovingAverage  # noqa
+from ts_benchmark.baselines.darts.darts_models import NaiveSeasonal  # noqa
+from ts_benchmark.baselines.darts.darts_models import RNNModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import RandomForest  # noqa
+from ts_benchmark.baselines.darts.darts_models import RegressionModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoARIMA  # noqa
+from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoCES  # noqa
+from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoETS  # noqa
+from ts_benchmark.baselines.darts.darts_models import StatsForecastAutoTheta  # noqa
+from ts_benchmark.baselines.darts.darts_models import TCNModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import TFTModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import TiDEModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import TransformerModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import VARIMA  # noqa
+from ts_benchmark.baselines.darts.darts_models import XGBModel  # noqa
+from ts_benchmark.baselines.darts.darts_models import (
+    darts_deep_model_adapter,
+    darts_statistical_model_adapter,
+    darts_regression_model_adapter,
+)

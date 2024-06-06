@@ -9,7 +9,7 @@ import pandas as pd
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.forecasting import ForecastingStrategy
-from ts_benchmark.models.get_model import ModelFactory
+from ts_benchmark.models import ModelFactory
 from ts_benchmark.utils.data_processing import split_before
 
 

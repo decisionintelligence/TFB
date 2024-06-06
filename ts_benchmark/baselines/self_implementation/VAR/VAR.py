@@ -3,8 +3,7 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 from statsmodels.tsa.api import VAR
-from ts_benchmark.baselines.utils import train_val_split
-from ts_benchmark.models.model_base import ModelBase
+from ts_benchmark.models import ModelBase
 
 
 class VAR_model(ModelBase):

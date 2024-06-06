@@ -14,7 +14,7 @@ from sklearn.preprocessing import StandardScaler
 
 from ts_benchmark.baselines.utils import train_val_split
 from ts_benchmark.common.constant import ROOT_PATH
-from ts_benchmark.models.model_base import ModelBase
+from ts_benchmark.models import ModelBase
 
 if darts.__version__ >= "0.25.0":
     from darts.models.utils import NotImportedModule
@@ -43,7 +43,7 @@ class DartsConfig:
 
     def get_darts_class_params(self) -> dict:
         ret = self.params.copy()
-        ret.pop("normalization")
+        ret.pop("norm")
         self._fix_multi_gpu(ret)
         return ret
 
@@ -143,7 +143,7 @@ class DartsModelAdapter(ModelBase):
             )
 
         self.model = self.model_class(**self.config.get_darts_class_params())
-        if self.config.normalization:
+        if self.config.norm:
             self.scaler.fit(train_data.values)
             train_data = pd.DataFrame(
                 self.scaler.transform(train_data.values),
@@ -174,7 +174,7 @@ class DartsModelAdapter(ModelBase):
         :param series: Time series data to make inferences on.
         :return: Forecast result.
         """
-        if self.config.normalization:
+        if self.config.norm:
             series = pd.DataFrame(
                 self.scaler.transform(series.values),
                 columns=series.columns,
@@ -190,7 +190,7 @@ class DartsModelAdapter(ModelBase):
                 fsct_result = self.model.predict(horizon, series)
         predict = fsct_result.values()
 
-        if self.config.normalization:
+        if self.config.norm:
             predict = self.scaler.inverse_transform(predict)
 
         return predict
@@ -244,15 +244,15 @@ def _generate_model_factory(
 DEEP_MODEL_REQUIRED_ARGS = {
     "input_chunk_length": "input_chunk_length",
     "output_chunk_length": "output_chunk_length",
-    "normalization": "norm",
+    "norm": "norm",
 }
 REGRESSION_MODEL_REQUIRED_ARGS = {
     "lags": "input_chunk_length",
     "output_chunk_length": "output_chunk_length",
-    "normalization": "norm",
+    "norm": "norm",
 }
 STAT_MODEL_REQUIRED_ARGS = {
-    "normalization": "norm",
+    "norm": "norm",
 }
 DEEP_MODEL_ARGS = {
     "pl_trainer_kwargs": {
@@ -278,7 +278,6 @@ def _get_model_info(model_name: str, required_args: Dict, model_args: Dict) -> T
 
 # darts model that does not retrain during prediction
 DARTS_MODELS = [
-    _get_model_info("KalmanForecaster", {}, {}),
     _get_model_info("TCNModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
     _get_model_info(
         "TFTModel",
@@ -303,6 +302,7 @@ DARTS_MODELS = [
 
 # The following models specifically allow for retraining during inference
 DARTS_STAT_MODELS = [
+    _get_model_info("KalmanForecaster", STAT_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("ARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("VARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("AutoARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
@@ -327,6 +327,7 @@ for _model_name, _model_class, _required_args, _model_args in DARTS_MODELS:
         logger.warning(
             "Model %s is not available, skipping model registration", _model_name
         )
+        globals()[_model_name] = None
         continue
     globals()[_model_name] = _generate_model_factory(
         model_class=_model_class,
@@ -343,8 +344,9 @@ for _model_name, _model_class, _required_args, _model_args in DARTS_STAT_MODELS:
         logger.warning(
             "Model %s is not available, skipping model registration", _model_name
         )
+        globals()[_model_name] = None
         continue
-    globals()[_model_class.__name__] = _generate_model_factory(
+    globals()[_model_name] = _generate_model_factory(
         model_class=_model_class,
         model_args=_model_args,
         model_name=_model_class.__name__,

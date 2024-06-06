@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from ts_benchmark.data.data_pool import DataPool
 from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.strategy import Strategy
-from ts_benchmark.models.get_model import ModelFactory
+from ts_benchmark.models import ModelFactory
 from ts_benchmark.utils.data_processing import split_before
 from ts_benchmark.utils.random_utils import fix_random_seed
 

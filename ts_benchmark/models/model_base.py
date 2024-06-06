@@ -6,6 +6,12 @@ import pandas as pd
 
 
 class ModelBase(metaclass=abc.ABCMeta):
+    """
+    The standard interface of benchmark-compatible models.
+
+    Users are recommended to inherit this class to implement or adapt their own models.
+    """
+
     @abc.abstractmethod
     def forecast_fit(
         self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs

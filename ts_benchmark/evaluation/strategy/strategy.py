@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from ts_benchmark.evaluation.evaluator import Evaluator
-from ts_benchmark.models.get_model import ModelFactory
+from ts_benchmark.models import ModelFactory
 
 
 class ResultCollector:

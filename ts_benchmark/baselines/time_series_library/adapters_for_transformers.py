@@ -1,3 +1,4 @@
+
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
@@ -219,7 +220,7 @@ class TransformerAdapter(ModelBase):
 
         self.scaler.fit(train_data.values)
 
-        if config.normalization:
+        if config.norm:
             train_data = pd.DataFrame(
                 self.scaler.transform(train_data.values),
                 columns=train_data.columns,
@@ -227,7 +228,7 @@ class TransformerAdapter(ModelBase):
             )
 
         if train_ratio_in_tv != 1:
-            if config.normalization:
+            if config.norm:
                 valid_data = pd.DataFrame(
                     self.scaler.transform(valid_data.values),
                     columns=valid_data.columns,
@@ -254,6 +255,7 @@ class TransformerAdapter(ModelBase):
         # Define the loss function and optimizer
         criterion = nn.MSELoss()
         # criterion = nn.L1Loss()
+        print("mse loss")
         optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -315,7 +317,7 @@ class TransformerAdapter(ModelBase):
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
-        if self.config.normalization:
+        if self.config.norm:
             train = pd.DataFrame(
                 self.scaler.transform(train.values),
                 columns=train.columns,
@@ -368,7 +370,7 @@ class TransformerAdapter(ModelBase):
                     answer = np.concatenate([answer, temp], axis=0)
 
                 if answer.shape[0] >= horizon:
-                    if self.config.normalization:
+                    if self.config.norm:
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
@@ -654,6 +656,6 @@ def transformer_adapter(model_info: Type[object]) -> object:
         required_args={
             "seq_len": "input_chunk_length",
             "horizon": "output_chunk_length",
-            "normalization": "norm",
+            "norm": "norm",
         },
     )

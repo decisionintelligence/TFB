@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 ADAPTER = {
-    "darts_deep_model_adapter": "ts_benchmark.baselines.Forecasting.darts_models.darts_deep_model_adapter",
-    "darts_statistical_model_adapter": "ts_benchmark.baselines.Forecasting.darts_models.darts_statistical_model_adapter",
-    "darts_regression_model_adapter": "ts_benchmark.baselines.Forecasting.darts_models.darts_regression_model_adapter",
+    "darts_deep_model_adapter": "ts_benchmark.baselines.darts.darts_deep_model_adapter",
+    "darts_statistical_model_adapter": "ts_benchmark.baselines.darts.darts_statistical_model_adapter",
+    "darts_regression_model_adapter": "ts_benchmark.baselines.darts.darts_regression_model_adapter",
     "transformer_adapter": "ts_benchmark.baselines.time_series_library.adapters_for_transformers.transformer_adapter",
-    "spatial_temporal_adapter": "ts_benchmark.baselines.adapters_for_spatial_temporal_models.spatial_temporal_adapter"
 }

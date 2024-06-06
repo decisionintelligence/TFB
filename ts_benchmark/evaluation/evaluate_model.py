@@ -12,7 +12,7 @@ from ts_benchmark.evaluation.evaluator import Evaluator
 from ts_benchmark.evaluation.strategy import STRATEGY
 from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.strategy import Strategy
-from ts_benchmark.models.get_model import ModelFactory
+from ts_benchmark.models import ModelFactory
 from ts_benchmark.utils.parallel import ParallelBackend
 
 logger = logging.getLogger(__name__)
