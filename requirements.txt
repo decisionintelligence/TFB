@@ -1,4 +1,4 @@
-darts>=0.25.0
+darts==0.25.0
 matplotlib>=3.6.2
 numpy>=1.22.3
 pandas>=1.5.1
@@ -11,3 +11,4 @@ tqdm>=4.64.0
 dash>=2.9.3
 dash-bootstrap-components>=1.5.0
 reformer-pytorch==1.4.4
+lightgbm>=4.1.0
