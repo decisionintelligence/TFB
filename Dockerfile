@@ -14,4 +14,4 @@ ENV PATH="/env/bin:$PATH"
 RUN pip install --upgrade pip
 
 # install dependencies
-RUN pip install -r /home/TFB/requirements.txt
+RUN pip install -r /home/TFB/requirements-docker.txt
