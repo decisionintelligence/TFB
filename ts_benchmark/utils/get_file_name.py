@@ -4,7 +4,7 @@ import socket
 import time
 
 
-def get_log_file_name():
+def get_unique_file_suffix():
     """
     Generate a log file name suffix that includes the following information:
 

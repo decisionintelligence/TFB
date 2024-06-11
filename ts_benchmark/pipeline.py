@@ -13,7 +13,7 @@ from ts_benchmark.data.data_source import (
 from ts_benchmark.data.suites.global_storage import GlobalStorageDataServer
 from ts_benchmark.evaluation.evaluate_model import eval_model
 from ts_benchmark.models import get_models
-from ts_benchmark.report.save_log import save_log
+from ts_benchmark.recording import save_log
 from ts_benchmark.utils.parallel import ParallelBackend
 
 
@@ -35,7 +35,7 @@ PREDEFINED_DATASETS = {
     ),
     "small_forecast": DatasetInfo(
         size_value=["small"], datasrc_class=LocalForecastingDataSource
-    ),
+    )
 }
 
 
@@ -115,11 +115,7 @@ def pipeline(
             model_name = model_config["models"][index]["model_name"].split(".")[-1]
             # Reporting
             log_file_names.append(
-                save_log(
-                    save_path,
-                    result_df,
-                    model_name if i == 0 else f"{model_name}_{i}",
-                )
+                save_log(result_df, save_path, model_name if i == 0 else f"{model_name}_{i}")
             )
 
     return log_file_names

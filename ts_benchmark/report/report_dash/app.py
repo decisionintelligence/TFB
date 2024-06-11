@@ -2,25 +2,19 @@
 
 from __future__ import absolute_import
 
-import itertools
 import logging
-import os
 from typing import Union, List, Dict, NoReturn
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import dcc, html
+from dash import html
 from flask import Flask, redirect
-from pandas.errors import ParserError
 
 from ts_benchmark.evaluation.strategy.constants import FieldNames
-from ts_benchmark.report.leaderboard import get_leaderboard
+from ts_benchmark.recording import load_record_data
 from ts_benchmark.report.report_dash.memory import READONLY_MEMORY
-from ts_benchmark.report.utils import read_log_file
-
-logger = logging.getLogger(__name__)
-
+from ts_benchmark.report.utils.leaderboard import get_leaderboard
 
 # currently we do not support showing or processing artifact columns
 # these columns are dropped as soon as data is loaded in order to save memory
@@ -30,31 +24,7 @@ ARTIFACT_COLUMNS = [
     FieldNames.LOG_INFO,
 ]
 
-
-def _find_log_files(directory: str) -> List[str]:
-    log_files = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            # TODO: this is a temporary solution, any good methods to identify a log file?
-            if file.endswith(".csv") or file.endswith(".tar.gz"):
-                log_files.append(os.path.join(root, file))
-    return log_files
-
-
-def _load_log_data(log_files: List[str]) -> pd.DataFrame:
-    log_files = itertools.chain.from_iterable(
-        [[fn] if not os.path.isdir(fn) else _find_log_files(fn) for fn in log_files]
-    )
-
-    ret = []
-    for fn in log_files:
-        logger.info("loading log file %s", fn)
-        try:
-            ret.append(read_log_file(fn).drop(columns=ARTIFACT_COLUMNS))
-        except (FileNotFoundError, PermissionError, KeyError, ParserError):
-            # TODO: it is ugly to identify log files by artifact columns...
-            logger.info("unrecognized log file format, skipping %s...", fn)
-    return pd.concat(ret, axis=0)
+logger = logging.getLogger(__name__)
 
 
 def report(report_config: Dict) -> NoReturn:
@@ -63,16 +33,17 @@ def report(report_config: Dict) -> NoReturn:
         raise ValueError("No log files to report")
 
     log_data = (
-        log_files if isinstance(log_files, pd.DataFrame) else _load_log_data(log_files)
+        log_files
+        if isinstance(log_files, pd.DataFrame)
+        else load_record_data(log_files, drop_columns=ARTIFACT_COLUMNS)
     )
 
     log_data = log_data.drop(columns=ARTIFACT_COLUMNS, errors="ignore")
 
     leaderboard_df = get_leaderboard(
-        log_files,
         log_data,
-        report_config.get("aggregate_type", "mean"),
         report_config["report_metrics"],
+        report_config.get("aggregate_type", "mean"),
         report_config.get("fill_type", "mean_value"),
         report_config.get("null_value_threshold", 0.3),
     )

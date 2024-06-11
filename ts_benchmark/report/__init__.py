@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
-@Time ： 2023-07-21 9:48
-@Auth ： Allen Qiu
-@File ：__init__.py.py
-@IDE ：PyCharm
-@作用:
-"""
+
+from __future__ import absolute_import
+
+from ts_benchmark.report import report_dash, report_csv
+
+
+def report(report_config: dict, report_method: str = "csv") -> None:
+    if report_method == "dash":
+        report_dash.report(report_config)
+    elif report_method == "csv":
+        report_csv.report(report_config)
+    else:
+        raise ValueError(f"Unknown report method {report_method}")

@@ -11,8 +11,8 @@ import torch
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from ts_benchmark.utils.get_file_name import get_log_file_name
-from ts_benchmark.report import report_dash, report_csv
+from ts_benchmark.utils.get_file_name import get_unique_file_suffix
+from ts_benchmark.report import report
 from ts_benchmark.common.constant import CONFIG_PATH, THIRD_PARTY_PATH
 from ts_benchmark.pipeline import pipeline
 from ts_benchmark.utils.parallel import ParallelBackend
@@ -303,10 +303,8 @@ if __name__ == "__main__":
         ParallelBackend().close(force=True)
 
     report_config["log_files_list"] = log_filenames
-    if args.report_method == "dash":
-        report_dash.report(report_config)
-    elif args.report_method == "csv":
-        filename = get_log_file_name()
+    if args.report_method == "csv":
+        filename = get_unique_file_suffix()
         leaderboard_file_name = "test_report" + filename
         report_config["leaderboard_file_name"] = leaderboard_file_name
-        report_csv.report(report_config)
+    report(report_config, report_method=args.report_method)
