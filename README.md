@@ -64,7 +64,7 @@ docker run -it -v $(pwd)/:/app/ tfb:latest bash
 
 ### Data preparation
 
-You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1oq5sX_FLc3mkjzd0dt27q_5EqxRKbgDS/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
+You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
 
 ### Train and evaluate model
 
