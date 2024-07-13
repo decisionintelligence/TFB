@@ -29,6 +29,8 @@ def build_data_config(args: argparse.Namespace, config_data: Dict) -> Dict:
     """
     data_config = config_data["data_config"]
     data_config["data_name_list"] = args.data_name_list
+    if args.data_set_name is not None:
+        data_config["data_set_name"] = args.data_set_name
     return data_config
 
 
@@ -137,6 +139,15 @@ if __name__ == "__main__":
         nargs="+",
         default=None,
         help="List of series names entered by the user",
+    )
+
+    parser.add_argument(
+        "--data-set-name",
+        type=str,
+        nargs="+",
+        default=None,
+        help="List of dataset name names entered by the user,"
+             "only takes effect when data_name_list is not specified",
     )
 
     # model_config

@@ -27,15 +27,15 @@ class DatasetInfo:
 
 PREDEFINED_DATASETS = {
     "large_forecast": DatasetInfo(
-        size_value=["large", "medium", "small"],
+        size_value=["large", "small"],
         datasrc_class=LocalForecastingDataSource,
-    ),
-    "medium_forecast": DatasetInfo(
-        size_value=["medium", "small"], datasrc_class=LocalForecastingDataSource
     ),
     "small_forecast": DatasetInfo(
         size_value=["small"], datasrc_class=LocalForecastingDataSource
-    )
+    ),
+    "user_forecast": DatasetInfo(
+        size_value=["user"], datasrc_class=LocalForecastingDataSource
+    ),
 }
 
 
@@ -84,17 +84,35 @@ def pipeline(
     """
     # prepare data
     # TODO: move these code into the data module, after the pipeline interface is unified
-    dataset_name = data_config.get("data_set_name", "small_forecast")
-    if dataset_name not in PREDEFINED_DATASETS:
-        raise ValueError(f"Unknown dataset {dataset_name}.")
-    data_src: DataSource = PREDEFINED_DATASETS[dataset_name].datasrc_class()
+    dataset_name_list = data_config.get("data_set_name", ["small_forecast"])
+    if not dataset_name_list:
+        dataset_name_list = ["small_forecast"]
+    if isinstance(dataset_name_list, str):
+        dataset_name_list = [dataset_name_list]
+    for dataset_name in dataset_name_list:
+        if dataset_name not in PREDEFINED_DATASETS:
+            raise ValueError(f"Unknown dataset {dataset_name}.")
+
+    data_src_type = PREDEFINED_DATASETS[dataset_name_list[0]].datasrc_class
+    if not all(
+            PREDEFINED_DATASETS[dataset_name].datasrc_class is data_src_type
+            for dataset_name in dataset_name_list
+    ):
+        raise ValueError("Not supporting different types of data sources.")
+
+    data_src: DataSource = PREDEFINED_DATASETS[dataset_name_list[0]].datasrc_class()
     data_name_list = data_config.get("data_name_list", None)
     if not data_name_list:
-        size_value = PREDEFINED_DATASETS[dataset_name].size_value
-        feature_dict = data_config.get("feature_dict", None)
-        data_name_list = filter_data(
-            data_src.dataset.metadata, size_value, feature_dict=feature_dict
-        )
+        data_name_list = []
+        for dataset_name in dataset_name_list:
+            size_value = PREDEFINED_DATASETS[dataset_name].size_value
+            feature_dict = data_config.get("feature_dict", None)
+            data_name_list.extend(
+                filter_data(
+                    data_src.dataset.metadata, size_value, feature_dict=feature_dict
+                )
+            )
+    data_name_list = list(set(data_name_list))
     if not data_name_list:
         raise ValueError("No dataset specified.")
     data_src.load_series_list(data_name_list)
