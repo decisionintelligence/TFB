@@ -95,8 +95,8 @@ def pipeline(
 
     data_src_type = PREDEFINED_DATASETS[dataset_name_list[0]].datasrc_class
     if not all(
-            PREDEFINED_DATASETS[dataset_name].datasrc_class is data_src_type
-            for dataset_name in dataset_name_list
+        PREDEFINED_DATASETS[dataset_name].datasrc_class is data_src_type
+        for dataset_name in dataset_name_list
     ):
         raise ValueError("Not supporting different types of data sources.")
 

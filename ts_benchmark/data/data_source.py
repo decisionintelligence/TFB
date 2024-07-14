@@ -104,7 +104,9 @@ class LocalDataSource(DataSource):
         data_info_list = []
         for user_csv in user_csv_files:
             try:
-                data_info_list.append(load_series_info(os.path.join(self.local_data_path, user_csv)))
+                data_info_list.append(
+                    load_series_info(os.path.join(self.local_data_path, user_csv))
+                )
             except Exception as e:
                 raise RuntimeError(f"Error loading series info from {user_csv}: {e}")
         new_metadata = pd.DataFrame(data_info_list)
@@ -112,7 +114,10 @@ class LocalDataSource(DataSource):
         metadata = pd.concat([metadata, new_metadata])
         with open(self.metadata_path, "w", newline="", encoding="utf-8") as csvfile:
             metadata.to_csv(csvfile, index=True)
-        logger.info("Detected %s new user datasets, registered in the metadata", len(user_csv_files))
+        logger.info(
+            "Detected %s new user datasets, registered in the metadata",
+            len(user_csv_files),
+        )
         return metadata
 
     def load_series_list(self, series_list: List[str]) -> NoReturn:
