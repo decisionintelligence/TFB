@@ -8,7 +8,7 @@ import pandas as pd
 
 from ts_benchmark.common.constant import FORECASTING_DATASET_PATH
 from ts_benchmark.data.dataset import Dataset
-from ts_benchmark.utils.data_processing import read_data
+from ts_benchmark.data.utils import load_series_info, read_data
 
 
 logger = logging.getLogger(__name__)
@@ -66,10 +66,10 @@ class LocalDataSource(DataSource):
     The data source that manages data files in a local directory
     """
 
-    # index column name of the metadata
+    #: index column name of the metadata
     _INDEX_COL = "file_name"
 
-    def __init__(self, local_data_path: str, metadata_path: Optional[str] = None):
+    def __init__(self, local_data_path: str, metadata_file_name: str):
         """
         initializer
 
@@ -77,19 +77,48 @@ class LocalDataSource(DataSource):
         loaded on demand.
 
         :param local_data_path: the directory that contains csv data files and metadata.
-        :param metadata_path: the path to the metadata file, if None, a default value of
-            '{local_data_path}/METADATA' will be used.
+        :param metadata_file_name: name of the metadata file.
         """
         self.local_data_path = local_data_path
-        self.metadata_path = (
-            os.path.join(self.local_data_path, "FORECAST_META.csv")
-            if metadata_path is None
-            else metadata_path
-        )
+        self.metadata_path = os.path.join(local_data_path, metadata_file_name)
+        metadata = self.update_meta_index()
+        super().__init__({}, metadata)
+
+    def update_meta_index(self) -> pd.DataFrame:
+        """
+        Check if there are any user-added dataset files in the dataset folder
+        Attempt to register them in the metadata and load metadata from the metadata file
+        :return: metadata
+        :rtype: pd.DataFrame
+        """
 
         metadata = self._load_metadata()
-
-        super().__init__({}, metadata)
+        csv_files = {
+            f
+            for f in os.listdir(self.local_data_path)
+            if f.endswith(".csv") and f != os.path.basename(self.metadata_path)
+        }
+        user_csv_files = set(csv_files).difference(metadata.index)
+        if not user_csv_files:
+            return metadata
+        data_info_list = []
+        for user_csv in user_csv_files:
+            try:
+                data_info_list.append(
+                    load_series_info(os.path.join(self.local_data_path, user_csv))
+                )
+            except Exception as e:
+                raise RuntimeError(f"Error loading series info from {user_csv}: {e}")
+        new_metadata = pd.DataFrame(data_info_list)
+        new_metadata.set_index(self._INDEX_COL, drop=False, inplace=True)
+        metadata = pd.concat([metadata, new_metadata])
+        with open(self.metadata_path, "w", newline="", encoding="utf-8") as csvfile:
+            metadata.to_csv(csvfile, index=True)
+        logger.info(
+            "Detected %s new user datasets, registered in the metadata",
+            len(user_csv_files),
+        )
+        return metadata
 
     def load_series_list(self, series_list: List[str]) -> NoReturn:
         logger.info("Start loading %s series in parallel", len(series_list))
@@ -130,7 +159,10 @@ class LocalForecastingDataSource(LocalDataSource):
     """
 
     def __init__(self):
-        super().__init__(FORECASTING_DATASET_PATH)
+        super().__init__(
+            FORECASTING_DATASET_PATH,
+            "FORECAST_META.csv"
+        )
 
 
 
