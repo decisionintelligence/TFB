@@ -5,6 +5,38 @@ import numpy as np
 import pandas as pd
 
 
+def annotate(**kwargs):
+    """
+    Decorate a function to add or update its annotations.
+
+    :param kwargs: Keyword arguments representing the annotations to be added or updated.
+    :return: A wrapper function that updates the annotations of the original function.
+    """
+
+    def wrapper(func):
+        func.__annotations__.update(kwargs)
+        return func
+
+    return wrapper
+
+
+class BatchMaker(metaclass=abc.ABCMeta):
+    """
+    The standard interface of batch maker.
+
+    """
+
+    @abc.abstractmethod
+    def make_batch(self, batch_size: int, win_size: int) -> dict:
+        """
+        Provide a batch of data to be used for batch prediction.
+
+        :param batch_size: The length of one batch.
+        :param win_size: The length of data for one prediction.
+        :return: A batch of data for prediction.
+        """
+
+
 class ModelBase(metaclass=abc.ABCMeta):
     """
     The standard interface of benchmark-compatible models.
@@ -36,3 +68,16 @@ class ModelBase(metaclass=abc.ABCMeta):
         :param series: Time series data to make inferences on.
         :return: Forecast result.
         """
+
+    @annotate(not_implemented_batch=True)
+    def batch_forecast(
+        self, horizon: int, batch_maker: BatchMaker, **kwargs
+    ) -> np.ndarray:
+        """
+        Perform batch forecasting with the model.
+
+        :param horizon: The length of each prediction.
+        :param batch_maker: Make batch data used for prediction.
+        :return: The prediction result.
+        """
+        raise NotImplementedError("Not implemented batch forecasting!")

@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 from ts_benchmark.baselines.time_series_library.utils.timefeatures import (
     time_features,
 )
-
 from ts_benchmark.utils.data_processing import split_before
 
 
@@ -123,6 +122,69 @@ def train_val_split(train_data, ratio, seq_len):
         return train_data_value, valid_data_rest
 
 
+def decompose_time(
+    time: np.ndarray,
+    freq: str,
+) -> np.ndarray:
+    """
+    Split the given array of timestamps into components based on the frequency.
+
+    :param time: Array of timestamps.
+    :param freq: The frequency of the time stamp.
+    :return: Array of timestamp components.
+    """
+    df_stamp = pd.DataFrame(pd.to_datetime(time), columns=["date"])
+    freq_scores = {
+        "m": 0,
+        "w": 1,
+        "b": 2,
+        "d": 2,
+        "h": 3,
+        "t": 4,
+        "s": 5,
+    }
+    max_score = max(freq_scores.values())
+    df_stamp["month"] = df_stamp.date.dt.month
+    if freq_scores.get(freq, max_score) >= 1:
+        df_stamp["day"] = df_stamp.date.dt.day
+    if freq_scores.get(freq, max_score) >= 2:
+        df_stamp["weekday"] = df_stamp.date.dt.weekday
+    if freq_scores.get(freq, max_score) >= 3:
+        df_stamp["hour"] = df_stamp.date.dt.hour
+    if freq_scores.get(freq, max_score) >= 4:
+        df_stamp["minute"] = df_stamp.date.dt.minute
+    if freq_scores.get(freq, max_score) >= 5:
+        df_stamp["second"] = df_stamp.date.dt.second
+    return df_stamp.drop(["date"], axis=1).values
+
+
+def get_time_mark(
+    time_stamp: np.ndarray,
+    timeenc: int,
+    freq: str,
+) -> np.ndarray:
+    """
+    Extract temporal features from the time stamp.
+
+    :param time_stamp: The time stamp ndarray.
+    :param timeenc: The time encoding type.
+    :param freq: The frequency of the time stamp.
+    :return: The mark of the time stamp.
+    """
+    if timeenc == 0:
+        origin_size = time_stamp.shape
+        data_stamp = decompose_time(time_stamp.flatten(), freq)
+        data_stamp = data_stamp.reshape(origin_size + (-1,))
+    elif timeenc == 1:
+        origin_size = time_stamp.shape
+        data_stamp = time_features(pd.to_datetime(time_stamp.flatten()), freq=freq)
+        data_stamp = data_stamp.transpose(1, 0)
+        data_stamp = data_stamp.reshape(origin_size + (-1,))
+    else:
+        raise ValueError("Unknown time encoding {}".format(timeenc))
+    return data_stamp.astype(np.float32)
+
+
 def forecasting_data_provider(data, config, timeenc, batch_size, shuffle, drop_last):
     dataset = DatasetForTransformer(
         dataset=data,
@@ -174,38 +236,9 @@ class DatasetForTransformer:
 
     def __read_data__(self):
         df_stamp = self.dataset.reset_index()
-        df_stamp = df_stamp[["date"]]
-        df_stamp["date"] = pd.to_datetime(df_stamp.date)
-        if self.timeenc == 0:
-            df_stamp["month"] = df_stamp.date.apply(lambda row: row.month, 1)
-            if self.freq != "m":
-                df_stamp["day"] = df_stamp.date.apply(lambda row: row.day, 1)
-                if self.freq != "w":
-                    df_stamp["weekday"] = df_stamp.date.apply(
-                        lambda row: row.weekday(), 1
-                    )
-                    if self.freq != "b" and self.freq != "d":
-                        df_stamp["hour"] = df_stamp.date.apply(lambda row: row.hour, 1)
-                        if self.freq != "h":
-                            df_stamp["minute"] = df_stamp.date.apply(
-                                lambda row: row.minute, 1
-                            )
-                            if self.freq != "t":
-                                df_stamp["second"] = df_stamp.date.apply(
-                                    # lambda row: row.minute, 1
-                                    lambda row: row.second,
-                                    1,
-                                )
-
-            data_stamp = df_stamp.drop(["date"], axis=1).values
-            # TODO：Can we extract more data when the timestamp is finer
-        elif self.timeenc == 1:
-            data_stamp = time_features(
-                pd.to_datetime(df_stamp["date"].values), freq=self.freq
-            )
-            data_stamp = data_stamp.transpose(1, 0)
-
-        self.data_stamp = pd.DataFrame(data_stamp, dtype=float)
+        df_stamp = df_stamp[["date"]].values.transpose(1, 0)
+        data_stamp = get_time_mark(df_stamp, self.timeenc, self.freq)[0]
+        self.data_stamp = data_stamp
 
     def __getitem__(self, index):
         s_begin = index
@@ -220,8 +253,8 @@ class DatasetForTransformer:
 
         seq_x = torch.tensor(seq_x.values, dtype=torch.float32)
         seq_y = torch.tensor(seq_y.values, dtype=torch.float32)
-        seq_x_mark = torch.tensor(seq_x_mark.values, dtype=torch.float32)
-        seq_y_mark = torch.tensor(seq_y_mark.values, dtype=torch.float32)
+        seq_x_mark = torch.tensor(seq_x_mark, dtype=torch.float32)
+        seq_y_mark = torch.tensor(seq_y_mark, dtype=torch.float32)
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
 
@@ -239,9 +272,9 @@ class SegLoader(object):
         """
         if self.mode == "train":
             return (self.data.shape[0] - self.win_size) // self.step + 1
-        elif (self.mode == 'val'):
+        elif self.mode == "val":
             return (self.data.shape[0] - self.win_size) // self.step + 1
-        elif (self.mode == 'test'):
+        elif self.mode == "test":
             return (self.data.shape[0] - self.win_size) // self.step + 1
         else:
             return (self.data.shape[0] - self.win_size) // self.win_size + 1
@@ -265,7 +298,7 @@ def anomaly_detection_data_provider(data, batch_size, win_size=100, step=100, mo
     dataset = SegLoader(data, win_size, 1, mode)
 
     shuffle = False
-    if mode == 'train' or mode == 'val':
+    if mode == "train" or mode == "val":
         shuffle = True
 
     data_loader = DataLoader(dataset=dataset,

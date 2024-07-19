@@ -1,20 +1,25 @@
+import math
+from typing import Type, Dict, Optional, Tuple
 
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
-
-from .utils.tools import EarlyStopping, adjust_learning_rate
-from ts_benchmark.utils.data_processing import split_before
-from typing import Type, Dict
 from torch import optim
-import numpy as np
-import pandas as pd
+
+from ts_benchmark.baselines.time_series_library.utils.tools import (
+    EarlyStopping,
+    adjust_learning_rate,
+)
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
     anomaly_detection_data_provider,
+    get_time_mark,
 )
-from ...models.model_base import ModelBase
+from ts_benchmark.models.model_base import ModelBase, BatchMaker
+from ts_benchmark.utils.data_processing import split_before
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
@@ -62,9 +67,11 @@ class TransformerConfig:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
     @property
     def pred_len(self):
         return self.horizon
+
 
 class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
@@ -159,6 +166,32 @@ class TransformerAdapter(ModelBase):
         test = pd.concat([test, new_df])
         return test
 
+    def _padding_time_stamp_mark(
+        self, time_stamps_list: np.ndarray, padding_len: int
+    ) -> np.ndarray:
+        """
+        Padding time stamp mark for prediction.
+
+        :param time_stamps_list: A batch of time stamps.
+        :param padding_len: The len of time stamp need to be padded.
+        :return: The padded time stamp mark.
+        """
+        padding_time_stamp = []
+        for time_stamps in time_stamps_list:
+            start = time_stamps[-1]
+            expand_time_stamp = pd.date_range(
+                start=start,
+                periods=padding_len + 1,
+                freq=self.config.freq.upper(),
+            )
+            padding_time_stamp.append(expand_time_stamp.to_numpy()[-padding_len:])
+        padding_time_stamp = np.stack(padding_time_stamp)
+        whole_time_stamp = np.concatenate(
+            (time_stamps_list, padding_time_stamp), axis=1
+        )
+        padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
+        return padding_mark
+
     def validate(self, valid_data_loader, criterion):
         config = self.config
         total_loss = []
@@ -191,7 +224,9 @@ class TransformerAdapter(ModelBase):
         self.model.train()
         return total_loss
 
-    def forecast_fit(self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float) -> "ModelBase":
+    def forecast_fit(
+        self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float
+    ) -> "ModelBase":
         """
         Train the model.
 
@@ -391,6 +426,140 @@ class TransformerAdapter(ModelBase):
                     shuffle=False,
                     drop_last=False,
                 )
+
+    def batch_forecast(
+        self, horizon: int, batch_maker: BatchMaker, **kwargs
+    ) -> np.ndarray:
+        """
+        Make predictions by batch.
+
+        :param horizon: The length of each prediction.
+        :param batch_maker: Make batch data used for prediction.
+        :return: An array of predicted results.
+        """
+        if self.early_stopping.check_point is not None:
+            self.model.load_state_dict(self.early_stopping.check_point)
+
+        if self.model is None:
+            raise ValueError("Model not trained. Call the fit() function first.")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(device)
+        self.model.eval()
+
+        input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
+        input_np = input_data["input"]
+
+        if self.config.norm:
+            origin_shape = input_np.shape
+            flattened_data = input_np.reshape((-1, input_np.shape[-1]))
+            input_np = self.scaler.transform(flattened_data).reshape(origin_shape)
+
+        input_index = input_data["time_stamps"]
+        padding_len = (
+            math.ceil(horizon / self.config.horizon) + 1
+        ) * self.config.horizon
+        all_mark = self._padding_time_stamp_mark(input_index, padding_len)
+
+        answers = self._perform_rolling_predictions(horizon, input_np, all_mark, device)
+
+        if self.config.norm:
+            flattened_data = answers.reshape((-1, answers.shape[-1]))
+            answers = self.scaler.inverse_transform(flattened_data).reshape(
+                answers.shape
+            )
+
+        return answers
+
+    def _perform_rolling_predictions(
+        self,
+        horizon: int,
+        input_np: np.ndarray,
+        all_mark: np.ndarray,
+        device: torch.device,
+    ) -> list:
+        """
+        Perform rolling predictions using the given input data and marks.
+
+        :param horizon: Length of predictions to be made.
+        :param input_np: Numpy array of input data.
+        :param all_mark: Numpy array of all marks (time stamps mark).
+        :param device: Device to run the model on.
+        :return: List of predicted results for each prediction batch.
+        """
+        rolling_time = 0
+        input_np, target_np, input_mark_np, target_mark_np = self._get_rolling_data(
+            input_np, None, all_mark, rolling_time
+        )
+        with torch.no_grad():
+            answers = []
+            while not answers or sum(a.shape[1] for a in answers) < horizon:
+                input, dec_input, input_mark, target_mark = (
+                    torch.tensor(input_np, dtype=torch.float32).to(device),
+                    torch.tensor(target_np, dtype=torch.float32).to(device),
+                    torch.tensor(input_mark_np, dtype=torch.float32).to(device),
+                    torch.tensor(target_mark_np, dtype=torch.float32).to(device),
+                )
+                output = self.model(input, input_mark, dec_input, target_mark)
+                column_num = output.shape[-1]
+                real_batch_size = output.shape[0]
+                answer = (
+                    output.cpu()
+                    .numpy()
+                    .reshape(real_batch_size, -1, column_num)[
+                        :, -self.config.horizon :, :
+                    ]
+                )
+                answers.append(answer)
+                if sum(a.shape[1] for a in answers) >= horizon:
+                    break
+                rolling_time += 1
+                output = output.cpu().numpy()[:, -self.config.horizon :, :]
+                input_np, target_np, input_mark_np, target_mark_np = (
+                    self._get_rolling_data(input_np, output, all_mark, rolling_time)
+                )
+
+        answers = np.concatenate(answers, axis=1)
+        return answers[:, -horizon:, :]
+
+    def _get_rolling_data(
+        self,
+        input_np: np.ndarray,
+        output: Optional[np.ndarray],
+        all_mark: np.ndarray,
+        rolling_time: int,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Prepare rolling data based on the current rolling time.
+
+        :param input_np: Current input data.
+        :param output: Output from the model prediction.
+        :param all_mark: Numpy array of all marks (time stamps mark).
+        :param rolling_time: Current rolling time step.
+        :return: Updated input data, target data, input marks, and target marks for rolling prediction.
+        """
+        if rolling_time > 0:
+            input_np = np.concatenate((input_np, output), axis=1)
+            input_np = input_np[:, -self.config.seq_len :, :]
+        target_np = np.zeros(
+            (
+                input_np.shape[0],
+                self.config.label_len + self.config.horizon,
+                input_np.shape[2],
+            )
+        )
+        target_np[:, : self.config.label_len, :] = input_np[
+            :, -self.config.label_len :, :
+        ]
+        advance_len = rolling_time * self.config.horizon
+        input_mark_np = all_mark[:, advance_len : self.config.seq_len + advance_len, :]
+        start = self.config.seq_len - self.config.label_len + advance_len
+        end = self.config.seq_len + self.config.horizon + advance_len
+        target_mark_np = all_mark[
+            :,
+            start:end,
+            :,
+        ]
+        return input_np, target_np, input_mark_np, target_mark_np
 
     def detect_validate(self, valid_data_loader, criterion):
         config = self.config
