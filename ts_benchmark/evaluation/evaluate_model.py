@@ -13,7 +13,7 @@ from ts_benchmark.evaluation.strategy import STRATEGY
 from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.strategy import Strategy
 from ts_benchmark.models import ModelFactory
-from ts_benchmark.utils.parallel import ParallelBackend
+from ts_benchmark.utils.parallel import ParallelBackend, TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +29,79 @@ def _safe_execute(fn: Callable, args: Tuple, get_default_result: Callable):
         return get_default_result(**{FieldNames.LOG_INFO: log})
 
 
+class EvalResult:
+    """
+    Result handle class for model evaluation.
+
+    This class is designed to separate experiment execution and result collection processes,
+    so that we can start experiments for all models (in parallel) before we try to collect
+    any results.
+    """
+
+    def __init__(
+        self,
+        strategy: Strategy,
+        result_list: List[TaskResult],
+        model_factory: ModelFactory,
+        series_list: List[str],
+    ):
+        """
+        Initializer.
+
+        :param strategy: Strategy instance.
+        :param result_list: A list of TaskResult object returned by eval-backend job submission.
+        :param model_factory: The model factory instance of the current model.
+        :param series_list: A list of strings representing data names.
+        """
+        self.result_list = result_list
+        self.strategy = strategy
+        self.model_factory = model_factory
+        self.series_list = series_list
+
+    def collect(self) -> Generator[pd.DataFrame, None, None]:
+        """
+        Collects all the results stored in this instance.
+
+        :return: A generator of evaluation result DataFrames.
+        """
+        collector = self.strategy.get_collector()
+        min_interval = (
+            0 if len(self.result_list) < 100 else 0.1
+        )  # improves visual effect
+        for i, result in enumerate(
+            tqdm.tqdm(
+                self.result_list,
+                desc=f"collecting {self.model_factory.model_name}",
+                mininterval=min_interval,
+            )
+        ):
+            collector.add(
+                _safe_execute(
+                    result.result,
+                    (),
+                    functools.partial(
+                        self.strategy.get_default_result,
+                        **{FieldNames.FILE_NAME: self.series_list[i]},
+                    ),
+                )
+            )
+            if collector.get_size() > 100000:
+                result_df = build_result_df(
+                    collector.collect(), self.model_factory, self.strategy
+                )
+                yield result_df
+                collector.reset()
+
+        if collector.get_size() > 0:
+            result_df = build_result_df(
+                collector.collect(), self.model_factory, self.strategy
+            )
+            yield result_df
+
+
 def eval_model(
     model_factory: ModelFactory, series_list: list, evaluation_config: dict
-) -> Generator[pd.DataFrame, None, None]:
+) -> EvalResult:
     """
     Evaluate the performance of the model on time series data.
     Evaluate the model based on the provided model factory, time series list, and evaluation configuration, and return the DataFrame of the evaluation results.
@@ -78,36 +148,15 @@ def eval_model(
 
     eval_backend = ParallelBackend()
     result_list = []
-    for series_name in tqdm.tqdm(series_list, desc="scheduling..."):
+    for series_name in tqdm.tqdm(
+        series_list, desc=f"scheduling {model_factory.model_name}"
+    ):
         # TODO: refactor data model to optimize communication cost in parallel mode
         result_list.append(
             eval_backend.schedule(strategy.execute, (series_name, model_factory))
         )
-        # result_list.append(single_series_results)
 
-    collector = strategy.get_collector()
-    min_interval = 0 if len(result_list) < 100 else 0.1  # improves visual effect
-    for i, result in enumerate(
-        tqdm.tqdm(result_list, desc="collecting...", mininterval=min_interval)
-    ):
-        collector.add(
-            _safe_execute(
-                result.result,
-                (),
-                functools.partial(
-                    strategy.get_default_result,
-                    **{FieldNames.FILE_NAME: series_list[i]},
-                ),
-            )
-        )
-        if collector.get_size() > 100000:
-            result_df = build_result_df(collector.collect(), model_factory, strategy)
-            yield result_df
-            collector.reset()
-
-    if collector.get_size() > 0:
-        result_df = build_result_df(collector.collect(), model_factory, strategy)
-        yield result_df
+    return EvalResult(strategy, result_list, model_factory, series_list)
 
 
 def build_result_df(

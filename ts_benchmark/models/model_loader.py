@@ -175,7 +175,6 @@ class ModelFactory:
 
         :return: A model instance that is compatible with the :class:`ModelBase` interface.
         """
-
         return self.model_factory(**self.model_hyper_params)
 
 
