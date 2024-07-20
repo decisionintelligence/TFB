@@ -66,6 +66,24 @@ def filter_data(
     return filt_metadata["file_name"].tolist()
 
 
+def _get_model_names(model_names: List[str]):
+    """
+    Rename models if there exists duplications.
+
+    If a model A appears multiple times in the list, each appearance will be renamed to
+    `A`, `A_1`, `A_2`, ...
+
+    :param model_names: A list of model names.
+    :return: The renamed list of model names.
+    """
+    s = pd.Series(model_names)
+    cumulative_counts = s.groupby(s).cumcount()
+    return [
+        f"{model_name}_{cnt}" if cnt > 0 else model_name
+        for model_name, cnt in zip(model_names, cumulative_counts)
+    ]
+
+
 def pipeline(
     data_config: dict,
     model_config: dict,
@@ -122,18 +140,28 @@ def pipeline(
     # modeling
     model_factory_list = get_models(model_config)
 
-    # Loop through each model
+    result_list = [
+        eval_model(model_factory, data_name_list, evaluation_config)
+        for model_factory in model_factory_list
+    ]
+    model_save_names = [
+        it.split(".")[-1]
+        for it in _get_model_names(
+            [model_factory.model_name for model_factory in model_factory_list]
+        )
+    ]
+
     log_file_names = []
-    for index, model_factory in enumerate(model_factory_list):
-        # evaluation model
-        for i, result_df in enumerate(
-            eval_model(model_factory, data_name_list, evaluation_config)
-        ):
-            # Name of the model being evaluated
-            model_name = model_config["models"][index]["model_name"].split(".")[-1]
-            # Reporting
+    for model_factory, result_itr, model_save_name in zip(
+        model_factory_list, result_list, model_save_names
+    ):
+        for i, result_df in enumerate(result_itr.collect()):
             log_file_names.append(
-                save_log(result_df, save_path, model_name if i == 0 else f"{model_name}_{i}")
+                save_log(
+                    result_df,
+                    save_path,
+                    model_save_name if i == 0 else f"{model_save_name}_{i}",
+                )
             )
 
     return log_file_names

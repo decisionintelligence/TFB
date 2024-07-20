@@ -98,6 +98,7 @@ class DartsModelAdapter(ModelBase):
         model_args: dict,
         model_name: Optional[str] = None,
         allow_fit_on_eval: bool = False,
+        supports_validation: bool = False,
         **kwargs
     ):
         """
@@ -107,6 +108,7 @@ class DartsModelAdapter(ModelBase):
         :param model_args: Model initialization parameters.
         :param model_name: Model name.
         :param allow_fit_on_eval: Is it allowed to fit the model during the prediction phase.
+        :param supports_validation: Whether the model supports inputting a validation series.
         :param kwargs: other arguments added to model_args.
         """
         self.model = None
@@ -114,6 +116,7 @@ class DartsModelAdapter(ModelBase):
         self.config = DartsConfig(**{**model_args, **kwargs})
         self.model_name = model_name
         self.allow_fit_on_eval = allow_fit_on_eval
+        self.supports_validation = supports_validation
         self.scaler = StandardScaler()
         self.train_ratio_in_tv = 1
 
@@ -150,7 +153,7 @@ class DartsModelAdapter(ModelBase):
                 columns=train_data.columns,
                 index=train_data.index,
             )
-            if valid_data is not None:
+            if self.supports_validation and valid_data is not None:
                 valid_data = pd.DataFrame(
                     self.scaler.transform(valid_data.values),
                     columns=valid_data.columns,
@@ -159,7 +162,7 @@ class DartsModelAdapter(ModelBase):
 
         with self._suppress_lightning_logs():
             train_data = TimeSeries.from_dataframe(train_data)
-            if valid_data is not None:
+            if self.supports_validation and valid_data is not None:
                 valid_data = TimeSeries.from_dataframe(valid_data)
                 self.model.fit(train_data, val_series=valid_data)
             else:
@@ -218,6 +221,7 @@ def _generate_model_factory(
     model_name: str,
     required_args: dict,
     allow_fit_on_eval: bool,
+    supports_validation: bool,
 ) -> Dict:
     """
     Generate model factory information for creating Darts model adapters.
@@ -227,6 +231,7 @@ def _generate_model_factory(
     :param model_args: Predefined model hyperparameters that can be overwritten by the hyperparameters of the input factory function.
     :param required_args: Requires hyperparameters recommended by benchmark.
     :param allow_fit_on_eval: Is it allowed to fit the model during the prediction phase.
+    :param supports_validation: Whether the model supports inputting a validation series.
     :return: A dictionary containing the model factory and required parameters.
     """
     model_factory = functools.partial(
@@ -235,6 +240,7 @@ def _generate_model_factory(
         model_args=model_args,
         model_name=model_name,
         allow_fit_on_eval=allow_fit_on_eval,
+        supports_validation=supports_validation,
     )
 
     return {"model_factory": model_factory, "required_hyper_params": required_args}
@@ -276,8 +282,8 @@ def _get_model_info(model_name: str, required_args: Dict, model_args: Dict) -> T
     return model_name, model_class, required_args, model_args
 
 
-# darts model that does not retrain during prediction
-DARTS_MODELS = [
+# deep models implemented by darts
+DARTS_DEEP_MODELS = [
     _get_model_info("TCNModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
     _get_model_info(
         "TFTModel",
@@ -292,6 +298,10 @@ DARTS_MODELS = [
     _get_model_info("DLinearModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
     _get_model_info("NBEATSModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
     _get_model_info("NLinearModel", DEEP_MODEL_REQUIRED_ARGS, DEEP_MODEL_ARGS),
+]
+
+# regression models implemented by darts
+DARTS_REGRESSION_MODELS = [
     _get_model_info("RandomForest", REGRESSION_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("XGBModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("CatBoostModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
@@ -300,7 +310,8 @@ DARTS_MODELS = [
     _get_model_info("RegressionModel", REGRESSION_MODEL_REQUIRED_ARGS, {}),
 ]
 
-# The following models specifically allow for retraining during inference
+# statistical models implemented by darts,
+# these models are specially allowed to retrain during inference
 DARTS_STAT_MODELS = [
     _get_model_info("KalmanForecaster", STAT_MODEL_REQUIRED_ARGS, {}),
     _get_model_info("ARIMA", STAT_MODEL_REQUIRED_ARGS, {}),
@@ -320,9 +331,9 @@ DARTS_STAT_MODELS = [
     _get_model_info("NaiveMovingAverage", STAT_MODEL_REQUIRED_ARGS, {}),
 ]
 
-# Generate model factories for each model class and required parameters in DARTS_MODELS
+# Generate model factories for each model class and required parameters in DARTS_DEEP_MODELS
 # and add them to global variables
-for _model_name, _model_class, _required_args, _model_args in DARTS_MODELS:
+for _model_name, _model_class, _required_args, _model_args in DARTS_DEEP_MODELS:
     if _model_class is None:
         logger.warning(
             "Model %s is not available, skipping model registration", _model_name
@@ -335,6 +346,25 @@ for _model_name, _model_class, _required_args, _model_args in DARTS_MODELS:
         model_name=_model_name,
         required_args=_required_args,
         allow_fit_on_eval=False,
+        supports_validation=True,
+    )
+
+# Generate model factories for each model class and required parameters in DARTS_REGRESSION_MODELS
+# and add them to global variables
+for _model_name, _model_class, _required_args, _model_args in DARTS_REGRESSION_MODELS:
+    if _model_class is None:
+        logger.warning(
+            "Model %s is not available, skipping model registration", _model_name
+        )
+        globals()[_model_name] = None
+        continue
+    globals()[_model_name] = _generate_model_factory(
+        model_class=_model_class,
+        model_args=_model_args,
+        model_name=_model_name,
+        required_args=_required_args,
+        allow_fit_on_eval=False,
+        supports_validation=False,
     )
 
 # Generate model factories for each model class and required parameters in DARTS_STAT_MODELS
@@ -352,6 +382,7 @@ for _model_name, _model_class, _required_args, _model_args in DARTS_STAT_MODELS:
         model_name=_model_class.__name__,
         required_args=_required_args,
         allow_fit_on_eval=True,
+        supports_validation=False,
     )
 
 
@@ -371,6 +402,7 @@ def darts_deep_model_adapter(model_class: type) -> Dict:
         model_class.__name__,
         DEEP_MODEL_REQUIRED_ARGS,
         allow_fit_on_eval=False,
+        supports_validation=True,
     )
 
 
@@ -387,6 +419,7 @@ def darts_statistical_model_adapter(model_class: type) -> Dict:
         model_class.__name__,
         STAT_MODEL_REQUIRED_ARGS,
         allow_fit_on_eval=True,
+        supports_validation=False,
     )
 
 
@@ -403,4 +436,5 @@ def darts_regression_model_adapter(model_class: type) -> Dict:
         model_class.__name__,
         REGRESSION_MODEL_REQUIRED_ARGS,
         allow_fit_on_eval=True,
+        supports_validation=False,
     )
