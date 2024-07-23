@@ -197,7 +197,7 @@ If you find this repo useful, please cite our paper.
              Zhenli Sheng and
              Bin Yang},
   title   = {{TFB:} Towards Comprehensive and Fair Benchmarking of Time Series
-                  Forecasting Methods},
+             Forecasting Methods},
   journal = {Proc. {VLDB} Endow.},
   volume  = {17},
   number  = {9},
