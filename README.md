@@ -16,6 +16,7 @@
 1. [Introduction](#introduction)
 1. [Quickstart](#Quickstart)
 1. [Steps to develop your own method](#Steps-to-develop-your-own-method)
+1. [Steps to evaluate on your own time series](#Steps-to-evaluate-on-your-own-time-series)
 1. [FAQ](#FAQ)
 1. [Citation](#Citation)
 1. [Acknowledgement](#Acknowledgement)
