@@ -75,97 +75,12 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
 ## Steps to develop your own method
+We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
 
-### Define you model or adapter class
 
-The user-implemented model or adapter class should implement the following functions in order to adapt to this benchmark.
+## Steps to evaluate your own time series
+We provide tutorial about how to evaluate your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
 
-"required_hyper_params" function is optional，__repr__ functions is necessary.
-
-**The function prototypes are as follows：**
-
-- required_hyper_params  function:
-
-  ```python
-  """
-  Return the hyperparameters required by the model
-  This function is optional and static
-  
-  :return: A dictionary that represents the hyperparameters required by the model
-  :rtype: dict
-  """
-  # For example
-  @staticmethod
-  def required_hyper_params() -> dict:
-      """
-      An empty dictionary indicating that model does not require
-      additional hyperparameters.
-      """
-      return {}
-  ```
-
-- forecast_fit  function training model
-
-  ```python
-  """
-  Train the model.
-  
-  :param train_data: Time series data used for training.
-  :param train_ratio_in_tv: Represents the splitting ratio of the training
-  set validation set. If it is equal to 1, it means that the validation
-  set is not partitioned.
-  """
-  # For example
-  def forecast_fit(self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs) -> "ModelBase":
-      pass
-  ```
-  
-- forecast function utilizing the model for inference
-
-  ```python
-  """
-  Use models for forecasting
-  
-  :param horizon: Predict length
-  :type horizon: int
-  :param series: Training data used to fit the model
-  :type series: pd.DataFrame
-  
-  :return: Forecasting results
-  :rtype: np.ndarray
-  """
-  # For example
-  def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
-      pass
-  ```
-
-- __repr __ string representation of function model name
-
-  ```python
-  """
-  Returns a string representation of the model name
-  
-  :return: Returns a string representation of the model name
-  :rtype: str
-  """
-  # For example
-  def __repr__(self) -> str:
-      return self.model_name
-  ```
-
-### Configure your Configuration File
-
-  - Modify the corresponding config under the folder `./config/`.
-
-  - Modify the contents in  `./scripts/run_benchmark.py/`.
-
-  - **We strongly recommend using the pre-defined configurations in `./config/`. Create your own  configuration file only when you have a clear understanding of the configuration items.**
-
-### Run it
-
-```shell
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args '{"horizon":24}' --model-name "time_series_library.DLinear" --model-hyper-params '{"batch_size": 16, "d_ff": 512, "d_model": 256, "lr": 0.01, "horizon": 24, "seq_len": 104}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
-```
 
 ## FAQ
 
@@ -178,13 +93,6 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 ```shell
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
-
-### How to evaluate your own time series？
-We provide tutorial about how to evaluate your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
-
-
-### How to develop your own method？
-We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
 
 
 ## Citation
