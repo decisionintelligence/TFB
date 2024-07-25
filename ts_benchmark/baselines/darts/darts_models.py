@@ -114,11 +114,19 @@ class DartsModelAdapter(ModelBase):
         self.model = None
         self.model_class = model_class
         self.config = DartsConfig(**{**model_args, **kwargs})
-        self.model_name = model_name
+        self._model_name = model_name
         self.allow_fit_on_eval = allow_fit_on_eval
         self.supports_validation = supports_validation
         self.scaler = StandardScaler()
         self.train_ratio_in_tv = 1
+
+    @property
+    def model_name(self):
+        """
+        Returns the name of the model.
+        """
+
+        return self._model_name
 
     def forecast_fit(
         self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs
@@ -207,12 +215,6 @@ class DartsModelAdapter(ModelBase):
             yield
         finally:
             pl_logger.setLevel(old_level)
-
-    def __repr__(self):
-        """
-        Returns a string representation of the model name.
-        """
-        return self.model_name
 
 
 def _generate_model_factory(

@@ -1,5 +1,5 @@
 <div align="center">
-<img alt="Logo" src="figures/TFB-LOGO.png" width="80%"/>
+<img alt="Logo" src="docs/figures/TFB-LOGO.png" width="80%"/>
 </div>
 
 
@@ -30,13 +30,13 @@ We provide a clean codebase for end-to-end evaluation of time series forecasting
 The below figure provides a visual overview of TFB's pipeline.
 
 <div align="center">
-<img alt="Logo" src="figures/Pipeline.png" width="80%"/>
+<img alt="Logo" src="docs/figures/Pipeline.png" width="80%"/>
 </div>
 
 
 The table below provides a visual overview of how TFB's key features compare to other libraries for time series forecasting.
 
-![image-20240514151134923](figures/Comparison_with_Related_Libraries.png)
+![image-20240514151134923](docs/figures/Comparison_with_Related_Libraries.png)
 
 ## Quickstart
 
@@ -178,6 +178,14 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 ```shell
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
+
+### How to evaluate your own time series？
+We provide tutorial about how to evaluate your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
+
+
+### How to develop your own method？
+We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
+
 
 ## Citation
 
