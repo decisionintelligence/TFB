@@ -81,3 +81,15 @@ class ModelBase(metaclass=abc.ABCMeta):
         :return: The prediction result.
         """
         raise NotImplementedError("Not implemented batch forecasting!")
+
+    @property
+    @abc.abstractmethod
+    def model_name(self):
+        """
+        Returns the name of the model.
+        """
+
+        pass
+
+    def __repr__(self):
+        return self.model_name
