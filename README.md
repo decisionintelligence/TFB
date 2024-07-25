@@ -78,8 +78,8 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
 
 
-## Steps to evaluate your own time series
-We provide tutorial about how to evaluate your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
+## Steps to evaluate on your own time series
+We provide tutorial about how to evaluate on your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
 
 
 ## FAQ
