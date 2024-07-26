@@ -1,6 +1,6 @@
 ## Steps to develop your own method 
 
-This is a tutorial to develop your own method.  You can refer to the following steps:
+This is a tutorial for developing your own method.  You can refer to the following steps:
 
 
 
@@ -8,7 +8,7 @@ This is a tutorial to develop your own method.  You can refer to the following s
 
 
 
-### 2. Define you model
+### 2. Define your model
 
 - The user-implemented model class should inherit the class **ModelBase**
 
@@ -46,8 +46,8 @@ This is a tutorial to develop your own method.  You can refer to the following s
       Train the model.
   
       :param train_data: Time series data used for training.
-  		:param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. 
-  		If it is equal to 1, it means that the validation set is not partitioned.
+      :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
+          If it is equal to 1, it means that the validation set is not partitioned.
   		
       :return: The fitted model object.
       """
@@ -64,7 +64,7 @@ This is a tutorial to develop your own method.  You can refer to the following s
       return self
   ```
 
-- Implement **forecast** method to inference your model
+- Implement **forecast** method to inference with your model
 
   ```python
   def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
@@ -89,13 +89,13 @@ This is a tutorial to develop your own method.  You can refer to the following s
 
 - Because VAR does not support **batch_forecast**, this method is not implemented in this tutorial.
 
-- Implement **required_hyper_params** method.  This method only needs to be overridden if your model requires the use of this mechanism. It is provided here as an instructional example.
+- Implement **required_hyper_params** method.  This method only needs to be overwritten if your model requires this mechanism. It is provided here as an instructional example.
 
-  > [!NOTE]
+  > **About required_hyper_params**
   >
-  > This is a specially designed mechanism to enable models to relinquish the settings of some hyperparameters to the benchmark. (We do not enforce the model to adhere to these parameter values) The method should return a key-value dictionary where the key is the model's own hyperparameter name and the value is the parameter name defined globally in **recommend_model_hyper_params**. 
+  > This is a specially designed mechanism to enable models to relinquish the settings of some hyperparameters to the benchmark (We do not enforce the model to adhere to these parameter values). The method should return a key-value dictionary where the key is the model's hyperparameter name and the value is the parameter name defined globally in **recommend_model_hyper_params**. 
   >
-  > For example, if a model cannot automatically decide the best input window size (corresponding hyperparameter **input_window_size**), it can leave the decision to the benchmark, so that the benchmark is able to use a globally recommended setting (corresponding hyperparameter **input_chunk_length**) to produce a fair comparison between different models;
+  > For example, if a model cannot automatically decide the best input window size (corresponding hyperparameter **input_window_size**), it can leave the decision to the benchmark, so that the benchmark can use a globally recommended setting (corresponding hyperparameter **input_chunk_length**) to produce a fair comparison between different models;
   >  In this example, to enable this mechanism properly, the model is required to provide a **required_hyper_params** field in dictionary **{"input_window_size": "input_chunk_length"}**.
 
   ```python
@@ -108,7 +108,7 @@ This is a tutorial to develop your own method.  You can refer to the following s
       return {}
   ```
 
-- Implement **model_name** method which is string representation of function model name
+- Implement **model_name** method which returns a string representation of the model name
 
   ```python
   def model_name(self):
@@ -213,7 +213,7 @@ class VAR(ModelBase):
 
 ### 4. Run it
 
-Make sure to change the value of the --model-name parameter to **"your_model.VAR\"**.
+Make sure to set the value of the --model-name parameter to **"your_model.VAR\"**.
 
 **"your_model"** is the name of the Python module you created. The pipeline will search for this module relative to **./ts_benchmark/baselines**.
 
