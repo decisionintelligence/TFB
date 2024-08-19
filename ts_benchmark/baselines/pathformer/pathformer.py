@@ -1,38 +1,36 @@
-import math
-from typing import Type, Dict, Optional, Tuple
+from typing import Optional, Tuple
 
+import math
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 from torch import optim
+from torch.optim import lr_scheduler
 
-from ts_benchmark.baselines.time_series_library.utils.tools import (
-    EarlyStopping,
-    adjust_learning_rate,
-)
+from ts_benchmark.baselines.pathformer.models.pathformer_model import PathformerModel
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
-    anomaly_detection_data_provider,
     get_time_mark,
 )
-from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_before
+from .utils.tools import EarlyStopping, adjust_learning_rate
+from ...models.model_base import ModelBase, BatchMaker
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
-    "top_k": 5,
+    "k": 2,
     "enc_in": 1,
     "dec_in": 1,
     "c_out": 1,
-    "e_layers": 2,
+    "e_layers": 1,
     "d_layers": 1,
-    "d_model": 512,
-    "d_ff": 2048,
+    "d_model": 4,
+    "d_ff": 64,
     "embed": "timeF",
     "freq": "h",
-    "lradj": "type1",
+    "lradj": "TST",
     "moving_avg": 25,
     "num_kernels": 6,
     "factor": 1,
@@ -44,19 +42,29 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "patch_len": 16,
     "stride": 8,
     "dropout": 0.1,
-    "batch_size": 32,
-    "lr": 0.0001,
-    "num_epochs": 10,
+    "batch_size": 512,
+    "learning_rate": 0.0001,
+    "train_epochs": 30,
     "num_workers": 0,
-    "loss": "MSE",
+    "loss": "MAE",
     "itr": 1,
     "distil": True,
-    "patience": 3,
+    "patience": 5,
     "p_hidden_dims": [128, 128],
     "p_hidden_layers": 2,
     "mem_dim": 32,
     "conv_kernel": [12, 16],
-    "anomaly_ratio": 1.0,
+    "individual": False,
+    "num_nodes": 21,
+    "layer_nums": 3,
+    "num_experts_list": [4, 4, 4],
+    "patch_size_list": [[56, 28, 12, 24], [42, 28, 16, 21], [56, 16, 28, 42]],
+    "revin": 1,
+    "drop": 0.1,
+    "pct_start": 0.4,
+    "residual_connection": 0,
+    "gpu": 0,
+    "seq_len": 336,
 }
 
 
@@ -73,12 +81,10 @@ class TransformerConfig:
         return self.horizon
 
 
-class TransformerAdapter(ModelBase):
-    def __init__(self, model_name, model_class, **kwargs):
-        super(TransformerAdapter, self).__init__()
+class Pathformer(ModelBase):
+    def __init__(self, **kwargs):
+        super(Pathformer, self).__init__()
         self.config = TransformerConfig(**kwargs)
-        self._model_name = model_name
-        self.model_class = model_class
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
@@ -90,15 +96,15 @@ class TransformerAdapter(ModelBase):
 
         :return: An empty dictionary indicating that model does not require additional hyperparameters.
         """
-        return {}
+        return {
+            "seq_len": "input_chunk_length",
+            "horizon": "output_chunk_length",
+            "norm": "norm",
+        }
 
     @property
     def model_name(self):
-        """
-        Returns the name of the model.
-        """
-
-        return self._model_name
+        return "pathformer"
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
@@ -154,7 +160,6 @@ class TransformerAdapter(ModelBase):
         time_column_data = test.index
         data_colums = test.columns
         start = time_column_data[-1]
-        # padding_zero = [0] * (self.config.horizon + 1)
         date = pd.date_range(
             start=start, periods=self.config.horizon + 1, freq=self.config.freq.upper()
         )
@@ -215,7 +220,7 @@ class TransformerAdapter(ModelBase):
                 .to(device)
             )
 
-            output = self.model(input, input_mark, dec_input, target_mark)
+            output, balance_loss = self.model(input)
 
             target = target[:, -config.horizon :, :]
             output = output[:, -config.horizon :, :]
@@ -244,7 +249,7 @@ class TransformerAdapter(ModelBase):
             self.multi_forecasting_hyper_param_tune(train_valid_data)
 
         setattr(self.config, "task_name", "short_term_forecast")
-        self.model = self.model_class(self.config)
+        self.model = PathformerModel(self.config)
 
         print(
             "----------------------------------------------------------",
@@ -290,9 +295,14 @@ class TransformerAdapter(ModelBase):
         )
 
         # Define the loss function and optimizer
-        criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
-        optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
+        if config.loss == "MSE":
+            criterion = nn.MSELoss()
+        elif config.loss == "MAE":
+            criterion = nn.L1Loss()
+        else:
+            criterion = nn.HuberLoss(delta=0.5)
+
+        optimizer = optim.Adam(self.model.parameters(), lr=config.learning_rate)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -303,10 +313,17 @@ class TransformerAdapter(ModelBase):
         )
 
         print(f"Total trainable parameters: {total_params}")
+        train_steps = len(train_data_loader)
+        scheduler = lr_scheduler.OneCycleLR(
+            optimizer=optimizer,
+            steps_per_epoch=train_steps,
+            pct_start=config.pct_start,
+            epochs=config.train_epochs,
+            max_lr=config.learning_rate,
+        )
 
-        for epoch in range(config.num_epochs):
+        for epoch in range(config.train_epochs):
             self.model.train()
-            # for input, target, input_mark, target_mark in train_data_loader:
             for i, (input, target, input_mark, target_mark) in enumerate(
                 train_data_loader
             ):
@@ -325,7 +342,7 @@ class TransformerAdapter(ModelBase):
                     .to(device)
                 )
 
-                output = self.model(input, input_mark, dec_input, target_mark)
+                output, balance_loss = self.model(input)
 
                 target = target[:, -config.horizon :, :]
                 output = output[:, -config.horizon :, :]
@@ -334,13 +351,19 @@ class TransformerAdapter(ModelBase):
                 loss.backward()
                 optimizer.step()
 
+                if config.lradj == "TST":
+                    adjust_learning_rate(
+                        optimizer, scheduler, epoch + 1, config, printout=False
+                    )
+                    scheduler.step()
+
             if train_ratio_in_tv != 1:
                 valid_loss = self.validate(valid_data_loader, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
-
-            adjust_learning_rate(optimizer, epoch + 1, config)
+            if config.lradj != "TST":
+                adjust_learning_rate(optimizer, scheduler, epoch + 1, config)
 
     def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
         """
@@ -395,7 +418,7 @@ class TransformerAdapter(ModelBase):
                         .float()
                         .to(device)
                     )
-                    output = self.model(input, input_mark, dec_input, target_mark)
+                    output, balance_loss = self.model(input)
 
                 column_num = output.shape[-1]
                 temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
@@ -500,7 +523,7 @@ class TransformerAdapter(ModelBase):
                     torch.tensor(input_mark_np, dtype=torch.float32).to(device),
                     torch.tensor(target_mark_np, dtype=torch.float32).to(device),
                 )
-                output = self.model(input, input_mark, dec_input, target_mark)
+                output, balance_loss = self.model(input)
                 column_num = output.shape[-1]
                 real_batch_size = output.shape[0]
                 answer = (
@@ -564,277 +587,3 @@ class TransformerAdapter(ModelBase):
             :,
         ]
         return input_np, target_np, input_mark_np, target_mark_np
-
-    def detect_validate(self, valid_data_loader, criterion):
-        config = self.config
-        total_loss = []
-        self.model.eval()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        for input, _ in valid_data_loader:
-            input = input.to(device)
-
-            output = self.model(input, None, None, None)
-
-            output = output[:, -config.horizon :, :]
-
-            output = output.detach().cpu()
-            true = input.detach().cpu()
-
-            loss = criterion(output, true).detach().cpu().numpy()
-            total_loss.append(loss)
-
-        total_loss = np.mean(total_loss)
-        self.model.train()
-        return total_loss
-
-    def detect_fit(self, train_data: pd.DataFrame, test_data: pd.DataFrame):
-        """
-        训练模型。
-
-        :param train_data: 用于训练的时间序列数据。
-        """
-
-        self.detect_hyper_param_tune(train_data)
-        setattr(self.config, "task_name", "anomaly_detection")
-        self.model = self.model_class(self.config)
-
-        config = self.config
-        train_data_value, valid_data = train_val_split(train_data, 0.8, None)
-        self.scaler.fit(train_data_value.values)
-
-        train_data_value = pd.DataFrame(
-            self.scaler.transform(train_data_value.values),
-            columns=train_data_value.columns,
-            index=train_data_value.index,
-        )
-
-        valid_data = pd.DataFrame(
-            self.scaler.transform(valid_data.values),
-            columns=valid_data.columns,
-            index=valid_data.index,
-        )
-
-        self.valid_data_loader = anomaly_detection_data_provider(
-            valid_data,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="val",
-        )
-
-        self.train_data_loader = anomaly_detection_data_provider(
-            train_data_value,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="train",
-        )
-
-        # Define the loss function and optimizer
-        if config.loss == "MSE":
-            criterion = nn.MSELoss()
-        elif config.loss == "MAE":
-            criterion = nn.L1Loss()
-        else:
-            criterion = nn.HuberLoss(delta=0.5)
-
-        optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.early_stopping = EarlyStopping(patience=config.patience)
-        self.model.to(self.device)
-        total_params = sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
-        print(f"Total trainable parameters: {total_params}")
-
-        for epoch in range(config.num_epochs):
-            self.model.train()
-            for i, (input, target) in enumerate(self.train_data_loader):
-                optimizer.zero_grad()
-                input = input.float().to(self.device)
-
-                output = self.model(input, None, None, None)
-
-                output = output[:, -config.horizon :, :]
-                loss = criterion(output, input)
-
-                loss.backward()
-                optimizer.step()
-            valid_loss = self.detect_validate(self.valid_data_loader, criterion)
-            self.early_stopping(valid_loss, self.model)
-            if self.early_stopping.early_stop:
-                break
-
-            adjust_learning_rate(optimizer, epoch + 1, config)
-
-    def detect_score(self, test: pd.DataFrame) -> np.ndarray:
-        test = pd.DataFrame(
-            self.scaler.transform(test.values), columns=test.columns, index=test.index
-        )
-        self.model.load_state_dict(self.early_stopping.check_point)
-
-        if self.model is None:
-            raise ValueError("Model not trained. Call the fit() function first.")
-
-        config = self.config
-
-        self.thre_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="thre",
-        )
-
-        self.model.to(self.device)
-        self.model.eval()
-        self.anomaly_criterion = nn.MSELoss(reduce=False)
-
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.thre_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-
-        return test_energy, test_energy
-
-    def detect_label(self, test: pd.DataFrame) -> np.ndarray:
-        test = pd.DataFrame(
-            self.scaler.transform(test.values), columns=test.columns, index=test.index
-        )
-        self.model.load_state_dict(self.early_stopping.check_point)
-
-        if self.model is None:
-            raise ValueError("Model not trained. Call the fit() function first.")
-
-        config = self.config
-
-        self.test_data_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="test",
-        )
-
-        self.thre_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="thre",
-        )
-
-        attens_energy = []
-
-        self.model.to(self.device)
-        self.model.eval()
-        self.anomaly_criterion = nn.MSELoss(reduce=False)
-
-        with torch.no_grad():
-            for i, (batch_x, batch_y) in enumerate(self.train_data_loader):
-                batch_x = batch_x.float().to(self.device)
-                # reconstruction
-                outputs = self.model(batch_x, None, None, None)
-                # criterion
-                score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-                score = score.detach().cpu().numpy()
-                attens_energy.append(score)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        train_energy = np.array(attens_energy)
-
-        # (2) find the threshold
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.test_data_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-        combined_energy = np.concatenate([train_energy, test_energy], axis=0)
-        threshold = np.percentile(combined_energy, 100 - self.config.anomaly_ratio)
-        # threshold = np.mean(combined_energy) + 3 * np.std(combined_energy)
-
-        print("Threshold :", threshold)
-
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.thre_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-
-        pred = (test_energy > threshold).astype(int)
-        a = pred.sum() / len(test_energy) * 100
-        print(pred.sum() / len(test_energy) * 100)
-        return pred, test_energy
-
-
-def generate_model_factory(
-    model_name: str, model_class: type, required_args: dict
-) -> Dict:
-    """
-    Generate model factory information for creating Transformer Adapters model adapters.
-
-    :param model_name: Model name.
-    :param model_class: Model class.
-    :param required_args: The required parameters for model initialization.
-    :return: A dictionary containing model factories and required parameters.
-    """
-
-    def model_factory(**kwargs) -> TransformerAdapter:
-        """
-        Model factory, used to create TransformerAdapter model adapter objects.
-
-        :param kwargs: Model initialization parameters.
-        :return:  Model adapter object.
-        """
-        return TransformerAdapter(model_name, model_class, **kwargs)
-
-    return {
-        "model_factory": model_factory,
-        "required_hyper_params": required_args,
-    }
-
-
-def transformer_adapter(model_info: Type[object]) -> object:
-    if not isinstance(model_info, type):
-        raise ValueError("the model_info does not exist")
-
-    return generate_model_factory(
-        model_name=model_info.__name__,
-        model_class=model_info,
-        required_args={
-            "seq_len": "input_chunk_length",
-            "horizon": "output_chunk_length",
-            "norm": "norm",
-        },
-    )
