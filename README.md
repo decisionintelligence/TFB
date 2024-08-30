@@ -22,6 +22,8 @@
 1. [Acknowledgement](#Acknowledgement)
 1. [Contact](#Contact)
 
+🚩 **News** (2024.08) **TFB achieves Best Paper Nomination in PVLDB 2024**.
+
 ## Introduction
 
 TFB is an open-source library designed for time series forecasting researchers.
