@@ -22,6 +22,7 @@ class AMS(nn.Module):
         k=4,
         layer_number=1,
         residual_connection=1,
+        batch_norm=False,
     ):
         super(AMS, self).__init__()
         self.num_experts = num_experts
@@ -48,6 +49,7 @@ class AMS(nn.Module):
                     patch_size=patch,
                     factorized=True,
                     layer_number=layer_number,
+                    batch_norm=batch_norm,
                 )
             )
 

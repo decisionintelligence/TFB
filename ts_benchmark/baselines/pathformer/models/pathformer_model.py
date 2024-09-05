@@ -25,6 +25,7 @@ class PathformerModel(nn.Module):
         self.d_ff = configs.d_ff
         self.residual_connection = configs.residual_connection
         self.revin = configs.revin
+        self.batch_norm = configs.batch_norm
         if self.revin:
             self.revin_layer = RevIN(
                 num_features=configs.num_nodes, affine=False, subtract_last=False
@@ -51,6 +52,7 @@ class PathformerModel(nn.Module):
                     d_ff=self.d_ff,
                     layer_number=num + 1,
                     residual_connection=self.residual_connection,
+                    batch_norm=self.batch_norm,
                 )
             )
         self.projections = nn.Sequential(

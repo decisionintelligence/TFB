@@ -57,6 +57,12 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "mem_dim": 32,
     "conv_kernel": [12, 16],
     "anomaly_ratio": 1.0,
+    "down_sampling_windows": 2,
+    "channel_independence": True,
+    "down_sampling_layers": 3,
+    "down_sampling_method": "avg",
+    "decomp_method": "moving_avg",
+    "use_norm": True
 }
 
 

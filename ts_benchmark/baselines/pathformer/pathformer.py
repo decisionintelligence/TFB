@@ -65,6 +65,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "residual_connection": 0,
     "gpu": 0,
     "seq_len": 336,
+    "batch_norm": 0,
 }
 
 
