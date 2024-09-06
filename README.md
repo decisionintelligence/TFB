@@ -7,7 +7,7 @@
 
 # TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
-**We have created a leaderboard for time series forecasting, which can be accessed by clicking https://decisionintelligence.github.io/OpenTS/.**
+**We have created a leaderboard for time series forecasting, which can be accessed by clicking [OpenTS](https://decisionintelligence.github.io/OpenTS/).**
 
 **We are further optimizing our code and welcome any suggestions for modifications.**
 
