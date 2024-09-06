@@ -113,7 +113,7 @@ class LocalDataSource(DataSource):
         new_metadata.set_index(self._INDEX_COL, drop=False, inplace=True)
         metadata = pd.concat([metadata, new_metadata])
         with open(self.metadata_path, "w", newline="", encoding="utf-8") as csvfile:
-            metadata.to_csv(csvfile, index=True)
+            metadata.to_csv(csvfile, index=False)
         logger.info(
             "Detected %s new user datasets, registered in the metadata",
             len(user_csv_files),
