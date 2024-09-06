@@ -15,7 +15,7 @@
 
 🚩 **News** (2024.08) **Some introduction video (in Chinese): [bilibili](https://www.bilibili.com/video/BV1fYH4eQEPv/?spm_id_from=333.337.search-card.all.click).**
 
-🚩 **News** (2024.08) **TFB achieves Best Paper Nomination in PVLDB 2024**.
+🚩 **News** (2024.08) **TFB achieves <span style="color: red;">**Best Paper Nomination**</span> in PVLDB 2024**.
 
 🚩 **News** (2024.08) **Some introduction (in Chinese): [intro1](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ), [intro2](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA), [intro3](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw), [intro4](https://mp.weixin.qq.com/s/OfZJtd3H3-TCkvBGATt0mA), [intro5](https://mp.weixin.qq.com/s/pjTN15vHL5UxjL1mhJxguw), [intro6](https://mp.weixin.qq.com/s/ghJ3xN38pB-sDb0hiWjW7w).**
 
