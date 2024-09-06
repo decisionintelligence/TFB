@@ -23,6 +23,7 @@
 1. [Contact](#Contact)
 
 🚩 **News** (2024.09) **You may find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
+
 🚩 **News** (2024.08) **TFB achieves Best Paper Nomination in PVLDB 2024**.
 
 ## Introduction
