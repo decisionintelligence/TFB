@@ -24,11 +24,11 @@
 
 🚩 **News** (2024.09) **You may find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
 
-🚩 **News** (2024.08) **Some introduction videos (in Chinese): [bilibili](https://www.bilibili.com/video/BV1fYH4eQEPv/?spm_id_from=333.337.search-card.all.click).**
+🚩 **News** (2024.08) **Some introduction video (in Chinese): [bilibili](https://www.bilibili.com/video/BV1fYH4eQEPv/?spm_id_from=333.337.search-card.all.click).**
 
 🚩 **News** (2024.08) **TFB achieves Best Paper Nomination in PVLDB 2024**.
 
-🚩 **News** (2024.08) **Some introduction (in Chinese): [Weixin](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ), [Weixin](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA), [Weixin](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw), [Zhihu](https://zhuanlan.zhihu.com/p/695413738).**
+🚩 **News** (2024.08) **Some introduction (in Chinese): [introduction1](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ), [introduction2](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA), [introduction3](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw), [introduction4](https://mp.weixin.qq.com/s/OfZJtd3H3-TCkvBGATt0mA), [introduction5](https://mp.weixin.qq.com/s/pjTN15vHL5UxjL1mhJxguw), [introduction6](https://mp.weixin.qq.com/s/ghJ3xN38pB-sDb0hiWjW7w).**
 
 
 
