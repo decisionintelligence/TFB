@@ -4,5 +4,5 @@
 @Auth ： Allen Qiu
 @File ：__init__.py.py
 @IDE ：PyCharm
-@作用:
+@Purpose:
 """

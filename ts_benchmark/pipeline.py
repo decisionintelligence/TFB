@@ -4,6 +4,7 @@ from functools import reduce
 from operator import and_
 from typing import List, Dict, Type, Optional
 
+import numpy as np
 import pandas as pd
 
 from ts_benchmark.data.data_source import (
@@ -88,7 +89,6 @@ def pipeline(
     data_config: dict,
     model_config: dict,
     evaluation_config: dict,
-    save_path: str,
 ) -> List[str]:
     """
     Execute the benchmark pipeline process
@@ -98,7 +98,6 @@ def pipeline(
     :param data_config: Configuration for data loading.
     :param model_config: Configuration for model construction.
     :param evaluation_config: Configuration for model evaluation.
-    :param save_path: The relative path for saving evaluation results, relative to the result folder.
     """
     # prepare data
     # TODO: move these code into the data module, after the pipeline interface is unified
@@ -156,10 +155,12 @@ def pipeline(
         model_factory_list, result_list, model_save_names
     ):
         for i, result_df in enumerate(result_itr.collect()):
+            if not evaluation_config.get("save_true_pred", False):
+                result_df["actual_data"], result_df["inference_data"] = np.nan, np.nan
             log_file_names.append(
                 save_log(
                     result_df,
-                    save_path,
+                    evaluation_config.get("save_path", None),
                     model_save_name if i == 0 else f"{model_save_name}-{i}",
                 )
             )

@@ -261,12 +261,14 @@ class RollingForecast(ForecastingStrategy):
         )
         single_series_results = np.mean(np.stack(all_test_results), axis=0).tolist()
         # we do not save rolling results by default because it is often too large
+        actual_data_encoded = self._encode_data(all_rolling_actual)
+        inference_data_encoded = self._encode_data(all_rolling_predict)
         single_series_results += [
             series_name,
             end_fit_time - start_fit_time,
             average_inference_time,
-            np.nan,
-            np.nan,
+            actual_data_encoded,
+            inference_data_encoded,
             "",
         ]
         return single_series_results
@@ -343,12 +345,14 @@ class RollingForecast(ForecastingStrategy):
         average_inference_time = float(total_inference_time) / min(
             len(index_list), num_rollings
         )
+        actual_data_encoded = self._encode_data(targets)
+        inference_data_encoded = self._encode_data(all_predicts)
         single_series_results += [
             series_name,
             end_fit_time - start_fit_time,
             average_inference_time,
-            np.nan,
-            np.nan,
+            actual_data_encoded,
+            inference_data_encoded,
             "",
         ]
         return single_series_results
