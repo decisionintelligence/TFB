@@ -1,5 +1,5 @@
 <div align="center">
-<img alt="Logo" src="figures/TFB-LOGO.png" width="80%"/>
+<img alt="Logo" src="docs/figures/TFB-LOGO.png" width="80%"/>
 </div>
 
 
@@ -7,19 +7,30 @@
 
 # TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
-**We have created a leaderboard for time series forecasting, which can be accessed by clicking https://decisionintelligence.github.io/TFB_leaderboard/.**
-
 **We are further optimizing our code and welcome any suggestions for modifications.**
+
+🚩 **News** (2024.09) **You can find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
+
+🚩 **News** (2024.08) **Introduction video (in Chinese): [bilibili](https://www.bilibili.com/video/BV1fYH4eQEPv/?spm_id_from=333.337.search-card.all.click).**
+
+🚩 **News** (2024.08) **TFB achieves 🌟Best Paper Nomination🌟 in PVLDB 2024**.
+
+🚩 **News** (2024.08) **We have created a leaderboard for time series forecasting，called [OpenTS](https://decisionintelligence.github.io/OpenTS/).**
+
+🚩 **News** (2024.05) **Some introduction (in Chinese): [intro1](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ), [intro2](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA), [intro3](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw), [intro4](https://mp.weixin.qq.com/s/OfZJtd3H3-TCkvBGATt0mA), [intro5](https://mp.weixin.qq.com/s/pjTN15vHL5UxjL1mhJxguw), [intro6](https://mp.weixin.qq.com/s/ghJ3xN38pB-sDb0hiWjW7w), and [intro7](https://mp.weixin.qq.com/s/J8SRsN4W0FNMtlLpULhwKg).**
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
 1. [Quickstart](#Quickstart)
 1. [Steps to develop your own method](#Steps-to-develop-your-own-method)
+1. [Steps to evaluate on your own time series](#Steps-to-evaluate-on-your-own-time-series)
 1. [FAQ](#FAQ)
 1. [Citation](#Citation)
 1. [Acknowledgement](#Acknowledgement)
 1. [Contact](#Contact)
+
+
 
 ## Introduction
 
@@ -30,13 +41,13 @@ We provide a clean codebase for end-to-end evaluation of time series forecasting
 The below figure provides a visual overview of TFB's pipeline.
 
 <div align="center">
-<img alt="Logo" src="figures/Pipeline.png" width="80%"/>
+<img alt="Logo" src="docs/figures/Pipeline.png" width="80%"/>
 </div>
 
 
 The table below provides a visual overview of how TFB's key features compare to other libraries for time series forecasting.
 
-![image-20240514151134923](figures/Comparison_with_Related_Libraries.png)
+![image-20240514151134923](docs/figures/Comparison_with_Related_Libraries.png)
 
 ## Quickstart
 
@@ -75,97 +86,12 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
 ## Steps to develop your own method
+We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
 
-### Define you model or adapter class
 
-The user-implemented model or adapter class should implement the following functions in order to adapt to this benchmark.
+## Steps to evaluate on your own time series
+We provide tutorial about how to evaluate on your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
 
-"required_hyper_params" function is optional，__repr__ functions is necessary.
-
-**The function prototypes are as follows：**
-
-- required_hyper_params  function:
-
-  ```python
-  """
-  Return the hyperparameters required by the model
-  This function is optional and static
-  
-  :return: A dictionary that represents the hyperparameters required by the model
-  :rtype: dict
-  """
-  # For example
-  @staticmethod
-  def required_hyper_params() -> dict:
-      """
-      An empty dictionary indicating that model does not require
-      additional hyperparameters.
-      """
-      return {}
-  ```
-
-- forecast_fit  function training model
-
-  ```python
-  """
-  Train the model.
-  
-  :param train_data: Time series data used for training.
-  :param train_ratio_in_tv: Represents the splitting ratio of the training
-  set validation set. If it is equal to 1, it means that the validation
-  set is not partitioned.
-  """
-  # For example
-  def forecast_fit(self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs) -> "ModelBase":
-      pass
-  ```
-  
-- forecast function utilizing the model for inference
-
-  ```python
-  """
-  Use models for forecasting
-  
-  :param horizon: Predict length
-  :type horizon: int
-  :param series: Training data used to fit the model
-  :type series: pd.DataFrame
-  
-  :return: Forecasting results
-  :rtype: np.ndarray
-  """
-  # For example
-  def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
-      pass
-  ```
-
-- __repr __ string representation of function model name
-
-  ```python
-  """
-  Returns a string representation of the model name
-  
-  :return: Returns a string representation of the model name
-  :rtype: str
-  """
-  # For example
-  def __repr__(self) -> str:
-      return self.model_name
-  ```
-
-### Configure your Configuration File
-
-  - Modify the corresponding config under the folder `./config/`.
-
-  - Modify the contents in  `./scripts/run_benchmark.py/`.
-
-  - **We strongly recommend using the pre-defined configurations in `./config/`. Create your own  configuration file only when you have a clear understanding of the configuration items.**
-
-### Run it
-
-```shell
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args '{"horizon":24}' --model-name "time_series_library.DLinear" --model-hyper-params '{"batch_size": 16, "d_ff": 512, "d_model": 256, "lr": 0.01, "horizon": 24, "seq_len": 104}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
-```
 
 ## FAQ
 
@@ -179,6 +105,7 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
 
+
 ## Citation
 
 If you find this repo useful, please cite our paper.
@@ -186,11 +113,12 @@ If you find this repo useful, please cite our paper.
 ```
 @article{qiu2024tfb,
   title   = {TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods},
-  author  = {Qiu, Xiangfei and Hu, Jilin and Zhou, Lekui and Wu, Xingjian and Du, Junyang and Zhang, Buang and Guo, Chenjuan and Zhou, Aoying and Jensen, Christian S and Sheng, Zhenli and Bin Yang},
+  author  = {Xiangfei Qiu and Jilin Hu and Lekui Zhou and Xingjian Wu and Junyang Du and Buang Zhang and Chenjuan Guo and Aoying Zhou and Christian S. Jensen and Zhenli Sheng and Bin Yang},
   journal = {Proc. {VLDB} Endow.},
+  volume  = {17},
+  number  = {9},
+  pages   = {2363--2377},
   year    = {2024}
-  pages   = {2363 - 2377}
-  volume  = {17}
 }
 ```
 

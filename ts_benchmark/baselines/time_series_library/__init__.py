@@ -19,7 +19,8 @@ __all__ = [
     "Reformer",
     "TimesNet",
     "Transformer",
-    "Triformer"
+    "Triformer",
+    "TimeMixer"
 ]
 
 
@@ -43,5 +44,6 @@ from ts_benchmark.baselines.time_series_library.models.Reformer import Reformer
 from ts_benchmark.baselines.time_series_library.models.TimesNet import TimesNet
 from ts_benchmark.baselines.time_series_library.models.Transformer import Transformer
 from ts_benchmark.baselines.time_series_library.patchs.Triformer import Triformer
+from ts_benchmark.baselines.time_series_library.models.TimeMixer import TimeMixer
 
 

@@ -57,6 +57,12 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "mem_dim": 32,
     "conv_kernel": [12, 16],
     "anomaly_ratio": 1.0,
+    "down_sampling_windows": 2,
+    "channel_independence": True,
+    "down_sampling_layers": 3,
+    "down_sampling_method": "avg",
+    "decomp_method": "moving_avg",
+    "use_norm": True
 }
 
 
@@ -77,7 +83,7 @@ class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__()
         self.config = TransformerConfig(**kwargs)
-        self.model_name = model_name
+        self._model_name = model_name
         self.model_class = model_class
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
@@ -92,11 +98,13 @@ class TransformerAdapter(ModelBase):
         """
         return {}
 
-    def __repr__(self) -> str:
+    @property
+    def model_name(self):
         """
-        Returns a string representation of the model name.
+        Returns the name of the model.
         """
-        return self.model_name
+
+        return self._model_name
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
@@ -513,9 +521,12 @@ class TransformerAdapter(ModelBase):
                     break
                 rolling_time += 1
                 output = output.cpu().numpy()[:, -self.config.horizon :, :]
-                input_np, target_np, input_mark_np, target_mark_np = (
-                    self._get_rolling_data(input_np, output, all_mark, rolling_time)
-                )
+                (
+                    input_np,
+                    target_np,
+                    input_mark_np,
+                    target_mark_np,
+                ) = self._get_rolling_data(input_np, output, all_mark, rolling_time)
 
         answers = np.concatenate(answers, axis=1)
         return answers[:, -horizon:, :]
@@ -627,7 +638,13 @@ class TransformerAdapter(ModelBase):
         )
 
         # Define the loss function and optimizer
-        criterion = nn.MSELoss()
+        if config.loss == "MSE":
+            criterion = nn.MSELoss()
+        elif config.loss == "MAE":
+            criterion = nn.L1Loss()
+        else:
+            criterion = nn.HuberLoss(delta=0.5)
+
         optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

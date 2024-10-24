@@ -160,7 +160,7 @@ def pipeline(
                 save_log(
                     result_df,
                     save_path,
-                    model_save_name if i == 0 else f"{model_save_name}_{i}",
+                    model_save_name if i == 0 else f"{model_save_name}-{i}",
                 )
             )
 
