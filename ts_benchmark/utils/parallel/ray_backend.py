@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def is_actor() -> bool:
     """
-    判断当前是否正在 actor 中运行
+    Determine whether the current code is running in an actor.
     """
     return ray.get_runtime_context().worker.mode == ray.WORKER_MODE
 
@@ -109,9 +109,9 @@ class RayTask:
 
 class RayActorPool:
     """
-    ray actor 资源池
+    Ray Actor Resource Pool
 
-    和 ray 的内置 ActorPool 不同，本实现试图支持为每个任务限时
+    Unlike Ray's built-in ActorPool, this implementation attempts to support time limits for each task.
     """
 
     def __init__(

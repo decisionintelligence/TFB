@@ -29,7 +29,9 @@
             "train_ratio_in_tv": {"ETTm1.csv": 0.75, "ETTm2.csv": 0.75, "PEMS04.csv": 0.75, "PEMS08.csv": 0.75, "AQShunyi.csv": 0.75, "AQWan.csv": 0.75, "ETTh1.csv": 0.75, "ETTh2.csv": 0.75, "Solar.csv": 0.75, "__default__": 0.875},
             "stride": 1,
             "num_rollings": 48000,
-            "seed": 2021 
+            "seed": 2021,
+            "deterministic": "efficient",
+            "save_true_pred": false
         }
     },
 
