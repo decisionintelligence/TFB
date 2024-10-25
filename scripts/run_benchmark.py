@@ -23,7 +23,7 @@ sys.path.insert(0, THIRD_PARTY_PATH)
 warnings.filterwarnings("ignore")
 
 
-def str_to_bool(value):
+def str_to_bool(value: str):
     """
     Converts a string to a boolean: True for 'True', '1', or 'T'; False for 'False', '0', or 'F'.
     """
@@ -92,8 +92,7 @@ def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict
     """
     evaluation_config = config_data["evaluation_config"]
     evaluation_config["save_path"] = args.save_path
-    if args.save_true_pred is not None:
-        evaluation_config["save_true_pred"] = args.save_true_pred
+
     metric_list = []
     if args.metrics != "all" and args.metrics is not None:
         for metric in args.metrics:
@@ -111,9 +110,8 @@ def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict
 
     if args.seed is not None:
         default_strategy_args["seed"] = args.seed
-
-    if args.deterministic is not None:
-        default_strategy_args["deterministic"] = args.deterministic
+    default_strategy_args["save_true_pred"] = args.save_true_pred
+    default_strategy_args["deterministic"] = args.deterministic
 
     return evaluation_config
 
@@ -296,7 +294,8 @@ if __name__ == "__main__":
         "--save-true-pred",
         type=str_to_bool,
         default=False,
-        help="If true, saves the model's prediction results and the true values.",
+        help="If true, saves the model's prediction results "
+             "and the true values in evaluation result file",
     )
 
     args = parser.parse_args()

@@ -260,9 +260,11 @@ class RollingForecast(ForecastingStrategy):
             len(index_list), num_rollings
         )
         single_series_results = np.mean(np.stack(all_test_results), axis=0).tolist()
-        # we do not save rolling results by default because it is often too large
-        actual_data_encoded = self._encode_data(all_rolling_actual)
-        inference_data_encoded = self._encode_data(all_rolling_predict)
+
+        save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
+        actual_data_encoded = self._encode_data(all_rolling_actual) if save_true_pred else np.nan
+        inference_data_encoded = self._encode_data(all_rolling_predict) if save_true_pred else np.nan
+
         single_series_results += [
             series_name,
             end_fit_time - start_fit_time,
@@ -345,8 +347,11 @@ class RollingForecast(ForecastingStrategy):
         average_inference_time = float(total_inference_time) / min(
             len(index_list), num_rollings
         )
-        actual_data_encoded = self._encode_data(targets)
-        inference_data_encoded = self._encode_data(all_predicts)
+
+        save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
+        actual_data_encoded = self._encode_data(targets) if save_true_pred else np.nan
+        inference_data_encoded = self._encode_data(all_predicts) if save_true_pred else np.nan
+
         single_series_results += [
             series_name,
             end_fit_time - start_fit_time,

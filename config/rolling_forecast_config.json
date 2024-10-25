@@ -30,9 +30,9 @@
             "stride": 1,
             "num_rollings": 48000,
             "seed": 2021,
-            "deterministic": "efficient"
-        },
-        "save_true_pred": false
+            "deterministic": "efficient",
+            "save_true_pred": false
+        }
     },
 
     "report_config" : {

@@ -155,8 +155,6 @@ def pipeline(
         model_factory_list, result_list, model_save_names
     ):
         for i, result_df in enumerate(result_itr.collect()):
-            if not evaluation_config.get("save_true_pred", False):
-                result_df["actual_data"], result_df["inference_data"] = np.nan, np.nan
             log_file_names.append(
                 save_log(
                     result_df,

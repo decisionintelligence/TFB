@@ -144,7 +144,7 @@ def eval_model(
     # Create an evaluator instance
     evaluator = Evaluator(metric)
 
-    # Create evaluation strategy object
+    # Create evaluation strategy instance
     strategy = strategy_class(evaluation_config["strategy_args"], evaluator)
 
     eval_backend = ParallelBackend()

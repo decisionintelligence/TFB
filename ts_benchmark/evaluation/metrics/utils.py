@@ -47,7 +47,7 @@ def get_list_anomaly(labels: np.ndarray) -> List[int]:
     """
     Get a list of lengths of anomalous intervals in the time series labels.
 
-    :param labels: List of time series labels, where 1 indicates anomalous and 0 indicates normal.
+    :param labels: List of anomaly label series, where 1 indicates anomalous and 0 indicates normal.
     :return: List of lengths of anomalous intervals.
     """
     end_pos = np.diff(np.array(labels, dtype=int), append=0) < 0
