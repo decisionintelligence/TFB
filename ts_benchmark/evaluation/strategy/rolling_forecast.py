@@ -130,6 +130,7 @@ class RollingForecast(ForecastingStrategy):
         "train_ratio_in_tv",
         "stride",
         "num_rollings",
+        "save_true_pred",
     ]
 
     @staticmethod

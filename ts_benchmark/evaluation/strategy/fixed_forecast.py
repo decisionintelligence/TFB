@@ -35,7 +35,11 @@ class FixedForecast(ForecastingStrategy):
     - FieldNames.LOG_INFO: Any log returned by the evaluator.
     """
 
-    REQUIRED_CONFIGS = ["horizon", "train_ratio_in_tv"]
+    REQUIRED_CONFIGS = [
+        "horizon",
+        "train_ratio_in_tv",
+        "save_true_pred",
+    ]
 
     def _execute(
         self,

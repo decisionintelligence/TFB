@@ -23,7 +23,7 @@ sys.path.insert(0, THIRD_PARTY_PATH)
 warnings.filterwarnings("ignore")
 
 
-def str_to_bool(value: str):
+def str_to_bool(value: str) -> bool:
     """
     Converts a string to a boolean: True for 'True', '1', or 'T'; False for 'False', '0', or 'F'.
     """

@@ -4,7 +4,6 @@ from functools import reduce
 from operator import and_
 from typing import List, Dict, Type, Optional
 
-import numpy as np
 import pandas as pd
 
 from ts_benchmark.data.data_source import (
@@ -158,7 +157,7 @@ def pipeline(
             log_file_names.append(
                 save_log(
                     result_df,
-                    evaluation_config.get("save_path", None),
+                    evaluation_config["save_path"],
                     model_save_name if i == 0 else f"{model_save_name}-{i}",
                 )
             )
