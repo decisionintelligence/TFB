@@ -65,13 +65,13 @@ class FixedForecast(ForecastingStrategy):
 
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(
+        target_train_valid_data, exog_data = split_dataframe(
             train_valid_data, target_channel
         )
         target_test_data, remaining_test_variate = split_dataframe(
             test_data, target_channel
         )
-        covariate = {"remaining_variate": remaining_test_variate}
+        covariate = {"exog": remaining_test_variate}
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit

@@ -84,8 +84,8 @@ class RollingForecastEvalBatchMaker:
         :return: A batch of covariates.
         """
         covariates_batch = self.covariates.copy()
-        covariates_batch["remaining_variate"] = self._make_batch_data(
-            self.covariates["remaining_variate"], index_list, win_size
+        covariates_batch["exog"] = self._make_batch_data(
+            self.covariates["exog"], index_list, win_size
         )
         return covariates_batch
 
@@ -270,12 +270,12 @@ class RollingForecast(ForecastingStrategy):
         train_length, test_length = self._get_split_lens(series, meta_info, tv_ratio)
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(
+        target_train_valid_data, exog_data = split_dataframe(
             train_valid_data, target_channel
         )
-        target4batch, remaining_variate4batch = split_dataframe(series, target_channel)
-        covariate = {"remaining_variate": remaining_variate}
-        covariate4batch = {"remaining_variate": remaining_variate4batch}
+        target4batch, exog_data4batch = split_dataframe(series, target_channel)
+        covariate = {"exog": exog_data}
+        covariate4batch = {"exog": exog_data4batch}
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
@@ -367,12 +367,12 @@ class RollingForecast(ForecastingStrategy):
         train_length, test_length = self._get_split_lens(series, meta_info, tv_ratio)
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(
+        target_train_valid_data, exog_data = split_dataframe(
             train_valid_data, target_channel
         )
-        target4batch, remaining_variate4batch = split_dataframe(series, target_channel)
-        covariate = {"remaining_variate": remaining_variate}
-        covariate4batch = {"remaining_variate": remaining_variate4batch}
+        target4batch, exog_data4batch = split_dataframe(series, target_channel)
+        covariate = {"exog": exog_data}
+        covariate4batch = {"exog": exog_data4batch}
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit

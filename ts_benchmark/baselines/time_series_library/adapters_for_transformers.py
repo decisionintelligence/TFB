@@ -226,15 +226,15 @@ class TransformerAdapter(ModelBase):
             target = target[
                 :,
                 -config.horizon :,
-                : -covariate["remaining_variate"].shape[1]
-                if covariate["remaining_variate"].shape[1] > 0
+                : -covariate["exog"].shape[1]
+                if covariate["exog"].shape[1] > 0
                 else None,
             ]
             output = output[
                 :,
                 -config.horizon :,
-                : -covariate["remaining_variate"].shape[1]
-                if covariate["remaining_variate"].shape[1] > 0
+                : -covariate["exog"].shape[1]
+                if covariate["exog"].shape[1] > 0
                 else None,
             ]
 
@@ -257,7 +257,7 @@ class TransformerAdapter(ModelBase):
         """
 
         train_valid_data = pd.concat(
-            [train_valid_data, covariate["remaining_variate"]], axis=1
+            [train_valid_data, covariate["exog"]], axis=1
         )
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
@@ -353,15 +353,15 @@ class TransformerAdapter(ModelBase):
                 target = target[
                     :,
                     -config.horizon :,
-                    : -covariate["remaining_variate"].shape[1]
-                    if covariate["remaining_variate"].shape[1] > 0
+                    : -covariate["exog"].shape[1]
+                    if covariate["exog"].shape[1] > 0
                     else None,
                 ]
                 output = output[
                     :,
                     -config.horizon :,
-                    : -covariate["remaining_variate"].shape[1]
-                    if covariate["remaining_variate"].shape[1] > 0
+                    : -covariate["exog"].shape[1]
+                    if covariate["exog"].shape[1] > 0
                     else None,
                 ]
                 loss = criterion(output, target)
@@ -485,7 +485,7 @@ class TransformerAdapter(ModelBase):
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
         input_np = np.concatenate(
-            (input_np, input_data["covariates"]["remaining_variate"]), axis=2
+            (input_np, input_data["covariates"]["exog"]), axis=2
         )
 
         if self.config.norm:
