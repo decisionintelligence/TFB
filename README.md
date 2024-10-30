@@ -101,11 +101,15 @@ When running under pycharm，please escape the double quotes, remove the spaces,
 
 Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\\"d_model\\":256,\\"horizon\\":24}**
 
+```shell
+--config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
+```
+
 ### 2. How to get models' predicted values and the target values？
 We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
 
 ### 3. Examples of script writing
-If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on [click here](./docs/tutorials/other_usage.sh).
+If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
 ## Citation
 
