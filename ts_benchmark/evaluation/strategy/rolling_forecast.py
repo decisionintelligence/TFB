@@ -15,8 +15,8 @@ from ts_benchmark.models.model_base import BatchMaker, ModelBase
 from ts_benchmark.utils.data_processing import split_before
 from ts_benchmark.utils.data_splitter import split_dataframe
 
-class RollingForecastEvalBatchMaker:
 
+class RollingForecastEvalBatchMaker:
     def __init__(
         self,
         series: pd.DataFrame,
@@ -37,7 +37,7 @@ class RollingForecastEvalBatchMaker:
         :return: a batch of data and its time stamps.
         """
         index_list = self.index_list[
-            self.current_sample_count: self.current_sample_count + batch_size
+            self.current_sample_count : self.current_sample_count + batch_size
         ]
         series = self.series.values
         predict_batch = self._make_batch_data(
@@ -48,7 +48,9 @@ class RollingForecastEvalBatchMaker:
         time_stamps_batch = self._make_batch_data(
             indexes, np.array(index_list) - win_size, win_size
         )
-        covariates_batch = self._make_batch_covariates(np.array(index_list) - win_size, win_size)
+        covariates_batch = self._make_batch_covariates(
+            np.array(index_list) - win_size, win_size
+        )
         self.current_sample_count += len(index_list)
         return {
             "input": predict_batch,
@@ -65,15 +67,15 @@ class RollingForecastEvalBatchMaker:
         """
         series = self.series.values
         test_batch = self._make_batch_data(series, np.array(self.index_list), horizon)
-        covariates_batch = self._make_batch_covariates(np.array(self.index_list), horizon)
+        covariates_batch = self._make_batch_covariates(
+            np.array(self.index_list), horizon
+        )
         return {
             "target": test_batch,
             "covariates": covariates_batch,
         }
 
-    def _make_batch_covariates(
-            self, index_list: np.ndarray, win_size: int
-    ) -> Dict:
+    def _make_batch_covariates(self, index_list: np.ndarray, win_size: int) -> Dict:
         """
         Create a batch of covariates
 
@@ -82,7 +84,9 @@ class RollingForecastEvalBatchMaker:
         :return: A batch of covariates.
         """
         covariates_batch = self.covariates.copy()
-        covariates_batch["remaining_variate"] = self._make_batch_data(self.covariates["remaining_variate"], index_list, win_size)
+        covariates_batch["remaining_variate"] = self._make_batch_data(
+            self.covariates["remaining_variate"], index_list, win_size
+        )
         return covariates_batch
 
     @staticmethod
@@ -112,7 +116,6 @@ class RollingForecastEvalBatchMaker:
 
 
 class RollingForecastPredictBatchMaker(BatchMaker):
-
     def __init__(self, batch_maker: RollingForecastEvalBatchMaker):
         self._batch_maker = batch_maker
 
@@ -267,14 +270,18 @@ class RollingForecast(ForecastingStrategy):
         train_length, test_length = self._get_split_lens(series, meta_info, tv_ratio)
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(train_valid_data, target_channel)
+        target_train_valid_data, remaining_variate = split_dataframe(
+            train_valid_data, target_channel
+        )
         target4batch, remaining_variate4batch = split_dataframe(series, target_channel)
         covariate = {"remaining_variate": remaining_variate}
         covariate4batch = {"remaining_variate": remaining_variate4batch}
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
-        fit_method(target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv)
+        fit_method(
+            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+        )
         end_fit_time = time.time()
 
         eval_scaler = self._get_eval_scaler(target_train_valid_data, train_ratio_in_tv)
@@ -286,10 +293,14 @@ class RollingForecast(ForecastingStrategy):
         all_rolling_predict = []
         for i, index in itertools.islice(enumerate(index_list), num_rollings):
             train, rest = split_before(series, index)
-            test = split_before(rest, horizon)[0].iloc[:, :target_train_valid_data.shape[-1]]
+            test = split_before(rest, horizon)[0].iloc[
+                :, : target_train_valid_data.shape[-1]
+            ]
 
             start_inference_time = time.time()
-            predict = model.forecast(horizon, train)[...,:target_train_valid_data.shape[-1]]
+            predict = model.forecast(horizon, train)[
+                ..., : target_train_valid_data.shape[-1]
+            ]
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
 
@@ -310,8 +321,12 @@ class RollingForecast(ForecastingStrategy):
         single_series_results = np.mean(np.stack(all_test_results), axis=0).tolist()
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
-        actual_data_encoded = self._encode_data(all_rolling_actual) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(all_rolling_predict) if save_true_pred else np.nan
+        actual_data_encoded = (
+            self._encode_data(all_rolling_actual) if save_true_pred else np.nan
+        )
+        inference_data_encoded = (
+            self._encode_data(all_rolling_predict) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,
@@ -352,14 +367,18 @@ class RollingForecast(ForecastingStrategy):
         train_length, test_length = self._get_split_lens(series, meta_info, tv_ratio)
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(train_valid_data, target_channel)
+        target_train_valid_data, remaining_variate = split_dataframe(
+            train_valid_data, target_channel
+        )
         target4batch, remaining_variate4batch = split_dataframe(series, target_channel)
         covariate = {"remaining_variate": remaining_variate}
         covariate4batch = {"remaining_variate": remaining_variate4batch}
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
-        fit_method(target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv)
+        fit_method(
+            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+        )
         end_fit_time = time.time()
 
         eval_scaler = self._get_eval_scaler(target_train_valid_data, train_ratio_in_tv)
@@ -378,7 +397,9 @@ class RollingForecast(ForecastingStrategy):
         predict_batch_maker = RollingForecastPredictBatchMaker(batch_maker)
         while predict_batch_maker.has_more_batches():
             start_inference_time = time.time()
-            predicts = model.batch_forecast(horizon, predict_batch_maker)[...,:target_train_valid_data.shape[-1]]
+            predicts = model.batch_forecast(horizon, predict_batch_maker)[
+                ..., : target_train_valid_data.shape[-1]
+            ]
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
             all_predicts.append(predicts)
@@ -405,7 +426,9 @@ class RollingForecast(ForecastingStrategy):
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
         actual_data_encoded = self._encode_data(targets) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(all_predicts) if save_true_pred else np.nan
+        inference_data_encoded = (
+            self._encode_data(all_predicts) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,

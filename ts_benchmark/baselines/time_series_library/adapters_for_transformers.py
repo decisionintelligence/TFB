@@ -62,7 +62,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_layers": 3,
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
-    "use_norm": True
+    "use_norm": True,
 }
 
 
@@ -223,8 +223,20 @@ class TransformerAdapter(ModelBase):
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = target[:, -config.horizon :, :-covariate['remaining_variate'].shape[1] if covariate['remaining_variate'].shape[1] > 0 else None]
-            output = output[:, -config.horizon :, :-covariate['remaining_variate'].shape[1] if covariate['remaining_variate'].shape[1] > 0 else None]
+            target = target[
+                :,
+                -config.horizon :,
+                : -covariate["remaining_variate"].shape[1]
+                if covariate["remaining_variate"].shape[1] > 0
+                else None,
+            ]
+            output = output[
+                :,
+                -config.horizon :,
+                : -covariate["remaining_variate"].shape[1]
+                if covariate["remaining_variate"].shape[1] > 0
+                else None,
+            ]
 
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
@@ -234,7 +246,7 @@ class TransformerAdapter(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self, train_valid_data: pd.DataFrame, covariate:dict, train_ratio_in_tv: float
+        self, train_valid_data: pd.DataFrame, covariate: dict, train_ratio_in_tv: float
     ) -> "ModelBase":
         """
         Train the model.
@@ -244,7 +256,9 @@ class TransformerAdapter(ModelBase):
         :return: The fitted model object.
         """
 
-        train_valid_data = pd.concat([train_valid_data, covariate['remaining_variate']], axis=1)
+        train_valid_data = pd.concat(
+            [train_valid_data, covariate["remaining_variate"]], axis=1
+        )
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -336,8 +350,20 @@ class TransformerAdapter(ModelBase):
 
                 output = self.model(input, input_mark, dec_input, target_mark)
 
-                target = target[:, -config.horizon :, :-covariate['remaining_variate'].shape[1] if covariate['remaining_variate'].shape[1] > 0 else None]
-                output = output[:, -config.horizon :, :-covariate['remaining_variate'].shape[1] if covariate['remaining_variate'].shape[1] > 0 else None]
+                target = target[
+                    :,
+                    -config.horizon :,
+                    : -covariate["remaining_variate"].shape[1]
+                    if covariate["remaining_variate"].shape[1] > 0
+                    else None,
+                ]
+                output = output[
+                    :,
+                    -config.horizon :,
+                    : -covariate["remaining_variate"].shape[1]
+                    if covariate["remaining_variate"].shape[1] > 0
+                    else None,
+                ]
                 loss = criterion(output, target)
 
                 loss.backward()
@@ -437,49 +463,51 @@ class TransformerAdapter(ModelBase):
                     drop_last=False,
                 )
 
-    # def batch_forecast(
-    #     self, horizon: int, batch_maker: BatchMaker, **kwargs
-    # ) -> np.ndarray:
-    #     """
-    #     Make predictions by batch.
-    #
-    #     :param horizon: The length of each prediction.
-    #     :param batch_maker: Make batch data used for prediction.
-    #     :return: An array of predicted results.
-    #     """
-    #     if self.early_stopping.check_point is not None:
-    #         self.model.load_state_dict(self.early_stopping.check_point)
-    #
-    #     if self.model is None:
-    #         raise ValueError("Model not trained. Call the fit() function first.")
-    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #     self.model.to(device)
-    #     self.model.eval()
-    #
-    #     input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
-    #     input_np = input_data["input"]
-    #     input_np = np.concatenate((input_np, input_data["covariates"]["remaining_variate"]), axis=2)
-    #
-    #     if self.config.norm:
-    #         origin_shape = input_np.shape
-    #         flattened_data = input_np.reshape((-1, input_np.shape[-1]))
-    #         input_np = self.scaler.transform(flattened_data).reshape(origin_shape)
-    #
-    #     input_index = input_data["time_stamps"]
-    #     padding_len = (
-    #         math.ceil(horizon / self.config.horizon) + 1
-    #     ) * self.config.horizon
-    #     all_mark = self._padding_time_stamp_mark(input_index, padding_len)
-    #
-    #     answers = self._perform_rolling_predictions(horizon, input_np, all_mark, device)
-    #
-    #     if self.config.norm:
-    #         flattened_data = answers.reshape((-1, answers.shape[-1]))
-    #         answers = self.scaler.inverse_transform(flattened_data).reshape(
-    #             answers.shape
-    #         )
-    #
-    #     return answers
+    def batch_forecast(
+        self, horizon: int, batch_maker: BatchMaker, **kwargs
+    ) -> np.ndarray:
+        """
+        Make predictions by batch.
+
+        :param horizon: The length of each prediction.
+        :param batch_maker: Make batch data used for prediction.
+        :return: An array of predicted results.
+        """
+        if self.early_stopping.check_point is not None:
+            self.model.load_state_dict(self.early_stopping.check_point)
+
+        if self.model is None:
+            raise ValueError("Model not trained. Call the fit() function first.")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(device)
+        self.model.eval()
+
+        input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
+        input_np = input_data["input"]
+        input_np = np.concatenate(
+            (input_np, input_data["covariates"]["remaining_variate"]), axis=2
+        )
+
+        if self.config.norm:
+            origin_shape = input_np.shape
+            flattened_data = input_np.reshape((-1, input_np.shape[-1]))
+            input_np = self.scaler.transform(flattened_data).reshape(origin_shape)
+
+        input_index = input_data["time_stamps"]
+        padding_len = (
+            math.ceil(horizon / self.config.horizon) + 1
+        ) * self.config.horizon
+        all_mark = self._padding_time_stamp_mark(input_index, padding_len)
+
+        answers = self._perform_rolling_predictions(horizon, input_np, all_mark, device)
+
+        if self.config.norm:
+            flattened_data = answers.reshape((-1, answers.shape[-1]))
+            answers = self.scaler.inverse_transform(flattened_data).reshape(
+                answers.shape
+            )
+
+        return answers
 
     def _perform_rolling_predictions(
         self,

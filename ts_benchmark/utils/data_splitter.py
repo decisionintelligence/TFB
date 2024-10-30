@@ -1,7 +1,10 @@
 import pandas as pd
 from typing import List, Optional, Tuple
 
-def split_dataframe(df: pd.DataFrame, target_channel: Optional[List] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+def split_dataframe(
+    df: pd.DataFrame, target_channel: Optional[List] = None
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Splits a DataFrame into target and remaining parts based on the target_channel configuration.
 
@@ -20,7 +23,9 @@ def split_dataframe(df: pd.DataFrame, target_channel: Optional[List] = None) -> 
     """
     num_columns = df.shape[1]  # Total number of columns in the DataFrame
 
-    def parse_target_channel(target_channel: Optional[List], num_columns: int) -> List[int]:
+    def parse_target_channel(
+        target_channel: Optional[List], num_columns: int
+    ) -> List[int]:
         """
         Parses the target_channel configuration to determine target column indices.
 

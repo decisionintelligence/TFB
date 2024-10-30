@@ -12,6 +12,7 @@ from ts_benchmark.models import ModelFactory
 from ts_benchmark.utils.data_processing import split_before
 from ts_benchmark.utils.data_splitter import split_dataframe
 
+
 class FixedForecast(ForecastingStrategy):
     """
     Fixed forecast strategy class
@@ -64,16 +65,23 @@ class FixedForecast(ForecastingStrategy):
 
         train_valid_data, test_data = split_before(series, train_length)
 
-        target_train_valid_data, remaining_variate = split_dataframe(train_valid_data, target_channel)
-        target_test_data, remaining_test_variate = split_dataframe(test_data, target_channel)
+        target_train_valid_data, remaining_variate = split_dataframe(
+            train_valid_data, target_channel
+        )
+        target_test_data, remaining_test_variate = split_dataframe(
+            test_data, target_channel
+        )
         covariate = {"remaining_variate": remaining_test_variate}
-
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
-        fit_method(target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv)
+        fit_method(
+            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+        )
         end_fit_time = time.time()
-        predicted = model.forecast(horizon, train_valid_data)[...,:target_train_valid_data.shape[-1]]
+        predicted = model.forecast(horizon, train_valid_data)[
+            ..., : target_train_valid_data.shape[-1]
+        ]
         end_inference_time = time.time()
 
         single_series_results, log_info = self.evaluator.evaluate_with_log(
@@ -88,8 +96,12 @@ class FixedForecast(ForecastingStrategy):
         )
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
-        actual_data_encoded = self._encode_data(target_test_data) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(inference_data) if save_true_pred else np.nan
+        actual_data_encoded = (
+            self._encode_data(target_test_data) if save_true_pred else np.nan
+        )
+        inference_data_encoded = (
+            self._encode_data(inference_data) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,
