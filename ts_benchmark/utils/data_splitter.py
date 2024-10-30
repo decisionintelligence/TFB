@@ -8,18 +8,9 @@ def split_dataframe(
     """
     Splits a DataFrame into target and remaining parts based on the target_channel configuration.
 
-    Parameters:
-    - df (pd.DataFrame): The input DataFrame to be split.
-    - target_channel (Optional[List]): Configuration for selecting target columns.
-      It can include integers (positive or negative) and lists of two integers representing slices.
-      If set to None, all columns are selected as target columns, and the remaining DataFrame is empty.
-
-    Returns:
-    - Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing the target DataFrame and the remaining DataFrame.
-
-    Raises:
-    - IndexError: If any specified column index is out of range.
-    - ValueError: If the target_channel configuration contains invalid items.
+    :param df: The input DataFrame to be split.
+    :param target_channel: Configuration for selecting target columns. It can include integers (positive or negative) and lists of two integers representing slices. If set to None, all columns are selected as target columns, and the remaining DataFrame is empty.
+    :return: A tuple containing the target DataFrame and the remaining DataFrame.
     """
     num_columns = df.shape[1]  # Total number of columns in the DataFrame
 
@@ -29,16 +20,9 @@ def split_dataframe(
         """
         Parses the target_channel configuration to determine target column indices.
 
-        Parameters:
-        - target_channel (Optional[List]): Configuration for selecting target columns.
-        - num_columns (int): Total number of columns in the DataFrame.
-
-        Returns:
-        - List[int]: A list of unique target column indices.
-
-        Raises:
-        - IndexError: If any specified column index is out of range.
-        - ValueError: If the target_channel contains invalid configurations.
+        :param target_channel: Configuration for selecting target columns.
+        :param num_columns: Total number of columns in the DataFrame.
+        :return: A list of unique target column indices.
         """
         if target_channel is None:
             return list(range(num_columns))  # Select all columns
