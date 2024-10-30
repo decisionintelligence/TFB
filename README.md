@@ -105,7 +105,7 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
 
 ### 3. Examples of script writing
-If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on [click here](./docs/tutorials/other_usage.sh).
+If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
 ## Citation
 
