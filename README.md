@@ -25,7 +25,7 @@
 1. [Quickstart](#Quickstart)
 1. [Steps to develop your own method](#Steps-to-develop-your-own-method)
 1. [Steps to evaluate on your own time series](#Steps-to-evaluate-on-your-own-time-series)
-1. [Time series code bug: drop-last illustration](#Time-series-code-bug:-drop-last-illustration)
+1. [Time series code bug the drop-last illustration](#Time-series-code-bug-the-drop-last-illustration)
 1. [FAQ](#FAQ)
 1. [Citation](#Citation)
 1. [Acknowledgement](#Acknowledgement)
@@ -93,7 +93,7 @@ We provide tutorial about how to develop your own method, you can [click here](.
 ## Steps to evaluate on your own time series
 We provide tutorial about how to evaluate on your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
 
-## Time series code bug: drop-last illustration
+## Time series code bug the drop-last illustration
 Implementations of existing methods often  employ a “Drop Last” trick in the testing phase. To accelerate the testing, it is common to split the data into batches. However, if we discard the last incomplete batch with fewer instances than the batch size, this causes unfair comparisons. For example, in Figure 4, the ETTh2 has a testing series of length 2,880, and we need to predict 336 future time steps using a look-back window of size 512. If we select the batch sizes to be 32, 64, and 128, the number of samples in the last batch are 17, 49, and 113, respectively. **Unless all methods use the same batch size, discarding the last batch of test samples is unfair, as the actual usage length of the test set is inconsistent.** Table 2 shows the testing results of PatchTST, DLinear, and FEDformer on the ETTh2 with different batch sizes and the “Drop Last” trick turned on. **We observe that the performance of the methods changes when varying the batch size.**
 
 **Therefore, TFB calls for the testing process to avoid using the drop-last operation to ensure fairness, and TFB did not use the drop-last operation during testing either.**
