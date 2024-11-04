@@ -52,7 +52,7 @@ The table below provides a visual overview of how TFB's key features compare to 
 
 ## Quickstart
 
-1. Installation
+1. Installation:
 
 **From PyPI**
 
@@ -74,11 +74,11 @@ docker build . -t tfb:latest
 docker run -it -v $(pwd)/:/app/ tfb:latest bash
 ```
 
-2. Data preparation
+2. Data preparation:
 
 You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
 
-3. Train and evaluate model
+3. Train and evaluate model:
 
 We provide the experiment scripts for all benchmarks under the folder `./scripts/multivariate_forecast`, and `./scripts/univariate_forecast`. For example you can reproduce a experiment result as the following:
 
@@ -114,9 +114,11 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 ```
 
 **2. How to get models' predicted values and the target values？**
+
 We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
 
-**3. Examples of script writing**
+**3. Examples of script writing.**
+
 If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
 ## Citation
