@@ -54,7 +54,7 @@ The table below provides a visual overview of how TFB's key features compare to 
 
 1. Installation:
 
-**From PyPI**
+- From PyPI
 
 Given a python environment (**note**: this project is fully tested under **python 3.8**), install the dependencies with the following command:
 
@@ -62,7 +62,7 @@ Given a python environment (**note**: this project is fully tested under **pytho
 pip install -r requirements.txt
 ```
 
-**From Docker**
+- From Docker
 
 We also provide a [Dockerfile](https://github.com/decisionintelligence/TFB/blob/master/Dockerfile) for you. For this setup to work you need to have a Docker service installed. You can get it at [Docker website](https://docs.docker.com/get-docker/).
 
