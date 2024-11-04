@@ -38,6 +38,6 @@ If you want to save the decoded data as a CSV file. Please follow the steps belo
 your_result_path = r"your_result_path/your_result.csv"
 decoded_result = decode_data(your_result_path)
 pd.set_option('display.width', None)  # Avoid ellipses in the data.
-decoded_result.to_csv("decoded_result.csv")
+decoded_result.to_csv("decoded_result.csv", index=None)
 '''
 ```
