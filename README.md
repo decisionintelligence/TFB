@@ -52,9 +52,9 @@ The table below provides a visual overview of how TFB's key features compare to 
 
 ## Quickstart
 
-### Installation
+1. Installation
 
-#### From PyPI
+**From PyPI**
 
 Given a python environment (**note**: this project is fully tested under **python 3.8**), install the dependencies with the following command:
 
@@ -62,7 +62,7 @@ Given a python environment (**note**: this project is fully tested under **pytho
 pip install -r requirements.txt
 ```
 
-#### From Docker
+**From Docker**
 
 We also provide a [Dockerfile](https://github.com/decisionintelligence/TFB/blob/master/Dockerfile) for you. For this setup to work you need to have a Docker service installed. You can get it at [Docker website](https://docs.docker.com/get-docker/).
 
@@ -74,11 +74,11 @@ docker build . -t tfb:latest
 docker run -it -v $(pwd)/:/app/ tfb:latest bash
 ```
 
-### Data preparation
+2. Data preparation
 
 You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
 
-### Train and evaluate model
+3. Train and evaluate model
 
 We provide the experiment scripts for all benchmarks under the folder `./scripts/multivariate_forecast`, and `./scripts/univariate_forecast`. For example you can reproduce a experiment result as the following:
 
@@ -103,7 +103,7 @@ Implementations of existing methods often  employ a “Drop Last” trick in the
 
 ## FAQ
 
-### 1. How to use Pycharm to run code？
+**1. How to use Pycharm to run code？**
 
 When running under pycharm，please escape the double quotes, remove the spaces, and remove the single quotes at the beginning and end.
 
@@ -113,10 +113,10 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
 
-### 2. How to get models' predicted values and the target values？
+**2. How to get models' predicted values and the target values？**
 We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
 
-### 3. Examples of script writing
+**3. Examples of script writing**
 If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
 ## Citation
