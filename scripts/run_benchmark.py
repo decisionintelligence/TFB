@@ -8,6 +8,7 @@ import warnings
 from typing import Dict, NoReturn
 
 import torch
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -300,6 +301,9 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    if args.gpus[0] == -1:
+        print("Using All GPUs Detected.")
+        args.gpus = np.arange(torch.cuda.device_count()).tolist()
 
     logging.basicConfig(
         level=logging.INFO,

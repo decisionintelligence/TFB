@@ -62,7 +62,8 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_layers": 3,
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
-    "use_norm": True
+    "use_norm": True,
+    "use_multi_gpu": True
 }
 
 
@@ -251,7 +252,11 @@ class TransformerAdapter(ModelBase):
 
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
-
+        
+        device_ids = np.arange(torch.cuda.device_count()).tolist()
+        if len(device_ids) > 1 and self.config.use_multi_gpu:
+            self.model = nn.DataParallel(self.model, device_ids=device_ids)
+            print("DataParallel Training on Devices: ", self.model.device_ids)
         print(
             "----------------------------------------------------------",
             self.model_name,
