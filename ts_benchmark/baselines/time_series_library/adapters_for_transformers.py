@@ -256,8 +256,7 @@ class TransformerAdapter(ModelBase):
         device_ids = np.arange(torch.cuda.device_count()).tolist()
         if len(device_ids) > 1 and self.config.use_multi_gpu:
             self.model = nn.DataParallel(self.model, device_ids=device_ids)
-            print("DataParallel Training on Devices: ", self.model.device_ids)
-        print(
+            print(
             "----------------------------------------------------------",
             self.model_name,
         )
