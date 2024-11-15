@@ -2,7 +2,7 @@
 
 If you are interested in training deep forecasting models in parallel using multiple GPUs, please follow the instructions below.
 
-**Notes**: Currently, we only support **DataParallel**, and it is supported only on the **Sequential Backend**.
+**Notes**: Currently, we only support **DataParallel**, and it is supported on both Sequential Backend and Ray Backend.
 
 
 ### 1. Check the GPU devices information on your machine
