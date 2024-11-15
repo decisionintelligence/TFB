@@ -46,12 +46,17 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  `--gpus -1`  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 
-### (Optional) 3. Configure the `use_multi_gpu` Argument within the `model-hyper-params` Argument
+### (Optional) 3. Configure the `parallel_strategy` Argument within the `model-hyper-params` Argument
 
-It is important to note that, by default, the `use_multi_gpu` parameter is set to `True` even without explicit specification in the launching script. However, in the event that you intend to train the models on a single GPU within a multi-GPU machine, you have the option to set it as `False`.
+It is important to note that, by default, the `parallel_strategy` parameter is set to `DP` even without explicit specification in the launching script. However, in the event that you intend to train the models on a single GPU within a multi-GPU machine, you have the option to set it as `None`.
 
+- Use multiple GPUs:
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "use_multi_gpu": "True"}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": "DP"}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+```
+- Use single GPU:
+```
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": null}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 
 ### 4. Verify the Parallel Operation of Multiple GPUs
