@@ -29,21 +29,21 @@ Suppose there are 4 GPUs installed on your machine. The following methods can be
 
 - To use 1 GPU (with ID 0):
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  `--gpus 0`  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 - To use 2 GPUs (with IDs 0 and 2):
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  `--gpus 0 2`  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus 0 2  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 - To use 3 GPUs (with IDs 1, 2, and 3):
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  `--gpus 1 2 3`  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus 1 2 3 --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 2) To use all the GPUs that have been detected, you can set the `gpus` argument to -1:
 
 - To use all GPUs (with IDs 0, 1, 2, and 3):
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  `--gpus -1`  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 
 ### (Optional) 3. Configure the `parallel_strategy` Argument within the `model-hyper-params` Argument
