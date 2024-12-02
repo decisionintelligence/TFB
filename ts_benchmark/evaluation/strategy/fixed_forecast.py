@@ -2,6 +2,7 @@
 import time
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 
 from ts_benchmark.evaluation.metrics import regression_metrics
@@ -34,7 +35,11 @@ class FixedForecast(ForecastingStrategy):
     - FieldNames.LOG_INFO: Any log returned by the evaluator.
     """
 
-    REQUIRED_CONFIGS = ["horizon", "train_ratio_in_tv"]
+    REQUIRED_CONFIGS = [
+        "horizon",
+        "train_ratio_in_tv",
+        "save_true_pred",
+    ]
 
     def _execute(
         self,
@@ -73,8 +78,10 @@ class FixedForecast(ForecastingStrategy):
         inference_data = pd.DataFrame(
             predicted, columns=test_data.columns, index=test_data.index
         )
-        actual_data_encoded = self._encode_data(test_data)
-        inference_data_encoded = self._encode_data(inference_data)
+
+        save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
+        actual_data_encoded = self._encode_data(test_data) if save_true_pred else np.nan
+        inference_data_encoded = self._encode_data(inference_data) if save_true_pred else np.nan
 
         single_series_results += [
             series_name,

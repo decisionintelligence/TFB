@@ -22,20 +22,17 @@ import numpy as np
 
 def find_length(data: np.ndarray) -> int:
     """
-    自动计算时间序列数据的合适周期长度。
+    Automatically calculate the appropriate period length for time series data.
 
-    :param data: 时间序列数据。
-    :return: 自动计算的周期长度。
+    :param data: Time series data.
+    :return: Automatically calculated period length.
     """
     if len(data.shape) > 1:
         return 0
 
-    # 取前 20000 个数据点进行计算
     data = data[: min(20000, len(data))]
-
     base = 3
     auto_corr = acf(data, nlags=400, fft=True)[base:]
-
     local_max = argrelextrema(auto_corr, np.greater)[0]
     try:
         max_local_max = np.argmax([auto_corr[lcm] for lcm in local_max])
@@ -48,28 +45,11 @@ def find_length(data: np.ndarray) -> int:
 
 def get_list_anomaly(labels: np.ndarray) -> List[int]:
     """
-    获取时间序列标签中的异常间隔长度列表。
+    Get a list of lengths of anomalous intervals in the time series labels.
 
-    :param labels: 时间序列标签列表，1 表示异常，0 表示正常。
-    :return: 异常间隔长度列表。
+    :param labels: List of anomaly label series, where 1 indicates anomalous and 0 indicates normal.
+    :return: List of lengths of anomalous intervals.
     """
-    # results = []
-    # start = 0
-    # anom = False
-    # for i, val in enumerate(labels):
-    #     if val == 1:
-    #         anom = True
-    #     else:
-    #         if anom:
-    #             results.append(i - start)
-    #             anom = False
-    #     if not anom:
-    #         start = i
-    # return results
-
     end_pos = np.diff(np.array(labels, dtype=int), append=0) < 0
     return np.diff(np.cumsum(labels)[end_pos], prepend=0)
 
-
-# label = [1,1,1,0,0,0,1,1,0,0,0,1,1,1,0]
-# print(get_list_anomaly(label))

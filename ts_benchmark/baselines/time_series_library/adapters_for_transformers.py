@@ -596,9 +596,9 @@ class TransformerAdapter(ModelBase):
 
     def detect_fit(self, train_data: pd.DataFrame, test_data: pd.DataFrame):
         """
-        训练模型。
+        Train the model.
 
-        :param train_data: 用于训练的时间序列数据。
+        :param train_data: Time series data used for training.
         """
 
         self.detect_hyper_param_tune(train_data)

@@ -1,8 +1,10 @@
 ## Steps to evaluating your own time series
 
-1. Process your dataset into three columns in [TFB format](#TFB-data-format) using code like [here](#Example-code).  
-2. Put the processed dataset under: **./dataset/forecasting** folder.
-3. Run the following shell commands to evaluate on your own datasets：
+1. Download the datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). 
+2. Put the downloaded data under the folder ./dataset.
+3. Process your dataset into three columns in [TFB format](#TFB-data-format) using code like [here](#Example-code).  
+4. Put the processed dataset under: **./dataset/forecasting** folder.
+5. Run the following shell commands to evaluate on your own datasets：
 
 - Evaluate on several user-defined forecasting datasets,  **please set the "--data-name-list" parameter to "your own dataset name"；**If you want to evaluate more than one series, separate the dataset names with commas.
 
@@ -16,7 +18,7 @@ A detailed example is provided below:
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "your series name1" "your series name2" "your series name3" --strategy-args '{"horizon":24}' --model-name "time_series_library.DLinear" --model-hyper-params '{"batch_size": 16, "d_ff": 512, "d_model": 256, "lr": 0.01, "horizon": 24, "seq_len": 104}' --adapter "transformer_adapter" --gpus 0 --num-workers 1 --timeout 60000 --save-path "ILI/DLinear"
 ```
 
-- Evaluate on all user-defined forecasting datasets,  **please set the "--data-set-namet" parameter to "user_forecast"**；At this point, all the datasets you uploaded will be evaluated.
+- Evaluate on all user-defined forecasting datasets,  **please set the "--data-set-namet" parameter to "user_forecast"**; At this point, all the datasets you uploaded will be evaluated.
 
 ```shell
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-set-name "user_forecast"

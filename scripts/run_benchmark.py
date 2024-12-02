@@ -23,6 +23,18 @@ sys.path.insert(0, THIRD_PARTY_PATH)
 warnings.filterwarnings("ignore")
 
 
+def str_to_bool(value: str) -> bool:
+    """
+    Converts a string to a boolean: True for 'True', '1', or 'T'; False for 'False', '0', or 'F'.
+    """
+    if value.lower() in ['true', '1', 't']:
+        return True
+    elif value.lower() in ['false', '0', 'f']:
+        return False
+    else:
+        raise ValueError("Invalid boolean value. Please enter 'True' or 'False'.")
+
+
 def build_data_config(args: argparse.Namespace, config_data: Dict) -> Dict:
     """
     Builds the data loader config from commandline arguments and configuration dict
@@ -79,6 +91,7 @@ def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict
     Builds the evaluation config from commandline arguments and configuration dict
     """
     evaluation_config = config_data["evaluation_config"]
+    evaluation_config["save_path"] = args.save_path
 
     metric_list = []
     if args.metrics != "all" and args.metrics is not None:
@@ -97,6 +110,9 @@ def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict
 
     if args.seed is not None:
         default_strategy_args["seed"] = args.seed
+    if args.save_true_pred is not None:
+        default_strategy_args["save_true_pred"] = args.save_true_pred
+    default_strategy_args["deterministic"] = args.deterministic
 
     return evaluation_config
 
@@ -198,6 +214,16 @@ if __name__ == "__main__":
         help="Random seed that is set before evaluating any model-series pair, "
              "by default, use the seed value in the config file"
     )
+    parser.add_argument(
+        "--deterministic",
+        type=str,
+        default="efficient",
+        choices=["full", "efficient", "none"],
+        help="Specify the type of deterministic behavior for the algorithm. Options are: "
+             "'full': Enables full deterministic mode. "
+             "'efficient': Fixes only some seeds for efficiency. "
+             "'none': No deterministic behavior is applied."
+    )
 
     # evaluation engine
     parser.add_argument(
@@ -265,6 +291,14 @@ if __name__ == "__main__":
         help="The relative path for saving evaluation results, relative to the result folder",
     )
 
+    parser.add_argument(
+        "--save-true-pred",
+        type=str_to_bool,
+        default=None,
+        help="If true, saves the model's prediction results "
+             "and the true values in evaluation result file",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -307,7 +341,6 @@ if __name__ == "__main__":
             data_config,
             model_config,
             evaluation_config,
-            save_path=args.save_path,
         )
 
     finally:

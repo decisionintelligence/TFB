@@ -25,6 +25,7 @@
 1. [Quickstart](#Quickstart)
 1. [Steps to develop your own method](#Steps-to-develop-your-own-method)
 1. [Steps to evaluate on your own time series](#Steps-to-evaluate-on-your-own-time-series)
+1. [Time series code bug the drop-last illustration](#Time-series-code-bug-the-drop-last-illustration)
 1. [FAQ](#FAQ)
 1. [Citation](#Citation)
 1. [Acknowledgement](#Acknowledgement)
@@ -51,9 +52,9 @@ The table below provides a visual overview of how TFB's key features compare to 
 
 ## Quickstart
 
-### Installation
+1. Installation:
 
-#### From PyPI
+- From PyPI
 
 Given a python environment (**note**: this project is fully tested under **python 3.8**), install the dependencies with the following command:
 
@@ -61,7 +62,7 @@ Given a python environment (**note**: this project is fully tested under **pytho
 pip install -r requirements.txt
 ```
 
-#### From Docker
+- From Docker
 
 We also provide a [Dockerfile](https://github.com/decisionintelligence/TFB/blob/master/Dockerfile) for you. For this setup to work you need to have a Docker service installed. You can get it at [Docker website](https://docs.docker.com/get-docker/).
 
@@ -73,11 +74,11 @@ docker build . -t tfb:latest
 docker run -it -v $(pwd)/:/app/ tfb:latest bash
 ```
 
-### Data preparation
+2. Data preparation:
 
 You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
 
-### Train and evaluate model
+3. Train and evaluate model:
 
 We provide the experiment scripts for all benchmarks under the folder `./scripts/multivariate_forecast`, and `./scripts/univariate_forecast`. For example you can reproduce a experiment result as the following:
 
@@ -92,10 +93,17 @@ We provide tutorial about how to develop your own method, you can [click here](.
 ## Steps to evaluate on your own time series
 We provide tutorial about how to evaluate on your own time series, you can [click here](./docs/tutorials/steps_to_evaluate_your_own_time_series.md).
 
+## Time series code bug the drop-last illustration
+Implementations of existing methods often  employ a “Drop Last” trick in the testing phase. To accelerate the testing, it is common to split the data into batches. However, if we discard the last incomplete batch with fewer instances than the batch size, this causes unfair comparisons. For example, in Figure 4, the ETTh2 has a testing series of length 2,880, and we need to predict 336 future time steps using a look-back window of size 512. If we select the batch sizes to be 32, 64, and 128, the number of samples in the last batch are 17, 49, and 113, respectively. **Unless all methods use the same batch size, discarding the last batch of test samples is unfair, as the actual usage length of the test set is inconsistent.** Table 2 shows the testing results of PatchTST, DLinear, and FEDformer on the ETTh2 with different batch sizes and the “Drop Last” trick turned on. **We observe that the performance of the methods changes when varying the batch size.**
+
+**Therefore, TFB calls for the testing process to avoid using the drop-last operation to ensure fairness, and TFB did not use the drop-last operation during testing either.**
+<div align="center">
+<img alt="Logo" src="docs/figures/Drop-last.png" width="70%"/>
+</div>
 
 ## FAQ
 
-### How to use Pycharm to run code？
+1. How to use Pycharm to run code？
 
 When running under pycharm，please escape the double quotes, remove the spaces, and remove the single quotes at the beginning and end.
 
@@ -105,6 +113,13 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args {\"horizon\":24} --model-name "time_series_library.DLinear" --model-hyper-params {\"batch_size\":16,\"d_ff\":512,\"d_model\":256,\"lr\":0.01,\"horizon\":24,\"seq_len\":104} --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "ILI/DLinear"
 ```
 
+2. How to get models' predicted values and the target values？
+
+We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
+
+3. Examples of script writing.
+
+If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
 ## Citation
 

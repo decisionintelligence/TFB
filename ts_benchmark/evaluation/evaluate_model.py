@@ -111,12 +111,12 @@ def eval_model(
     :param evaluation_config: Evaluate configuration information, including strategies, evaluation metrics, etc.
     :return: The DataFrame containing the evaluation results.
     """
-    # 获取策略类
+    # Get the strategy class
     strategy_class = STRATEGY.get(evaluation_config["strategy_args"]["strategy_name"])
     if strategy_class is None:
         raise RuntimeError("strategy_class is none")
 
-    # 解析评价指标配置
+    # Parse evaluation metric configuration
     metric = evaluation_config["metrics"]
     if metric == "all":
         metric = list(strategy_class.accepted_metrics())
@@ -144,7 +144,8 @@ def eval_model(
     # Create an evaluator instance
     evaluator = Evaluator(metric)
 
-    strategy = strategy_class(evaluation_config["strategy_args"], evaluator)  # 创建评估策略对象
+    # Create evaluation strategy instance
+    strategy = strategy_class(evaluation_config["strategy_args"], evaluator)
 
     eval_backend = ParallelBackend()
     result_list = []

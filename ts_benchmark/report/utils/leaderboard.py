@@ -52,7 +52,7 @@ def _calculate_single_metric_result(
     metric_df["model_and_params"] = (
         metric_df["model_name"] + ";" + metric_df["model_params"]
     )
-    # todo:inf,-inf应该变成null
+    # TODO: inf and -inf should be changed to null
     metric_df = metric_df[[metric_name, "model_and_params", "file_name"]].pivot_table(
         values=metric_name,
         index="file_name",

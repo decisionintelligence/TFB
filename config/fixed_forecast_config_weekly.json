@@ -26,7 +26,9 @@
             "strategy_name": "fixed_forecast",
             "horizon": 13,
             "train_ratio_in_tv": 1,
-            "seed": 2021
+            "seed": 2021,
+            "deterministic": "efficient",
+            "save_true_pred": false
         }
     },
 
