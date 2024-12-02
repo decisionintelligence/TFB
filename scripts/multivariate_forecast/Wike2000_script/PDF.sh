@@ -1,0 +1,10 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Wike2000.csv" --strategy-args '{"horizon":24}' --model-name "PDF.PDF" --model-hyper-params '{"d_ff": 2048, "d_model": 512, "n_head":4, "dropout":0.1,"fc_dropout":0, "e_layers": 4, "horizon": 24, "seq_len": 104,  "period":[24], "patch_len":[8], "kernel_list":[3,7,11],"stride":[4],"train_epochs":100,"patience":10,"batch_size":32}'  --gpus 3  --num-workers 1  --timeout 60000  --save-path "PDF/Wike2000"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Wike2000.csv" --strategy-args '{"horizon":36}' --model-name "PDF.PDF" --model-hyper-params '{"d_ff": 2048, "d_model": 512, "n_head":4, "dropout":0,"fc_dropout":0, "e_layers": 3, "horizon": 36, "seq_len": 104,  "period":[24], "patch_len":[16], "kernel_list":[3,7,11],"stride":[8],"train_epochs":100,"patience":10,"batch_size":32}'  --gpus 3  --num-workers 1  --timeout 60000  --save-path "PDF/Wike2000"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Wike2000.csv" --strategy-args '{"horizon":48}' --model-name "PDF.PDF" --model-hyper-params '{"d_ff": 2048, "d_model": 512, "n_head":4, "dropout":0,"fc_dropout":0, "e_layers": 4, "horizon": 48, "seq_len": 104,  "period":[24,180,720], "patch_len":[4,16,48], "kernel_list":[3,7,11],"stride":[4,16,48],"train_epochs":100,"patience":10,"batch_size":32}'  --gpus 3  --num-workers 1  --timeout 60000  --save-path "PDF/Wike2000"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Wike2000.csv" --strategy-args '{"horizon":60}' --model-name "PDF.PDF" --model-hyper-params '{"d_ff": 2048, "d_model": 512, "n_head":4, "dropout":0,"fc_dropout":0, "e_layers": 4, "horizon": 60, "seq_len": 104,  "period":[24,180,720], "patch_len":[4,16,48], "kernel_list":[3,7,11],"stride":[4,16,48],"train_epochs":100,"patience":10,"batch_size":32}'  --gpus 3  --num-workers 1  --timeout 60000  --save-path "PDF/Wike2000"
+
+
+
