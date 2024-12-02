@@ -7,7 +7,7 @@
 
 # TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
-**We are further optimizing our code and welcome any suggestions for modifications.**
+**If you find this project helpful, please don't forget to give it a ⭐ Star to show your support. Thank you!**
 
 🚩 **News** (2024.09) **You can find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
 
