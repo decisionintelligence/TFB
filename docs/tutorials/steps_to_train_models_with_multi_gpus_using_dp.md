@@ -24,8 +24,7 @@ When initiating the running of the launching scripts, it is necessary to specify
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 
-Suppose there are 4 GPUs installed on your machine. The following methods can be employed to set the `gpus` parameter:
-1) If you wish to conduct the training process on specific GPUs, you can set it by providing the device IDs separated by spaces:
+Suppose there are 4 GPUs installed on your machine. If you wish to conduct the training process on specific GPUs, you can set it by providing the device IDs separated by spaces:
 
 - To use 1 GPU (with ID 0):
 ```
@@ -39,12 +38,7 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 ```
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus 1 2 3 --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
-2) To use all the GPUs that have been detected, you can set the `gpus` argument to -1:
 
-- To use all GPUs (with IDs 0, 1, 2, and 3):
-```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
-```
 
 ### (Optional) 3. Configure the `parallel_strategy` Argument within the `model-hyper-params` Argument
 
@@ -52,11 +46,11 @@ It is important to note that, by default, the `parallel_strategy` parameter is s
 
 - Use multiple GPUs:
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": "DP"}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": "DP"}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 - Use single GPU:
 ```
-python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": null}' --adapter "transformer_adapter"  --gpus -1  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Electricity.csv" --strategy-args '{"horizon":96}' --model-name "time_series_library.PatchTST" --model-hyper-params '{"batch_size": 16, "d_ff": 1024, "d_model": 512, "lr": 0.001, "horizon": 96, "seq_len": 512, "parallel_strategy": null}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "Electricity/PatchTST"
 ```
 
 ### 4. Verify the Parallel Operation of Multiple GPUs

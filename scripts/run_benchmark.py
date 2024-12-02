@@ -301,9 +301,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if args.gpus[0] == -1:
-        print("Using All GPUs Detected.")
-        args.gpus = np.arange(torch.cuda.device_count()).tolist()
 
     logging.basicConfig(
         level=logging.INFO,
