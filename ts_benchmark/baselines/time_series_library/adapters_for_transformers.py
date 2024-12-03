@@ -62,7 +62,8 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_layers": 3,
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
-    "use_norm": True
+    "use_norm": True,
+    "parallel_strategy": "DP"
 }
 
 
@@ -73,6 +74,9 @@ class TransformerConfig:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        if self.parallel_strategy not in [None, 'DP']:
+            raise ValueError("Invalid value for parallel_strategy. Supported values are 'DP' and None.")
 
     @property
     def pred_len(self):
@@ -251,7 +255,10 @@ class TransformerAdapter(ModelBase):
 
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
-
+        
+        device_ids = np.arange(torch.cuda.device_count()).tolist()
+        if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
+            self.model = nn.DataParallel(self.model, device_ids=device_ids)
         print(
             "----------------------------------------------------------",
             self.model_name,

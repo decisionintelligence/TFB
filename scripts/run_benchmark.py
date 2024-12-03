@@ -8,6 +8,7 @@ import warnings
 from typing import Dict, NoReturn
 
 import torch
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
