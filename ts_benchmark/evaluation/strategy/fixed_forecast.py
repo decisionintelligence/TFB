@@ -10,6 +10,7 @@ from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.forecasting import ForecastingStrategy
 from ts_benchmark.models import ModelFactory
 from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_splitter import split_dataframe
 
 
 class FixedForecast(ForecastingStrategy):
@@ -39,6 +40,7 @@ class FixedForecast(ForecastingStrategy):
         "horizon",
         "train_ratio_in_tv",
         "save_true_pred",
+        "target_channel",
     ]
 
     def _execute(
@@ -50,6 +52,7 @@ class FixedForecast(ForecastingStrategy):
     ) -> List:
         model = model_factory()
 
+        target_channel = self.strategy_config["target_channel"]
         horizon = self._get_scalar_config_value("horizon", series_name)
         train_ratio_in_tv = self._get_scalar_config_value(
             "train_ratio_in_tv", series_name
@@ -61,27 +64,44 @@ class FixedForecast(ForecastingStrategy):
             raise ValueError("The prediction step exceeds the data length")
 
         train_valid_data, test_data = split_before(series, train_length)
+
+        target_train_valid_data, exog_data = split_dataframe(
+            train_valid_data, target_channel
+        )
+        target_test_data, remaining_test_variate = split_dataframe(
+            test_data, target_channel
+        )
+        covariate = {"exog": remaining_test_variate}
+
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
-        fit_method(train_valid_data, train_ratio_in_tv=train_ratio_in_tv)
+        fit_method(
+            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+        )
         end_fit_time = time.time()
-        predicted = model.forecast(horizon, train_valid_data)
+        predicted = model.forecast(horizon, train_valid_data)[
+            ..., : target_train_valid_data.shape[-1]
+        ]
         end_inference_time = time.time()
 
         single_series_results, log_info = self.evaluator.evaluate_with_log(
-            test_data.to_numpy(),
+            target_test_data.to_numpy(),
             predicted,
             # TODO: add configs to control scaling behavior
-            self._get_eval_scaler(train_valid_data, train_ratio_in_tv),
-            train_valid_data.values,
+            self._get_eval_scaler(target_train_valid_data, train_ratio_in_tv),
+            target_train_valid_data.values,
         )
         inference_data = pd.DataFrame(
-            predicted, columns=test_data.columns, index=test_data.index
+            predicted, columns=target_test_data.columns, index=target_test_data.index
         )
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
-        actual_data_encoded = self._encode_data(test_data) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(inference_data) if save_true_pred else np.nan
+        actual_data_encoded = (
+            self._encode_data(target_test_data) if save_true_pred else np.nan
+        )
+        inference_data_encoded = (
+            self._encode_data(inference_data) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,
