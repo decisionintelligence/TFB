@@ -23,7 +23,7 @@
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard.
 
-  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2406.16964).
+  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]]().
 
   - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt).
 
