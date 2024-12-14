@@ -19,6 +19,20 @@
 
 🚩 **News** (2024.05) **Some introduction (in Chinese): [intro1](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ), [intro2](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA), [intro3](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw), [intro4](https://mp.weixin.qq.com/s/OfZJtd3H3-TCkvBGATt0mA), [intro5](https://mp.weixin.qq.com/s/pjTN15vHL5UxjL1mhJxguw), [intro6](https://mp.weixin.qq.com/s/ghJ3xN38pB-sDb0hiWjW7w), and [intro7](https://mp.weixin.qq.com/s/J8SRsN4W0FNMtlLpULhwKg).**
 
+
+
+**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard.
+
+  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2406.16964).
+
+  - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt).
+
+  - [x] **Pathformer** - Pathformer: Multi-scale transformers with adaptive pathways for time series forecasting [[ICLR 2024]](https://arxiv.org/pdf/2402.05956).
+
+  - [x] **FITS** - FITS: Modeling Time Series with 10k Parameters [[ICLR 2024]](https://arxiv.org/pdf/2307.03756).
+
+    
+
 ## Table of Contents
 
 1. [Introduction](#introduction)
