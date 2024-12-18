@@ -150,11 +150,11 @@ If you find this repo useful, please cite our paper.
   year    = {2024}
 }
 
-@article{qiu2024duet,
-  title   = {DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting}, 
-  author  = {Xiangfei Qiu and Xingjian Wu and Yan Lin and Chenjuan Guo and Jilin Hu and Bin Yang},
-  journal = {arXiv preprint arXiv:2412.10859},
-  year    = {2024}
+@inproceedings{qiu2025duet,
+  title     = {DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting},
+  author    = {Xiangfei Qiu and Xingjian Wu and Yan Lin and Chenjuan Guo and Jilin Hu and Bin Yang},
+  booktitle = {SIGKDD},
+  year      = {2025}
 }
 ```
 
