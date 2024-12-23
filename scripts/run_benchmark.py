@@ -8,6 +8,7 @@ import warnings
 from typing import Dict, NoReturn
 
 import torch
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -110,7 +111,8 @@ def build_evaluation_config(args: argparse.Namespace, config_data: Dict) -> Dict
 
     if args.seed is not None:
         default_strategy_args["seed"] = args.seed
-    default_strategy_args["save_true_pred"] = args.save_true_pred
+    if args.save_true_pred is not None:
+        default_strategy_args["save_true_pred"] = args.save_true_pred
     default_strategy_args["deterministic"] = args.deterministic
 
     return evaluation_config
@@ -293,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--save-true-pred",
         type=str_to_bool,
-        default=False,
+        default=None,
         help="If true, saves the model's prediction results "
              "and the true values in evaluation result file",
     )
