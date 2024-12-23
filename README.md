@@ -23,7 +23,7 @@
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard.
 
-  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]]().
+  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859).
 
   - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt).
 
@@ -149,6 +149,13 @@ If you find this repo useful, please cite our paper.
   pages   = {2363--2377},
   year    = {2024}
 }
+
+@inproceedings{qiu2025duet,
+  title     = {DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting},
+  author    = {Xiangfei Qiu and Xingjian Wu and Yan Lin and Chenjuan Guo and Jilin Hu and Bin Yang},
+  booktitle = {SIGKDD},
+  year      = {2025}
+}
 ```
 
 
@@ -161,7 +168,7 @@ The development of this library has been supported by **Huawei Cloud**, and we w
 
 If you have any questions or suggestions, feel free to contact:
 
-- Xiangfei Qiu (xfqiu@stu.ecnu.edu.cn)
+- [Xiangfei Qiu](https://qiu69.github.io/) (xfqiu@stu.ecnu.edu.cn)
 - Xingjian Wu (xjwu@stu.ecnu.edu.cn)
 
 
