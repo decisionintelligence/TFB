@@ -151,7 +151,7 @@ class Mahalanobis_mask(nn.Module):
         # B x C x C x D
         diff = X1 - X2
 
-        temp = torch.einsum("dd,bxcd->bxcd", self.A, diff)
+        temp = torch.einsum("dk,bxck->bxcd", self.A, diff)
 
         dist = torch.einsum("bxcd,bxcd->bxc", temp, temp)
 

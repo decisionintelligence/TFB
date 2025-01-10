@@ -89,12 +89,11 @@ class SparseDispatcher(object):
         stitched = torch.cat(expert_out, 0)
         if multiply_by_gates:
             # stitched = stitched.mul(self._nonzero_gates)
-            stitched = torch.einsum('i...,ij->i...', stitched, self._nonzero_gates)
+            stitched = torch.einsum("i...,ij->i...", stitched, self._nonzero_gates)
 
         shape = list(expert_out[-1].shape)
         shape[0] = self._gates.size(0)
-        zeros = torch.zeros(*shape, requires_grad=True,
-                            device=stitched.device)
+        zeros = torch.zeros(*shape, requires_grad=True, device=stitched.device)
         # combine samples that have been processed by the same k experts
         combined = zeros.index_add(0, self._batch_index, stitched.float())
         return combined
@@ -127,9 +126,8 @@ class Linear_extractor_cluster(nn.Module):
         self.input_size = config.seq_len
         self.k = config.k
         # instantiate experts
-        self.experts = nn.ModuleList(
-            [expert(config) for _ in range(self.num_experts)])
-
+        self.experts = nn.ModuleList([expert(config) for _ in range(self.num_experts)])
+        self.W_h = nn.Parameter(torch.eye(self.num_experts))
         self.gate = encoder(config)
         self.noise = encoder(config)
 
@@ -141,7 +139,7 @@ class Linear_extractor_cluster(nn.Module):
         self.softmax = nn.Softmax(1)
         self.register_buffer("mean", torch.tensor([0.0]))
         self.register_buffer("std", torch.tensor([1.0]))
-        assert (self.k <= self.num_experts)
+        assert self.k <= self.num_experts
 
     def cv_squared(self, x):
         """The squared coefficient of variation of a sample.
@@ -170,7 +168,9 @@ class Linear_extractor_cluster(nn.Module):
         """
         return (gates > 0).sum(0)
 
-    def _prob_in_top_k(self, clean_values, noisy_values, noise_stddev, noisy_top_values):
+    def _prob_in_top_k(
+        self, clean_values, noisy_values, noise_stddev, noisy_top_values
+    ):
         """Helper function to NoisyTopKGating.
         Computes the probability that value is in top k, given different random noise.
         This gives us a way of backpropagating from a loss that balances the number
@@ -191,11 +191,17 @@ class Linear_extractor_cluster(nn.Module):
         m = noisy_top_values.size(1)
         top_values_flat = noisy_top_values.flatten()
 
-        threshold_positions_if_in = torch.arange(batch, device=clean_values.device) * m + self.k
-        threshold_if_in = torch.unsqueeze(torch.gather(top_values_flat, 0, threshold_positions_if_in), 1)
+        threshold_positions_if_in = (
+            torch.arange(batch, device=clean_values.device) * m + self.k
+        )
+        threshold_if_in = torch.unsqueeze(
+            torch.gather(top_values_flat, 0, threshold_positions_if_in), 1
+        )
         is_in = torch.gt(noisy_values, threshold_if_in)
         threshold_positions_if_out = threshold_positions_if_in - 1
-        threshold_if_out = torch.unsqueeze(torch.gather(top_values_flat, 0, threshold_positions_if_out), 1)
+        threshold_if_out = torch.unsqueeze(
+            torch.gather(top_values_flat, 0, threshold_positions_if_out), 1
+        )
         # is each value currently in the top k.
         normal = Normal(self.mean, self.std)
         prob_if_in = normal.cdf((clean_values - threshold_if_in) / noise_stddev)
@@ -205,37 +211,44 @@ class Linear_extractor_cluster(nn.Module):
 
     def noisy_top_k_gating(self, x, train, noise_epsilon=1e-2):
         """Noisy top-k gating.
-          See paper: https://arxiv.org/abs/1701.06538.
-          Args:
-            x: input Tensor with shape [batch_size, input_size]
-            train: a boolean - we only add noise at training time.
-            noise_epsilon: a float
-          Returns:
-            gates: a Tensor with shape [batch_size, num_experts]
-            load: a Tensor with shape [num_experts]
+        See paper: https://arxiv.org/abs/1701.06538.
+        Args:
+          x: input Tensor with shape [batch_size, input_size]
+          train: a boolean - we only add noise at training time.
+          noise_epsilon: a float
+        Returns:
+          gates: a Tensor with shape [batch_size, num_experts]
+          load: a Tensor with shape [num_experts]
         """
         clean_logits = self.gate(x)
+
         if self.noisy_gating and train:
             raw_noise_stddev = self.noise(x)
-            noise_stddev = ((self.softplus(raw_noise_stddev) + noise_epsilon))
+            noise_stddev = self.softplus(raw_noise_stddev) + noise_epsilon
             noise = torch.randn_like(clean_logits)
             noisy_logits = clean_logits + (noise * noise_stddev)
-            logits = noisy_logits
+            logits = noisy_logits @ self.W_h
         else:
             logits = clean_logits
 
         # calculate topk + 1 that will be needed for the noisy gates
         logits = self.softmax(logits)
         top_logits, top_indices = logits.topk(min(self.k + 1, self.num_experts), dim=1)
-        top_k_logits = top_logits[:, :self.k]
-        top_k_indices = top_indices[:, :self.k]
-        top_k_gates = top_k_logits / (top_k_logits.sum(1, keepdim=True) + 1e-6)  # normalization
+        top_k_logits = top_logits[:, : self.k]
+        top_k_indices = top_indices[:, : self.k]
+        top_k_gates = top_k_logits / (
+            top_k_logits.sum(1, keepdim=True) + 1e-6
+        )  # normalization
 
         zeros = torch.zeros_like(logits, requires_grad=True)
         gates = zeros.scatter(1, top_k_indices, top_k_gates)
 
         if self.noisy_gating and self.k < self.num_experts and train:
-            load = (self._prob_in_top_k(clean_logits, noisy_logits, noise_stddev, top_logits)).sum(0)
+            load = (
+                self._prob_in_top_k(
+                    clean_logits, noisy_logits, noise_stddev, top_logits
+                )
+            ).sum(0)
         else:
             load = self._gates_to_load(gates)
         return gates, load
@@ -260,16 +273,18 @@ class Linear_extractor_cluster(nn.Module):
 
         dispatcher = SparseDispatcher(self.num_experts, gates)
         if self.CI:
-            x_norm = rearrange(x, '(x y) l c -> x l (y c)', y=self.n_vars)
+            x_norm = rearrange(x, "(x y) l c -> x l (y c)", y=self.n_vars)
             x_norm = self.revin(x_norm, "norm")
-            x_norm = rearrange(x_norm, 'x l (y c) -> (x y) l c', y=self.n_vars)
+            x_norm = rearrange(x_norm, "x l (y c) -> (x y) l c", y=self.n_vars)
         else:
             x_norm = self.revin(x, "norm")
 
         expert_inputs = dispatcher.dispatch(x_norm)
 
         gates = dispatcher.expert_to_gates()
-        expert_outputs = [self.experts[i](expert_inputs[i]) for i in range(self.num_experts)]
+        expert_outputs = [
+            self.experts[i](expert_inputs[i]) for i in range(self.num_experts)
+        ]
         y = dispatcher.combine(expert_outputs)
 
         return y, loss
