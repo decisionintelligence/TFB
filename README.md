@@ -82,6 +82,7 @@ Given a python environment (**note**: this project is fully tested under **pytho
 pip install -r requirements.txt
 ```
 
+> [!IMPORTANT]
 > If you want to reproduce the results from [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts), please use the `requirements-docker.txt` file instead of `requirements.txt`. This is because `requirements-docker.txt` locks the versions of the packages, while `requirements.txt` provides version ranges, which may result in different dependency versions and affect the accuracy of the reproduction. 
 > ```shell
 > pip install -r requirements-docker.txt
