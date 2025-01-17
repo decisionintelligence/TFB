@@ -4,7 +4,7 @@ import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 
 from ts_benchmark.baselines.duet.utils.tools import EarlyStopping, adjust_learning_rate
-from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_processing import split_time
 from typing import Type, Dict, Optional, Tuple
 from torch import optim
 import numpy as np
@@ -352,7 +352,7 @@ class DUET(ModelBase):
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_before(train, len(train) - config.seq_len)
+        train, test = split_time(train, len(train) - config.seq_len)
 
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)

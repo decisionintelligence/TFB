@@ -19,7 +19,7 @@ from ts_benchmark.baselines.utils import (
     get_time_mark,
 )
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
-from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_processing import split_time
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
@@ -204,7 +204,7 @@ class TransformerAdapter(ModelBase):
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
 
-    def validate(self, valid_data_loader, criterion):
+    def validate(self, valid_data_loader, series_dim, criterion):
         config = self.config
         total_loss = []
         self.model.eval()
@@ -227,8 +227,21 @@ class TransformerAdapter(ModelBase):
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = target[:, -config.horizon :, :]
-            output = output[:, -config.horizon :, :]
+            target = target[
+                     :,
+                     -config.horizon:,
+                     : -series_dim
+                     if series_dim > 0
+                     else None,
+                     ]
+            output = output[
+                     :,
+                     -config.horizon:,
+                     : -series_dim
+                     if series_dim > 0
+                     else None,
+                     ]
+
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
 
@@ -237,7 +250,7 @@ class TransformerAdapter(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float
+        self, train_valid_data: pd.DataFrame, covariates: dict, train_ratio_in_tv: float
     ) -> "ModelBase":
         """
         Train the model.
@@ -246,6 +259,11 @@ class TransformerAdapter(ModelBase):
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
+        series_dim = covariates["exog"].shape[1]
+        if "exog" in covariates:
+            train_valid_data = pd.concat(
+                [train_valid_data, covariates["exog"]], axis=1
+            )
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -255,7 +273,7 @@ class TransformerAdapter(ModelBase):
 
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
-        
+
         device_ids = np.arange(torch.cuda.device_count()).tolist()
         if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
             self.model = nn.DataParallel(self.model, device_ids=device_ids)
@@ -340,15 +358,27 @@ class TransformerAdapter(ModelBase):
 
                 output = self.model(input, input_mark, dec_input, target_mark)
 
-                target = target[:, -config.horizon :, :]
-                output = output[:, -config.horizon :, :]
+                target = target[
+                         :,
+                         -config.horizon:,
+                         : -series_dim
+                         if series_dim > 0
+                         else None,
+                         ]
+                output = output[
+                         :,
+                         -config.horizon:,
+                         : -series_dim
+                         if series_dim > 0
+                         else None,
+                         ]
                 loss = criterion(output, target)
 
                 loss.backward()
                 optimizer.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, criterion)
+                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
@@ -377,7 +407,7 @@ class TransformerAdapter(ModelBase):
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_before(train, len(train) - config.seq_len)
+        train, test = split_time(train, len(train) - config.seq_len)
 
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
@@ -425,7 +455,7 @@ class TransformerAdapter(ModelBase):
                         )
                     return answer[-horizon:]
 
-                output = output.cpu().numpy()[:, -config.horizon :, :]
+                output = output.cpu().numpy()[:, -config.horizon  :]
                 for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
@@ -461,7 +491,10 @@ class TransformerAdapter(ModelBase):
         self.model.eval()
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
-        input_np = input_data["input"]
+        input_target_np = input_data["input"]
+        input_np = np.concatenate(
+            (input_target_np, input_data["covariates"]["exog"]), axis=2
+        )
 
         if self.config.norm:
             origin_shape = input_np.shape
@@ -482,7 +515,9 @@ class TransformerAdapter(ModelBase):
                 answers.shape
             )
 
-        return answers
+        return answers[
+               ..., : input_target_np.shape[-1]
+               ]
 
     def _perform_rolling_predictions(
         self,
@@ -568,7 +603,7 @@ class TransformerAdapter(ModelBase):
             :, -self.config.label_len :, :
         ]
         advance_len = rolling_time * self.config.horizon
-        input_mark_np = all_mark[:, advance_len : self.config.seq_len + advance_len, :]
+        input_mark_np = all_mark[:, advance_len: self.config.seq_len + advance_len, :]
         start = self.config.seq_len - self.config.label_len + advance_len
         end = self.config.seq_len + self.config.horizon + advance_len
         target_mark_np = all_mark[
@@ -810,7 +845,6 @@ class TransformerAdapter(ModelBase):
         print(pred.sum() / len(test_energy) * 100)
         return pred, test_energy
 
-
 def generate_model_factory(
     model_name: str, model_class: type, required_args: dict
 ) -> Dict:
@@ -836,7 +870,6 @@ def generate_model_factory(
         "model_factory": model_factory,
         "required_hyper_params": required_args,
     }
-
 
 def transformer_adapter(model_info: Type[object]) -> object:
     if not isinstance(model_info, type):
