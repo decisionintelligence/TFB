@@ -135,6 +135,9 @@ We provide tutorial about how to get the models' predicted values and the target
 
 If you want to run datasets in parallel, test multiple datasets, or test multiple algorithms, and so on, you can [click here](./docs/tutorials/other_usage.sh).
 
+4. How long the look-back window is used for the multivariate forecasting evaluation results?
+You can find answer [here](https://github.com/decisionintelligence/TFB/issues/40).
+
 ## Citation
 
 If you find this repo useful, please cite our paper.
