@@ -13,6 +13,7 @@ python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" -
 import base64
 import pickle
 
+import numpy as np
 import pandas as pd
 
 
@@ -30,4 +31,15 @@ def decode_data(filepath: str) -> pd.DataFrame:
         data.at[index, "inference_data"] = pickle.loads(decoded_inference_data)
         data.at[index, "actual_data"] = pickle.loads(decoded_actual_data)
     return data
+
+
+'''
+If you want to save the decoded data as a CSV file. Please follow the steps below.
+
+your_result_path = r"your_result_path/your_result.csv"
+decoded_result = decode_data(your_result_path)
+pd.set_option('display.width', None)  # Avoid ellipses in the data.
+np.set_printoptions(threshold=np.inf)  # Avoid ellipses in the data.
+decoded_result.to_csv("decoded_result.csv", index=None)
+'''
 ```
