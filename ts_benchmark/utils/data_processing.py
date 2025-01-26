@@ -62,14 +62,14 @@ def split_channel(
     df: pd.DataFrame, target_channel: Optional[List] = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Splits a DataFrame into target and remaining parts based on the target_channel configuration.
+    Splits a DataFrame into target and exog parts based on the target_channel configuration.
 
     :param df: The input DataFrame to be split.
     :param target_channel: Configuration for selecting target columns.
         It can include:
         - Integers (positive or negative) representing single column indices.
         - Lists or tuples of two integers representing slices, e.g., [2, 4] or (2, 4) selects columns 2 and 3.
-        - If set to None, all columns are selected as target columns, and the remaining DataFrame is empty.
+        - If set to None, all columns are selected as target columns, and the exog DataFrame is empty.
 
     Example 1:
         target_channel = [1, 3]
@@ -81,9 +81,9 @@ def split_channel(
 
     Example 3:
         target_channel = None
-        - Selects all columns as target columns, and the remaining DataFrame is empty.
+        - Selects all columns as target columns, and the exog DataFrame is empty.
 
-    :return: A tuple containing the target DataFrame and the remaining DataFrame.
+    :return: A tuple containing the target DataFrame and the exog DataFrame.
     """
     num_columns = df.shape[1]  # Total number of columns in the DataFrame
 
@@ -91,20 +91,20 @@ def split_channel(
     target_columns = _parse_target_channel(target_channel, num_columns)
 
     if target_channel is not None:
-        # Determine remaining columns by excluding target columns
+        # Determine exog columns by excluding target columns
         all_columns = set(range(num_columns))
-        remaining_columns = sorted(all_columns - set(target_columns))
+        exog_columns = sorted(all_columns - set(target_columns))
     else:
-        # If target_channel is None, remaining_columns is empty
-        remaining_columns = []
+        # If target_channel is None, exog_columns is empty
+        exog_columns = []
 
-    # Split the DataFrame into target and remaining parts
+    # Split the DataFrame into target and exog parts
     target_df = df.iloc[:, target_columns]
-    remaining_df = df.iloc[
-        :, remaining_columns
-    ]  # This works even if remaining_columns is an empty list
+    exog_df = df.iloc[
+        :, exog_columns
+    ]  # This works even if exog_columns is an empty list
 
-    return target_df, remaining_df
+    return target_df, exog_df
 
 
 def split_time(data: pd.DataFrame, index: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
