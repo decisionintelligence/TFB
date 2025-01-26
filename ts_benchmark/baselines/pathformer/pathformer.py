@@ -200,7 +200,7 @@ class Pathformer(ModelBase):
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
 
-    def validate(self, valid_data_loader, covariate, criterion):
+    def validate(self, valid_data_loader, criterion):
         config = self.config
         total_loss = []
         self.model.eval()
@@ -223,20 +223,8 @@ class Pathformer(ModelBase):
 
             output, balance_loss = self.model(input)
 
-            target = target[
-                :,
-                -config.horizon :,
-                : -covariate["exog"].shape[1]
-                if covariate["exog"].shape[1] > 0
-                else None,
-            ]
-            output = output[
-                :,
-                -config.horizon :,
-                : -covariate["exog"].shape[1]
-                if covariate["exog"].shape[1] > 0
-                else None,
-            ]
+            target = target[:, -config.horizon :, :]
+            output = output[:, -config.horizon :, :]
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
 
@@ -245,7 +233,7 @@ class Pathformer(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self, train_valid_data: pd.DataFrame, covariate: dict, train_ratio_in_tv: float
+        self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float
     ) -> "ModelBase":
         """
         Train the model.
@@ -254,9 +242,6 @@ class Pathformer(ModelBase):
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        train_valid_data = pd.concat(
-            [train_valid_data, covariate["exog"]], axis=1
-        )
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -360,20 +345,8 @@ class Pathformer(ModelBase):
 
                 output, balance_loss = self.model(input)
 
-                target = target[
-                    :,
-                    -config.horizon :,
-                    : -covariate["exog"].shape[1]
-                    if covariate["exog"].shape[1] > 0
-                    else None,
-                ]
-                output = output[
-                    :,
-                    -config.horizon :,
-                    : -covariate["exog"].shape[1]
-                    if covariate["exog"].shape[1] > 0
-                    else None,
-                ]
+                target = target[:, -config.horizon :, :]
+                output = output[:, -config.horizon :, :]
                 loss = criterion(output, target)
 
                 loss.backward()
@@ -386,7 +359,7 @@ class Pathformer(ModelBase):
                     scheduler.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, covariate, criterion)
+                valid_loss = self.validate(valid_data_loader, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
@@ -500,9 +473,6 @@ class Pathformer(ModelBase):
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
-        input_np = np.concatenate(
-            (input_np, input_data["covariates"]["exog"]), axis=2
-        )
 
         if self.config.norm:
             origin_shape = input_np.shape

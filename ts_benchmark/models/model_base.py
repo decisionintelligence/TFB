@@ -3,7 +3,6 @@ import abc
 
 import numpy as np
 import pandas as pd
-from typing import List, Optional, Tuple, Dict
 
 
 def annotate(**kwargs):
@@ -47,7 +46,7 @@ class ModelBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def forecast_fit(
-        self, train_data: pd.DataFrame, *,covariates: Optional[Dict] = None, train_ratio_in_tv: float = 1.0, **kwargs
+        self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs
     ) -> "ModelBase":
         """
         Fit a model on time series data
