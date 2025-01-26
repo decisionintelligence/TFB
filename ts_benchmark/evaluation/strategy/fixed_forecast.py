@@ -64,12 +64,16 @@ class FixedForecast(ForecastingStrategy):
             raise ValueError("The prediction step exceeds the data length")
 
         train_valid_data, test_data = split_time(series, train_length)
-        target_train_valid_data, exog_data = split_channel(train_valid_data, target_channel)
+        target_train_valid_data, exog_data = split_channel(
+            train_valid_data, target_channel
+        )
         target_test_data, exog_data = split_channel(test_data, target_channel)
         covariate = {"exog": exog_data}
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
-        fit_method(target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv)
+        fit_method(
+            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+        )
         end_fit_time = time.time()
         predicted = model.forecast(horizon, train_valid_data)
         end_inference_time = time.time()
@@ -86,8 +90,12 @@ class FixedForecast(ForecastingStrategy):
         )
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
-        actual_data_encoded = self._encode_data(target_test_data) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(inference_data) if save_true_pred else np.nan
+        actual_data_encoded = (
+            self._encode_data(target_test_data) if save_true_pred else np.nan
+        )
+        inference_data_encoded = (
+            self._encode_data(inference_data) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,

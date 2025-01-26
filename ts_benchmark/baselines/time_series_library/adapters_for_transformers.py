@@ -63,7 +63,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
     "use_norm": True,
-    "parallel_strategy": "DP"
+    "parallel_strategy": "DP",
 }
 
 
@@ -75,8 +75,10 @@ class TransformerConfig:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        if self.parallel_strategy not in [None, 'DP']:
-            raise ValueError("Invalid value for parallel_strategy. Supported values are 'DP' and None.")
+        if self.parallel_strategy not in [None, "DP"]:
+            raise ValueError(
+                "Invalid value for parallel_strategy. Supported values are 'DP' and None."
+            )
 
     @property
     def pred_len(self):
@@ -228,19 +230,15 @@ class TransformerAdapter(ModelBase):
             output = self.model(input, input_mark, dec_input, target_mark)
 
             target = target[
-                     :,
-                     -config.horizon:,
-                     : -series_dim
-                     if series_dim > 0
-                     else None,
-                     ]
+                :,
+                -config.horizon :,
+                : -series_dim if series_dim > 0 else None,
+            ]
             output = output[
-                     :,
-                     -config.horizon:,
-                     : -series_dim
-                     if series_dim > 0
-                     else None,
-                     ]
+                :,
+                -config.horizon :,
+                : -series_dim if series_dim > 0 else None,
+            ]
 
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
@@ -261,9 +259,7 @@ class TransformerAdapter(ModelBase):
         """
         series_dim = covariates["exog"].shape[1]
         if "exog" in covariates:
-            train_valid_data = pd.concat(
-                [train_valid_data, covariates["exog"]], axis=1
-            )
+            train_valid_data = pd.concat([train_valid_data, covariates["exog"]], axis=1)
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -359,19 +355,15 @@ class TransformerAdapter(ModelBase):
                 output = self.model(input, input_mark, dec_input, target_mark)
 
                 target = target[
-                         :,
-                         -config.horizon:,
-                         : -series_dim
-                         if series_dim > 0
-                         else None,
-                         ]
+                    :,
+                    -config.horizon :,
+                    : -series_dim if series_dim > 0 else None,
+                ]
                 output = output[
-                         :,
-                         -config.horizon:,
-                         : -series_dim
-                         if series_dim > 0
-                         else None,
-                         ]
+                    :,
+                    -config.horizon :,
+                    : -series_dim if series_dim > 0 else None,
+                ]
                 loss = criterion(output, target)
 
                 loss.backward()
@@ -455,7 +447,7 @@ class TransformerAdapter(ModelBase):
                         )
                     return answer[-horizon:]
 
-                output = output.cpu().numpy()[:, -config.horizon  :]
+                output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
@@ -515,9 +507,7 @@ class TransformerAdapter(ModelBase):
                 answers.shape
             )
 
-        return answers[
-               ..., : input_target_np.shape[-1]
-               ]
+        return answers[..., : input_target_np.shape[-1]]
 
     def _perform_rolling_predictions(
         self,
@@ -603,7 +593,7 @@ class TransformerAdapter(ModelBase):
             :, -self.config.label_len :, :
         ]
         advance_len = rolling_time * self.config.horizon
-        input_mark_np = all_mark[:, advance_len: self.config.seq_len + advance_len, :]
+        input_mark_np = all_mark[:, advance_len : self.config.seq_len + advance_len, :]
         start = self.config.seq_len - self.config.label_len + advance_len
         end = self.config.seq_len + self.config.horizon + advance_len
         target_mark_np = all_mark[
@@ -845,6 +835,7 @@ class TransformerAdapter(ModelBase):
         print(pred.sum() / len(test_energy) * 100)
         return pred, test_energy
 
+
 def generate_model_factory(
     model_name: str, model_class: type, required_args: dict
 ) -> Dict:
@@ -870,6 +861,7 @@ def generate_model_factory(
         "model_factory": model_factory,
         "required_hyper_params": required_args,
     }
+
 
 def transformer_adapter(model_info: Type[object]) -> object:
     if not isinstance(model_info, type):

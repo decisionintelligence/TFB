@@ -17,7 +17,6 @@ from ts_benchmark.utils.data_processing import split_channel
 
 
 class RollingForecastEvalBatchMaker:
-
     def __init__(
         self,
         series: pd.DataFrame,
@@ -117,7 +116,6 @@ class RollingForecastEvalBatchMaker:
 
 
 class RollingForecastPredictBatchMaker(BatchMaker):
-
     def __init__(self, batch_maker: RollingForecastEvalBatchMaker):
         self._batch_maker = batch_maker
 
@@ -424,7 +422,9 @@ class RollingForecast(ForecastingStrategy):
 
         save_true_pred = self._get_scalar_config_value("save_true_pred", series_name)
         actual_data_encoded = self._encode_data(targets) if save_true_pred else np.nan
-        inference_data_encoded = self._encode_data(all_predicts) if save_true_pred else np.nan
+        inference_data_encoded = (
+            self._encode_data(all_predicts) if save_true_pred else np.nan
+        )
 
         single_series_results += [
             series_name,
