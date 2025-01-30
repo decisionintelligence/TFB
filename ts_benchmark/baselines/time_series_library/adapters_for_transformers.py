@@ -214,7 +214,7 @@ class TransformerAdapter(ModelBase):
         Validates the model performance on the provided validation dataset.
 
         :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
-        :param exog_dim : The number of dimensions to exclude from the series data (e.g., features).
+        :param exog_dim : The number of dimensions to exclude from the series data.
         :param criterion : The loss function to compute the loss between model predictions and ground truth.
 
         Returns:The mean loss computed over the validation dataset.
@@ -273,7 +273,7 @@ class TransformerAdapter(ModelBase):
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        exog_dim = -1  # maybe None is better
+        exog_dim = -1
         if covariates["exog"] is not None:
             exog_dim = covariates["exog"].shape[-1]
             train_valid_data = pd.concat([train_valid_data, covariates["exog"]], axis=1)
