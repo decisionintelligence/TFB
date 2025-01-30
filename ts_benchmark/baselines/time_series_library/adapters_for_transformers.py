@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 
@@ -206,7 +207,18 @@ class TransformerAdapter(ModelBase):
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
 
-    def validate(self, valid_data_loader, series_dim, criterion):
+    def validate(
+        self, valid_data_loader: DataLoader, exog_dim: int, criterion: torch.nn.Module
+    ) -> float:
+        """
+        Validates the model performance on the provided validation dataset.
+
+        :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
+        :param exog_dim : The number of dimensions to exclude from the series data (e.g., features).
+        :param criterion : The loss function to compute the loss between model predictions and ground truth.
+
+        Returns:The mean loss computed over the validation dataset.
+        """
         config = self.config
         total_loss = []
         self.model.eval()
@@ -232,12 +244,12 @@ class TransformerAdapter(ModelBase):
             target = target[
                 :,
                 -config.horizon :,
-                : -series_dim if series_dim > 0 else None,
+                : -exog_dim if exog_dim > 0 else None,
             ]
             output = output[
                 :,
                 -config.horizon :,
-                : -series_dim if series_dim > 0 else None,
+                : -exog_dim if exog_dim > 0 else None,
             ]
 
             loss = criterion(output, target).detach().cpu().numpy()
@@ -248,18 +260,24 @@ class TransformerAdapter(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self, train_valid_data: pd.DataFrame, covariates: dict, train_ratio_in_tv: float
+        self,
+        train_valid_data: pd.DataFrame,
+        covariates: Optional[Dict],
+        train_ratio_in_tv: float,
     ) -> "ModelBase":
         """
         Train the model.
 
         :param train_data: Time series data used for training.
+        :param covariates: Additional external variables
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        series_dim = covariates["exog"].shape[1]
-        if "exog" in covariates:
+        exog_dim = -1  # maybe None is better
+        if covariates["exog"] is not None:
+            exog_dim = covariates["exog"].shape[-1]
             train_valid_data = pd.concat([train_valid_data, covariates["exog"]], axis=1)
+
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -357,12 +375,12 @@ class TransformerAdapter(ModelBase):
                 target = target[
                     :,
                     -config.horizon :,
-                    : -series_dim if series_dim > 0 else None,
+                    : -exog_dim if exog_dim > 0 else None,
                 ]
                 output = output[
                     :,
                     -config.horizon :,
-                    : -series_dim if series_dim > 0 else None,
+                    : -exog_dim if exog_dim > 0 else None,
                 ]
                 loss = criterion(output, target)
 
@@ -370,21 +388,29 @@ class TransformerAdapter(ModelBase):
                 optimizer.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
+                valid_loss = self.validate(valid_data_loader, exog_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
 
             adjust_learning_rate(optimizer, epoch + 1, config)
 
-    def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
+    def forecast(
+        self, horizon: int, covariates: Optional[Dict], train: pd.DataFrame
+    ) -> np.ndarray:
         """
         Make predictions.
 
         :param horizon: The predicted length.
+        :param covariates: Additional external variables
         :param testdata: Time series data used for prediction.
         :return: An array of predicted results.
         """
+        exog_dim = -1
+        if covariates["exog"] is not None:
+            exog_dim = covariates["exog"].shape[-1]
+            train = pd.concat([train, covariates["exog"]], axis=1)
+
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
@@ -445,7 +471,7 @@ class TransformerAdapter(ModelBase):
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
-                    return answer[-horizon:]
+                    return answer[-horizon:][..., : -exog_dim if exog_dim > 0 else None]
 
                 output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
@@ -483,10 +509,14 @@ class TransformerAdapter(ModelBase):
         self.model.eval()
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
-        input_target_np = input_data["input"]
-        input_np = np.concatenate(
-            (input_target_np, input_data["covariates"]["exog"]), axis=2
-        )
+        input_np = input_data["input"]
+
+        exog_dim = -1
+        if input_data["covariates"] is not None:
+            exog_dim = input_data["covariates"]["exog"].shape[-1]
+            input_np = np.concatenate(
+                (input_np, input_data["covariates"]["exog"]), axis=2
+            )
 
         if self.config.norm:
             origin_shape = input_np.shape
@@ -507,7 +537,7 @@ class TransformerAdapter(ModelBase):
                 answers.shape
             )
 
-        return answers[..., : input_target_np.shape[-1]]
+        return answers[..., : -exog_dim if exog_dim > 0 else None]
 
     def _perform_rolling_predictions(
         self,

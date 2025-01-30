@@ -60,30 +60,44 @@ def _parse_target_channel(
 
 def split_channel(
     df: pd.DataFrame, target_channel: Optional[List] = None
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
     """
-    Splits a DataFrame into target and exog parts based on the target_channel configuration.
+    Splits a DataFrame into target and exogenous (exog) parts based on target_channel.
 
-    :param df: The input DataFrame to be split.
-    :param target_channel: Configuration for selecting target columns.
-        It can include:
-        - Integers (positive or negative) representing single column indices.
-        - Lists or tuples of two integers representing slices, e.g., [2, 4] or (2, 4) selects columns 2 and 3.
-        - If set to None, all columns are selected as target columns, and the exog DataFrame is empty.
+    :param df: Input DataFrame to split.
+    :param target_channel: Rules for selecting target columns. Can include:
+        - Integers (positive/negative) for single column indices.
+        - Lists/tuples of two integers representing slices (e.g., `[2,4]` selects columns 2-3).
+        - If `None`, all columns are treated as target columns (exog becomes None).
 
-    Example 1:
-        target_channel = [1, 3]
-        - Selects columns 1 and 3.
+    :return: Tuple of (target_df, exog_df).
+             exog_df is None if no exogenous columns exist.
 
-    Example 2:
-        target_channel = [(1, 4)]
-        - Selects columns 1, 2, and 3 (range from column 1 to column 4 exclusive).
+    Examples:
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> df = pd.DataFrame(np.zeros((5, 6)))
 
-    Example 3:
-        target_channel = None
-        - Selects all columns as target columns, and the exog DataFrame is empty.
+        >>> # Case 1: Select columns 1 and 3
+        >>> target, exog = split_channel(df, target_channel=[1, 3])
+        >>> target.shape
+        (5, 2)
+        >>> exog.shape  # Exog contains remaining columns 0,2,4,5
+        (5, 4)
 
-    :return: A tuple containing the target DataFrame and the exog DataFrame.
+        >>> # Case 2: Select columns 1-3 via slice
+        >>> target, exog = split_channel(df, target_channel=[(1, 4)])
+        >>> target.shape
+        (5, 3)
+        >>> exog.shape  # Exog contains columns 0,4,5
+        (5, 3)
+
+        >>> # Case 3: Select all columns when target_channel=None
+        >>> target, exog = split_channel(df, target_channel=None)
+        >>> target.shape  # All columns are target
+        (5, 6)
+        >>> print(exog)  # No exog columns
+        None
     """
     num_columns = df.shape[1]  # Total number of columns in the DataFrame
 
@@ -100,10 +114,9 @@ def split_channel(
 
     # Split the DataFrame into target and exog parts
     target_df = df.iloc[:, target_columns]
-    exog_df = df.iloc[
-        :, exog_columns
-    ]  # This works even if exog_columns is an empty list
-
+    exog_df = (
+        df.iloc[:, exog_columns] if exog_columns else None
+    )  # Directly return None if no exog columns
     return target_df, exog_df
 
 

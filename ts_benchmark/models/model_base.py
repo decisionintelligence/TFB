@@ -47,25 +47,51 @@ class ModelBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def forecast_fit(
-        self, train_data: pd.DataFrame, *,covariates: Optional[Dict] = None, train_ratio_in_tv: float = 1.0, **kwargs
+        self,
+        train_data: pd.DataFrame,
+        *,
+        covariates: Optional[Dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs
     ) -> "ModelBase":
         """
         Fit a model on time series data
 
         :param train_data: Time series data.
+        :param covariates: Additional external variables
+
+            - To use exogenous features:
+                1. Must contain 'exog' key
+                2. Value of 'exog' must be pandas DataFrame (can be None)
+                3. DataFrame must have same time index as train_data
+
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
             If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
 
     @abc.abstractmethod
-    def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
+    def forecast(
+        self,
+        horizon: int,
+        *,
+        covariates: Optional[Dict] = None,
+        series: pd.DataFrame,
+        **kwargs
+    ) -> np.ndarray:
         """
         Forecasting with the model
 
         TODO: support returning DataFrames
 
         :param horizon: Forecast length.
+        :param covariates: Additional external variables
+
+            - To use exogenous features:
+                1. Must contain 'exog' key
+                2. Value of 'exog' must be pandas DataFrame (can be None)
+                3. DataFrame must cover full forecast horizon time range
+
         :param series: Time series data to make inferences on.
         :return: Forecast result.
         """

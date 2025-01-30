@@ -52,7 +52,7 @@ class FixedForecast(ForecastingStrategy):
     ) -> List:
         model = model_factory()
 
-        target_channel = self.strategy_config.get("target_channel", None)
+        target_channel = self._get_scalar_config_value("target_channel", series_name)
         horizon = self._get_scalar_config_value("horizon", series_name)
         train_ratio_in_tv = self._get_scalar_config_value(
             "train_ratio_in_tv", series_name
@@ -64,18 +64,18 @@ class FixedForecast(ForecastingStrategy):
             raise ValueError("The prediction step exceeds the data length")
 
         train_valid_data, test_data = split_time(series, train_length)
-        target_train_valid_data, exog_data = split_channel(
+        target_train_valid_data, exog_train_valid_data = split_channel(
             train_valid_data, target_channel
         )
-        target_test_data, exog_data = split_channel(test_data, target_channel)
-        covariate = {"exog": exog_data}
+        target_test_data, _ = split_channel(test_data, target_channel)
+        covariates = {"exog": exog_train_valid_data}
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariate, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data, covariates, train_ratio_in_tv=train_ratio_in_tv
         )
         end_fit_time = time.time()
-        predicted = model.forecast(horizon, train_valid_data)
+        predicted = model.forecast(horizon, covariates, target_train_valid_data)
         end_inference_time = time.time()
 
         single_series_results, log_info = self.evaluator.evaluate_with_log(
