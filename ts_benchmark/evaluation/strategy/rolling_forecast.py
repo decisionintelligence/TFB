@@ -21,7 +21,7 @@ class RollingForecastEvalBatchMaker:
         self,
         series: pd.DataFrame,
         index_list: List[int],
-        covariates: Optional[Dict] = None,
+        covariates: dict,
     ):
         self.series = series
         self.index_list = index_list
@@ -294,12 +294,8 @@ class RollingForecast(ForecastingStrategy):
         all_rolling_predict = []
         for i, index in itertools.islice(enumerate(index_list), num_rollings):
             train, rest = split_time(series, index)
-            target_train, exog_train = split_channel(train)
-            test, _ = split_channel(
-                split_time(rest, horizon)[0].iloc[
-                    :, : target_train_valid_data.shape[-1]
-                ]
-            )
+            test, _ = split_channel(split_time(rest, horizon)[0], target_channel)
+            target_train, exog_train = split_channel(train, target_channel)
             covariates = {"exog": exog_train}
 
             start_inference_time = time.time()

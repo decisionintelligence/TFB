@@ -50,7 +50,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         self,
         train_data: pd.DataFrame,
         *,
-        covariates: Optional[Dict] = None,
+        covariates: dict,
         train_ratio_in_tv: float = 1.0,
         **kwargs
     ) -> "ModelBase":
@@ -75,9 +75,8 @@ class ModelBase(metaclass=abc.ABCMeta):
         self,
         horizon: int,
         *,
-        covariates: Optional[Dict] = None,
         series: pd.DataFrame,
-        **kwargs
+        covariates: dict,
     ) -> np.ndarray:
         """
         Forecasting with the model

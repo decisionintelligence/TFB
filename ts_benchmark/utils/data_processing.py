@@ -66,6 +66,7 @@ def split_channel(
 
     :param df: Input DataFrame to split.
     :param target_channel: Rules for selecting target columns. Can include:
+
         - Integers (positive/negative) for single column indices.
         - Lists/tuples of two integers representing slices (e.g., `[2,4]` selects columns 2-3).
         - If `None`, all columns are treated as target columns (exog becomes None).

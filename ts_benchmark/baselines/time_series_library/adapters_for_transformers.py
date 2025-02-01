@@ -262,21 +262,22 @@ class TransformerAdapter(ModelBase):
     def forecast_fit(
         self,
         train_valid_data: pd.DataFrame,
-        covariates: Optional[Dict],
+        covariates: dict,
         train_ratio_in_tv: float,
     ) -> "ModelBase":
         """
         Train the model.
 
         :param train_data: Time series data used for training.
-        :param covariates: Additional external variables
+        :param covariates: Additional external variables.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
         exog_dim = -1
-        if covariates["exog"] is not None:
-            exog_dim = covariates["exog"].shape[-1]
-            train_valid_data = pd.concat([train_valid_data, covariates["exog"]], axis=1)
+        exog_data = covariates.get("exog")
+        if exog_data is not None:
+            exog_dim = exog_data.shape[-1]
+            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
 
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
@@ -396,36 +397,40 @@ class TransformerAdapter(ModelBase):
             adjust_learning_rate(optimizer, epoch + 1, config)
 
     def forecast(
-        self, horizon: int, covariates: Optional[Dict], train: pd.DataFrame
+        self, horizon: int, covariates: dict, series: pd.DataFrame
     ) -> np.ndarray:
         """
         Make predictions.
 
         :param horizon: The predicted length.
         :param covariates: Additional external variables
-        :param testdata: Time series data used for prediction.
+        :param series: Time series data used for prediction.
         :return: An array of predicted results.
         """
         exog_dim = -1
         if covariates["exog"] is not None:
             exog_dim = covariates["exog"].shape[-1]
-            train = pd.concat([train, covariates["exog"]], axis=1)
+            series = pd.concat([series, covariates["exog"]], axis=1)
+        if exog_dim != -1 and horizon != self.config.output_chunk_length:
+            raise ValueError(
+                f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+            )
 
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
         if self.config.norm:
-            train = pd.DataFrame(
-                self.scaler.transform(train.values),
-                columns=train.columns,
-                index=train.index,
+            series = pd.DataFrame(
+                self.scaler.transform(series.values),
+                columns=series.columns,
+                index=series.index,
             )
 
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_time(train, len(train) - config.seq_len)
+        series, test = split_time(series, len(series) - config.seq_len)
 
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
@@ -516,6 +521,10 @@ class TransformerAdapter(ModelBase):
             exog_dim = input_data["covariates"]["exog"].shape[-1]
             input_np = np.concatenate(
                 (input_np, input_data["covariates"]["exog"]), axis=2
+            )
+        if exog_dim != -1 and horizon != self.config.output_chunk_length:
+            raise ValueError(
+                f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
             )
 
         if self.config.norm:

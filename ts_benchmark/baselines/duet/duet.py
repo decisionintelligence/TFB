@@ -215,7 +215,12 @@ class DUET(ModelBase):
         self.model.train()
         return total_loss
 
-    def forecast_fit(self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float) -> "ModelBase":
+    def forecast_fit(
+        self,
+        train_valid_data: pd.DataFrame,
+        covariates: Optional[Dict],
+        train_ratio_in_tv: float,
+    ) -> "ModelBase":
         """
         Train the model.
 
