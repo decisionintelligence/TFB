@@ -274,10 +274,11 @@ class TransformerAdapter(ModelBase):
         :return: The fitted model object.
         """
         exog_dim = -1
-        exog_data = covariates.get("exog")
-        if exog_data is not None:
-            exog_dim = exog_data.shape[-1]
-            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
+        if covariates is not None:
+            exog_data = covariates.get("exog")
+            if exog_data is not None:
+                exog_dim = exog_data.shape[-1]
+                train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
 
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
