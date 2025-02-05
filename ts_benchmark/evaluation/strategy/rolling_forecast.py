@@ -278,7 +278,8 @@ class RollingForecast(ForecastingStrategy):
             train_valid_data, target_channel
         )
         covariates = {}
-        if exog_data is not None:covariates["exog"] = exog_data
+        if exog_data is not None:
+            covariates["exog"] = exog_data
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
@@ -372,9 +373,11 @@ class RollingForecast(ForecastingStrategy):
             train_valid_data, target_channel
         )
         target4batch, exog_data4batch = split_channel(series, target_channel)
-        covariates,covariates4batch = {},{}
-        if exog_train_valid_data is not None:covariates["exog"] = exog_train_valid_data
-        if exog_data4batch is not None: covariates4batch["exog"] = exog_data4batch
+        covariates, covariates4batch = {}, {}
+        if exog_train_valid_data is not None:
+            covariates["exog"] = exog_train_valid_data
+        if exog_data4batch is not None:
+            covariates4batch["exog"] = exog_data4batch
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit

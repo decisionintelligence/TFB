@@ -397,7 +397,10 @@ class TransformerAdapter(ModelBase):
             adjust_learning_rate(optimizer, epoch + 1, config)
 
     def forecast(
-        self, horizon: int, series: pd.DataFrame, covariates: Optional[dict],
+        self,
+        horizon: int,
+        series: pd.DataFrame,
+        covariates: Optional[dict],
     ) -> np.ndarray:
         """
         Make predictions.
@@ -414,7 +417,10 @@ class TransformerAdapter(ModelBase):
             if exog_data is not None:
                 exog_dim = exog_data.shape[-1]
                 series = pd.concat([series, exog_data], axis=1)
-                if hasattr(self.config, 'output_chunk_length') and horizon != self.config.output_chunk_length:
+                if (
+                    hasattr(self.config, "output_chunk_length")
+                    and horizon != self.config.output_chunk_length
+                ):
                     raise ValueError(
                         f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                     )
@@ -525,10 +531,11 @@ class TransformerAdapter(ModelBase):
             exog_data = covariates.get("exog")
             if exog_data is not None:
                 exog_dim = exog_data.shape[-1]
-                input_np = np.concatenate(
-                    (input_np, exog_data), axis=2
-                )
-            if hasattr(self.config, 'output_chunk_length') and horizon != self.config.output_chunk_length:
+                input_np = np.concatenate((input_np, exog_data), axis=2)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )

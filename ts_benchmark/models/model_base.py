@@ -52,7 +52,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         *,
         covariates: Optional[dict] = None,
         train_ratio_in_tv: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> "ModelBase":
         """
         Fit a model on time series data
