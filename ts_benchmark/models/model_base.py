@@ -50,7 +50,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         self,
         train_data: pd.DataFrame,
         *,
-        covariates: dict,
+        covariates: Optional[dict] = None,
         train_ratio_in_tv: float = 1.0,
         **kwargs
     ) -> "ModelBase":
@@ -59,12 +59,6 @@ class ModelBase(metaclass=abc.ABCMeta):
 
         :param train_data: Time series data.
         :param covariates: Additional external variables
-
-            - To use exogenous features:
-                1. Must contain 'exog' key
-                2. Value of 'exog' must be pandas DataFrame (can be None)
-                3. DataFrame must have same time index as train_data
-
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
             If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
@@ -76,7 +70,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         horizon: int,
         *,
         series: pd.DataFrame,
-        covariates: dict,
+        covariates: Optional[dict] = None,
     ) -> np.ndarray:
         """
         Forecasting with the model
@@ -85,12 +79,6 @@ class ModelBase(metaclass=abc.ABCMeta):
 
         :param horizon: Forecast length.
         :param covariates: Additional external variables
-
-            - To use exogenous features:
-                1. Must contain 'exog' key
-                2. Value of 'exog' must be pandas DataFrame (can be None)
-                3. DataFrame must cover full forecast horizon time range
-
         :param series: Time series data to make inferences on.
         :return: Forecast result.
         """

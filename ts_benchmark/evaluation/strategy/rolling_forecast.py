@@ -21,7 +21,7 @@ class RollingForecastEvalBatchMaker:
         self,
         series: pd.DataFrame,
         index_list: List[int],
-        covariates: dict,
+        covariates: Optional[dict] = None,
     ):
         self.series = series
         self.index_list = index_list
@@ -84,12 +84,13 @@ class RollingForecastEvalBatchMaker:
         :return: A batch of covariates.
         """
         covariates_batch = {}
-        if self.covariates["exog"] is not None:
-            covariates_batch["exog"] = self._make_batch_data(
-                self.covariates["exog"], index_list, win_size
-            )
-        else:
-            return None
+        if self.covariates is not None:
+            if self.covariates.get("exog") is not None:
+                covariates_batch["exog"] = self._make_batch_data(
+                    self.covariates["exog"], index_list, win_size
+                )
+            else:
+                covariates_batch["exog"] = None
         return covariates_batch
 
     @staticmethod
@@ -276,7 +277,8 @@ class RollingForecast(ForecastingStrategy):
         target_train_valid_data, exog_data = split_channel(
             train_valid_data, target_channel
         )
-        covariates = {"exog": exog_data}
+        covariates = {}
+        if exog_data is not None:covariates["exog"] = exog_data
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
@@ -299,7 +301,7 @@ class RollingForecast(ForecastingStrategy):
             covariates = {"exog": exog_train}
 
             start_inference_time = time.time()
-            predict = model.forecast(horizon, covariates, target_train)
+            predict = model.forecast(horizon, target_train, covariates)
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
 
@@ -370,8 +372,9 @@ class RollingForecast(ForecastingStrategy):
             train_valid_data, target_channel
         )
         target4batch, exog_data4batch = split_channel(series, target_channel)
-        covariates = {"exog": exog_train_valid_data}
-        covariates4batch = {"exog": exog_data4batch}
+        covariates,covariates4batch = {},{}
+        if exog_train_valid_data is not None:covariates["exog"] = exog_train_valid_data
+        if exog_data4batch is not None: covariates4batch["exog"] = exog_data4batch
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit

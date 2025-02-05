@@ -262,7 +262,7 @@ class TransformerAdapter(ModelBase):
     def forecast_fit(
         self,
         train_valid_data: pd.DataFrame,
-        covariates: dict,
+        covariates: Optional[dict],
         train_ratio_in_tv: float,
     ) -> "ModelBase":
         """
@@ -397,24 +397,27 @@ class TransformerAdapter(ModelBase):
             adjust_learning_rate(optimizer, epoch + 1, config)
 
     def forecast(
-        self, horizon: int, covariates: dict, series: pd.DataFrame
+        self, horizon: int, series: pd.DataFrame, covariates: Optional[dict],
     ) -> np.ndarray:
         """
         Make predictions.
 
         :param horizon: The predicted length.
-        :param covariates: Additional external variables
         :param series: Time series data used for prediction.
+        :param covariates: Additional external variables
+
         :return: An array of predicted results.
         """
         exog_dim = -1
-        if covariates["exog"] is not None:
-            exog_dim = covariates["exog"].shape[-1]
-            series = pd.concat([series, covariates["exog"]], axis=1)
-        if exog_dim != -1 and horizon != self.config.output_chunk_length:
-            raise ValueError(
-                f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
-            )
+        if covariates is not None:
+            exog_data = covariates.get("exog")
+            if exog_data is not None:
+                exog_dim = exog_data.shape[-1]
+                series = pd.concat([series, exog_data], axis=1)
+                if hasattr(self.config, 'output_chunk_length') and horizon != self.config.output_chunk_length:
+                    raise ValueError(
+                        f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                    )
 
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
@@ -518,14 +521,17 @@ class TransformerAdapter(ModelBase):
 
         exog_dim = -1
         if input_data["covariates"] is not None:
-            exog_dim = input_data["covariates"]["exog"].shape[-1]
-            input_np = np.concatenate(
-                (input_np, input_data["covariates"]["exog"]), axis=2
-            )
-        if exog_dim != -1 and horizon != self.config.output_chunk_length:
-            raise ValueError(
-                f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
-            )
+            covariates = input_data["covariates"]
+            exog_data = covariates.get("exog")
+            if exog_data is not None:
+                exog_dim = exog_data.shape[-1]
+                input_np = np.concatenate(
+                    (input_np, exog_data), axis=2
+                )
+            if hasattr(self.config, 'output_chunk_length') and horizon != self.config.output_chunk_length:
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
 
         if self.config.norm:
             origin_shape = input_np.shape
