@@ -83,14 +83,12 @@ class RollingForecastEvalBatchMaker:
         :param win_size: The size of each window.
         :return: A batch of covariates.
         """
+        covariates = {} if self.covariates is None else self.covariates
         covariates_batch = {}
-        if self.covariates is not None:
-            if self.covariates.get("exog") is not None:
-                covariates_batch["exog"] = self._make_batch_data(
-                    self.covariates["exog"], index_list, win_size
-                )
-            else:
-                covariates_batch["exog"] = None
+        if covariates.get("exog") is not None:
+            covariates_batch["exog"] = self._make_batch_data(
+                self.covariates["exog"], index_list, win_size
+            )
         return covariates_batch
 
     @staticmethod
@@ -277,14 +275,13 @@ class RollingForecast(ForecastingStrategy):
         target_train_valid_data, exog_data = split_channel(
             train_valid_data, target_channel
         )
-        covariates = {}
-        if exog_data is not None:
-            covariates["exog"] = exog_data
+        covariates_train = {}
+        covariates_train["exog"] = exog_data
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariates, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data, covariates_train, train_ratio_in_tv=train_ratio_in_tv
         )
         end_fit_time = time.time()
 
@@ -299,10 +296,11 @@ class RollingForecast(ForecastingStrategy):
             train, rest = split_time(series, index)
             test, _ = split_channel(split_time(rest, horizon)[0], target_channel)
             target_train, exog_train = split_channel(train, target_channel)
-            covariates = {"exog": exog_train}
+            covariates_forecast = {}
+            covariates_forecast["exog"] = exog_train
 
             start_inference_time = time.time()
-            predict = model.forecast(horizon, target_train, covariates)
+            predict = model.forecast(horizon, target_train, covariates_forecast)
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
 
@@ -373,16 +371,14 @@ class RollingForecast(ForecastingStrategy):
             train_valid_data, target_channel
         )
         target4batch, exog_data4batch = split_channel(series, target_channel)
-        covariates, covariates4batch = {}, {}
-        if exog_train_valid_data is not None:
-            covariates["exog"] = exog_train_valid_data
-        if exog_data4batch is not None:
-            covariates4batch["exog"] = exog_data4batch
+        covariates_train, covariates4batch = {}, {}
+        covariates_train["exog"] = exog_train_valid_data
+        covariates4batch["exog"] = exog_data4batch
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariates, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data, covariates_train, train_ratio_in_tv=train_ratio_in_tv
         )
         end_fit_time = time.time()
 
