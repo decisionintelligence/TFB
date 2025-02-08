@@ -59,6 +59,7 @@ class ModelBase(metaclass=abc.ABCMeta):
 
         :param train_data: Time series data.
         :param covariates: Additional external variables
+            key "exog" : the corresponding exogenous data aligned with `train_data`.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
             If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
@@ -78,8 +79,9 @@ class ModelBase(metaclass=abc.ABCMeta):
         TODO: support returning DataFrames
 
         :param horizon: Forecast length.
-        :param covariates: Additional external variables
         :param series: Time series data to make inferences on.
+        :param covariates: Additional external variables.
+            key "exog" : the corresponding exogenous data aligned with `series`.
         :return: Forecast result.
         """
 
