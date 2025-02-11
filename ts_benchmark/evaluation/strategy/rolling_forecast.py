@@ -281,7 +281,9 @@ class RollingForecast(ForecastingStrategy):
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariates_train, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data,
+            covariates=covariates_train,
+            train_ratio_in_tv=train_ratio_in_tv,
         )
         end_fit_time = time.time()
 
@@ -300,7 +302,9 @@ class RollingForecast(ForecastingStrategy):
             covariates_forecast["exog"] = exog_train
 
             start_inference_time = time.time()
-            predict = model.forecast(horizon, target_train, covariates_forecast)
+            predict = model.forecast(
+                horizon, target_train, covariates=covariates_forecast
+            )
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
 
@@ -378,7 +382,9 @@ class RollingForecast(ForecastingStrategy):
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariates_train, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data,
+            covariates=covariates_train,
+            train_ratio_in_tv=train_ratio_in_tv,
         )
         end_fit_time = time.time()
 

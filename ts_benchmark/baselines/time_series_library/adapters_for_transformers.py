@@ -208,16 +208,16 @@ class TransformerAdapter(ModelBase):
         return padding_mark
 
     def validate(
-        self, valid_data_loader: DataLoader, exog_dim: int, criterion: torch.nn.Module
+        self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module
     ) -> float:
         """
         Validates the model performance on the provided validation dataset.
 
         :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
-        :param exog_dim : The number of dimensions to exclude from the series data.
+        :param series_dim : The number of series data‘s dimensions.
         :param criterion : The loss function to compute the loss between model predictions and ground truth.
 
-        Returns:The mean loss computed over the validation dataset.
+        returns:The mean loss computed over the validation dataset.
         """
         config = self.config
         total_loss = []
@@ -241,16 +241,8 @@ class TransformerAdapter(ModelBase):
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = target[
-                :,
-                -config.horizon :,
-                : -exog_dim if exog_dim > 0 else None,
-            ]
-            output = output[
-                :,
-                -config.horizon :,
-                : -exog_dim if exog_dim > 0 else None,
-            ]
+            target = output[:, -config.horizon :, :series_dim]
+            output = output[:, -config.horizon :, :series_dim]
 
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
@@ -262,8 +254,10 @@ class TransformerAdapter(ModelBase):
     def forecast_fit(
         self,
         train_valid_data: pd.DataFrame,
-        covariates: Optional[dict],
-        train_ratio_in_tv: float,
+        *,
+        covariates: Optional[dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs,
     ) -> "ModelBase":
         """
         Train the model.
@@ -273,12 +267,11 @@ class TransformerAdapter(ModelBase):
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
-        exog_dim = -1
         if covariates is None:
             covariates = {}
+        series_dim = train_valid_data.shape[-1]
         exog_data = covariates.get("exog", None)
         if exog_data is not None:
-            exog_dim = exog_data.shape[-1]
             train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
 
         if train_valid_data.shape[1] == 1:
@@ -375,23 +368,16 @@ class TransformerAdapter(ModelBase):
 
                 output = self.model(input, input_mark, dec_input, target_mark)
 
-                target = target[
-                    :,
-                    -config.horizon :,
-                    : -exog_dim if exog_dim > 0 else None,
-                ]
-                output = output[
-                    :,
-                    -config.horizon :,
-                    : -exog_dim if exog_dim > 0 else None,
-                ]
+                target = target[:, -config.horizon :, :series_dim]
+                output = output[:, -config.horizon :, :series_dim]
+
                 loss = criterion(output, target)
 
                 loss.backward()
                 optimizer.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, exog_dim, criterion)
+                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
@@ -402,7 +388,8 @@ class TransformerAdapter(ModelBase):
         self,
         horizon: int,
         series: pd.DataFrame,
-        covariates: Optional[dict],
+        *,
+        covariates: Optional[dict] = None,
     ) -> np.ndarray:
         """
         Make predictions.
@@ -413,12 +400,11 @@ class TransformerAdapter(ModelBase):
 
         :return: An array of predicted results.
         """
-        exog_dim = -1
         if covariates is None:
             covariates = {}
+        series_dim = series.shape[-1]
         exog_data = covariates.get("exog", None)
         if exog_data is not None:
-            exog_dim = exog_data.shape[-1]
             series = pd.concat([series, exog_data], axis=1)
             if (
                 hasattr(self.config, "output_chunk_length")
@@ -488,7 +474,7 @@ class TransformerAdapter(ModelBase):
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
-                    return answer[-horizon:][..., : -exog_dim if exog_dim > 0 else None]
+                    return answer[-horizon:, :series_dim]
 
                 output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
@@ -527,15 +513,14 @@ class TransformerAdapter(ModelBase):
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
+        series_dim = input_np.shape[-1]
 
-        exog_dim = -1
         if input_data["covariates"] is None:
             covariates = {}
         else:
             covariates = input_data["covariates"]
         exog_data = covariates.get("exog")
         if exog_data is not None:
-            exog_dim = exog_data.shape[-1]
             input_np = np.concatenate((input_np, exog_data), axis=2)
         if (
             hasattr(self.config, "output_chunk_length")
@@ -564,7 +549,7 @@ class TransformerAdapter(ModelBase):
                 answers.shape
             )
 
-        return answers[..., : -exog_dim if exog_dim > 0 else None]
+        return answers[..., :series_dim]
 
     def _perform_rolling_predictions(
         self,

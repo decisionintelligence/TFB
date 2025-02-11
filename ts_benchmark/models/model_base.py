@@ -69,8 +69,8 @@ class ModelBase(metaclass=abc.ABCMeta):
     def forecast(
         self,
         horizon: int,
-        *,
         series: pd.DataFrame,
+        *,
         covariates: Optional[dict] = None,
     ) -> np.ndarray:
         """

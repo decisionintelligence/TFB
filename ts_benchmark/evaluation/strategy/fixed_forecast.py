@@ -74,10 +74,10 @@ class FixedForecast(ForecastingStrategy):
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit
         fit_method(
-            target_train_valid_data, covariates, train_ratio_in_tv=train_ratio_in_tv
+            target_train_valid_data, covariates=covariates, train_ratio_in_tv=train_ratio_in_tv
         )
         end_fit_time = time.time()
-        predicted = model.forecast(horizon, target_train_valid_data, covariates)
+        predicted = model.forecast(horizon, target_train_valid_data, covariates=covariates)
         end_inference_time = time.time()
 
         single_series_results, log_info = self.evaluator.evaluate_with_log(

@@ -218,8 +218,9 @@ class DUET(ModelBase):
     def forecast_fit(
         self,
         train_valid_data: pd.DataFrame,
-        covariates: Optional[Dict],
-        train_ratio_in_tv: float,
+        *,
+        covariates: Optional[Dict] = None,
+        train_ratio_in_tv: float = 1.0,
     ) -> "ModelBase":
         """
         Train the model.
