@@ -216,8 +216,7 @@ class TransformerAdapter(ModelBase):
         :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
         :param series_dim : The number of series data‘s dimensions.
         :param criterion : The loss function to compute the loss between model predictions and ground truth.
-
-        returns:The mean loss computed over the validation dataset.
+        :returns:The mean loss computed over the validation dataset.
         """
         config = self.config
         total_loss = []
@@ -397,7 +396,6 @@ class TransformerAdapter(ModelBase):
         :param horizon: The predicted length.
         :param series: Time series data used for prediction.
         :param covariates: Additional external variables
-
         :return: An array of predicted results.
         """
         if covariates is None:
@@ -522,13 +520,13 @@ class TransformerAdapter(ModelBase):
         exog_data = covariates.get("exog")
         if exog_data is not None:
             input_np = np.concatenate((input_np, exog_data), axis=2)
-        if (
-            hasattr(self.config, "output_chunk_length")
-            and horizon != self.config.output_chunk_length
-        ):
-            raise ValueError(
-                f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
-            )
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
 
         if self.config.norm:
             origin_shape = input_np.shape
