@@ -71,7 +71,8 @@ The table below provides a visual overview of how TFB's key features compare to 
 ![image-20240514151134923](docs/figures/Comparison_with_Related_Libraries.png)
 
 ## Quickstart
-
+> [!IMPORTANT]
+> this project is fully tested under python 3.8, it is recommended that you set the Python version to 3.8.
 1. Installation:
 
 - From PyPI
