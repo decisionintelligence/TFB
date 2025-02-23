@@ -44,7 +44,7 @@ def import_model_info(model_path: str) -> Union[Dict, Callable]:
           These hyperparameters overwrite the ones specified by recommended hyperparameters;
         - required_hyper_params: Dictionary, optional; A dictionary of hyperparameters to be filled
           by the benchmark, in format `{model_param_name: std_param_name}`.
-        - model_name: str, optional; The name of the model that is recorded in the output logs.
+        - model_name: str, optional; The name of the model that is recorded in the output logs.  
 
     - A callable that returns an instance compatible with :class:`ModelBase` interface when called with
       hyperparameters as keyword arguments. This callable may optionally support the following features:
@@ -82,34 +82,35 @@ def get_model_info(model_config: Dict) -> Union[Dict, Callable]:
           Must be one of the adapters defined in :mod:`ts_benchmark.baselines.__init__`;
 
     :return: The model information corresponding to the config.
-    :raises ImportError: If the specified model package cannot be imported.
+    :raises ImportError: If the specified model package cannot be imported.  
     :raises AttributeError: If the specified `model_name` cannot be found in the imported module.
     """
     model_name_candidates = [
-        model_config["model_name"][7:] if model_config["model_name"].startswith("global.") else None,
+        model_config["model_name"][7:] if model_config["model_name"].startswith("global.") else None,  
         "ts_benchmark.baselines." + model_config["model_name"],
         model_config["model_name"],
     ]
     model_name_candidates = list(filter(None, model_name_candidates))
 
     model_info = None
-    for model_name in model_name_candidates:
-        try:
-            logger.info("Trying to load model %s", model_name)
-            model_info = import_model_info(model_name)
-        except (ImportError, AttributeError):
-            logger.info("Loading model %s failed", model_name)
-            continue
-        else:
-            break
-
-    adapter_name = model_config.get("adapter")
-    if adapter_name is not None:
-        if adapter_name not in ADAPTER:
-            raise ValueError(f"Unknown adapter {adapter_name}")
-        model_info = _import_attribute(ADAPTER[adapter_name])(model_info)
-
-    return model_info
+    for model_name in model_name_candidates:  
+         try:
+             logger.info("Trying to load model %s", model_name)
+             model_info = import_model_info(model_name)  
+         except (ImportError, AttributeError) as e:  
+             logger.info("Loading model %s failed", model_name)
+             logger.info(f"Error: {e}")
+             continue
+         else:
+             break
+    
+     adapter_name = model_config.get("adapter")
+     if adapter_name is not None:
+         if adapter_name not in ADAPTER:  
+             raise ValueError(f"Unknown adapter {adapter_name}")
+         model_info = _import_attribute(ADAPTER[adapter_name])(model_info)
+    
+     return model_info
 
 
 def get_model_hyper_params(
