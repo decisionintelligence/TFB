@@ -240,7 +240,7 @@ class TransformerAdapter(ModelBase):
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = output[:, -config.horizon :, :series_dim]
+            target = target[:, -config.horizon :, :series_dim]
             output = output[:, -config.horizon :, :series_dim]
 
             loss = criterion(output, target).detach().cpu().numpy()
