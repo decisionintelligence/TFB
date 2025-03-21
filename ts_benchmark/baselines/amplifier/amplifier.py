@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 
-from ts_benchmark.baselines.duet.utils.tools import EarlyStopping, adjust_learning_rate
+from ts_benchmark.baselines.amplifier.utils.tools import EarlyStopping, adjust_learning_rate
 from ts_benchmark.utils.data_processing import split_before
 from typing import Type, Dict, Optional, Tuple
 from torch import optim
