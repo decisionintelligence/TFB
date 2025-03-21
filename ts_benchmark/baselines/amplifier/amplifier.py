@@ -19,15 +19,14 @@ from ...models.model_base import ModelBase, BatchMaker
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "use_amp": 0,
-    "features": 'M',
     "label_len": 48,
     "embed": "timeF",
     "SCI": 0,
     "enc_in": 1,
     "hidden_size": 256,
     "output_attention": 0,
-    "batch_size": 256,
-    "lradj": "type3",
+    "batch_size": 32,
+    "lradj": "type1",
     "lr": 0.02,
     "num_epochs": 10,
     "num_workers": 0,
@@ -202,9 +201,8 @@ class Amplifier(ModelBase):
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                f_dim = -1 if config.features == 'MS' else 0
-                outputs = outputs[:, -config.pred_len:, f_dim:]
-                target = target[:, -config.pred_len:, f_dim:].to(device)
+                outputs = outputs[:, -config.pred_len:, :]
+                target = target[:, -config.pred_len:, :].to(device)
 
                 pred = outputs.detach().cpu()
                 true = target.detach().cpu()
@@ -321,9 +319,8 @@ class Amplifier(ModelBase):
                         else:
                             outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                        f_dim = -1 if config.features == 'MS' else 0
-                        outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(device)
+                        outputs = outputs[:, -self.args.pred_len:, :]
+                        batch_y = batch_y[:, -self.args.pred_len:, :].to(device)
                         loss = criterion(outputs, target)
                 else:
                     if config.output_attention == 1:
@@ -331,9 +328,8 @@ class Amplifier(ModelBase):
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                    f_dim = -1 if config.features == 'MS' else 0
-                    outputs = outputs[:, -config.pred_len:, f_dim:]
-                    target = target[:, -config.pred_len:, f_dim:].to(device)
+                    outputs = outputs[:, -config.pred_len:, :]
+                    target = target[:, -config.pred_len:, :].to(device)
                     loss = criterion(outputs, target)
 
                 if config.use_amp == 1:
