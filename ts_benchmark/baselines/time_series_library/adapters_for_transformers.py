@@ -261,7 +261,7 @@ class TransformerAdapter(ModelBase):
         """
         Train the model.
 
-        :param train_data: Time series data used for training.
+        :param train_valid_data: Time series data used for training and validation.
         :param covariates: Additional external variables.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.

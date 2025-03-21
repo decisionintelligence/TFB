@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 from torch.optim import lr_scheduler
@@ -40,7 +41,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "attn_dropout": 0.05,
     "dropout": 0.25,
     "act": "gelu",
-    "key_padding_mask": 'auto',
+    "key_padding_mask": "auto",
     "padding_var": None,
     "attn_mask": None,
     "res_attention": True,
@@ -50,9 +51,9 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "learn_pe": True,
     "head_dropout": 0,
     "fc_dropout": 0.15,
-    "padding_patch": 'end',
+    "padding_patch": "end",
     "pretrain_head": False,
-    "head_type": 'flatten',
+    "head_type": "flatten",
     "individual": 0,
     "revin": 1,
     "affine": 0,
@@ -66,7 +67,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "loss": "MSE",
     "learning_rate": 0.0001,
     "lradj": "type3",
-    "use_amp":False
+    "use_amp": False,
 }
 
 
@@ -176,7 +177,7 @@ class PDF(ModelBase):
         return test
 
     def _padding_time_stamp_mark(
-            self, time_stamps_list: np.ndarray, padding_len: int
+        self, time_stamps_list: np.ndarray, padding_len: int
     ) -> np.ndarray:
         """
         Padding time stamp mark for prediction.
@@ -201,7 +202,16 @@ class PDF(ModelBase):
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
 
-    def validate(self, valid_data_loader, criterion):
+    def validate(
+        self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module
+    ) -> float:
+        """
+        Validates the model performance on the provided validation dataset.
+        :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
+        :param series_dim : The number of series data‘s dimensions.
+        :param criterion : The loss function to compute the loss between model predictions and ground truth.
+        :returns:The mean loss computed over the validation dataset.
+        """
         config = self.config
         total_loss = []
         self.model.eval()
@@ -215,7 +225,7 @@ class PDF(ModelBase):
                 target_mark.to(device),
             )
             # decoder input
-            dec_input = torch.zeros_like(target[:, -config.horizon:, :]).float()
+            dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
             dec_input = (
                 torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                 .float()
@@ -224,8 +234,8 @@ class PDF(ModelBase):
 
             output = self.model(input)
 
-            target = target[:, -config.horizon:, :]
-            output = output[:, -config.horizon:, :]
+            target = target[:, -config.horizon :, :series_dim]
+            output = output[:, -config.horizon :, :series_dim]
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
 
@@ -234,15 +244,27 @@ class PDF(ModelBase):
         return total_loss
 
     def forecast_fit(
-            self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float
+        self,
+        train_valid_data: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs,
     ) -> "ModelBase":
         """
-        Train the models.
-
-        :param train_data: Time series data used for training.
+        Train the model.
+        :param train_valid_data: Time series data used for training and validation.
+        :param covariates: Additional external variables.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
-        :return: The fitted models object.
+        :return: The fitted model object.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = train_valid_data.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
+
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -331,7 +353,7 @@ class PDF(ModelBase):
         for epoch in range(config.train_epochs):
             self.model.train()
             for i, (input, target, input_mark, target_mark) in enumerate(
-                    train_data_loader
+                train_data_loader
             ):
                 optimizer.zero_grad()
                 input, target, input_mark, target_mark = (
@@ -341,7 +363,7 @@ class PDF(ModelBase):
                     target_mark.to(device),
                 )
                 # decoder input
-                dec_input = torch.zeros_like(target[:, -config.horizon:, :]).float()
+                dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
                 dec_input = (
                     torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                     .float()
@@ -350,8 +372,8 @@ class PDF(ModelBase):
 
                 output = self.model(input)
 
-                target = target[:, -config.horizon:, :]
-                output = output[:, -config.horizon:, :]
+                target = target[:, -config.horizon :, :series_dim]
+                output = output[:, -config.horizon :, :series_dim]
                 loss = criterion(output, target)
 
                 if config.use_amp:
@@ -369,37 +391,55 @@ class PDF(ModelBase):
                     scheduler.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, criterion)
+                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
             if config.lradj != "TST":
                 adjust_learning_rate(optimizer, scheduler, epoch + 1, config)
 
-    def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
+    def forecast(
+        self,
+        horizon: int,
+        series: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+    ) -> np.ndarray:
         """
         Make predictions.
-
         :param horizon: The predicted length.
-        :param testdata: Time series data used for prediction.
+        :param series: Time series data used for prediction.
+        :param covariates: Additional external variables
         :return: An array of predicted results.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = series.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            series = pd.concat([series, exog_data], axis=1)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
         if self.config.norm:
-            train = pd.DataFrame(
-                self.scaler.transform(train.values),
-                columns=train.columns,
-                index=train.index,
+            series = pd.DataFrame(
+                self.scaler.transform(series.values),
+                columns=series.columns,
+                index=series.index,
             )
 
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_time(train, len(train) - config.seq_len)
-
+        series, test = split_time(series, len(series) - config.seq_len)
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
 
@@ -422,7 +462,7 @@ class PDF(ModelBase):
                         target_mark.to(device),
                     )
                     dec_input = torch.zeros_like(
-                        target[:, -config.horizon:, :]
+                        target[:, -config.horizon :, :]
                     ).float()
                     dec_input = (
                         torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
@@ -432,7 +472,7 @@ class PDF(ModelBase):
                     output = self.model(input)
 
                 column_num = output.shape[-1]
-                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon:]
+                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
 
                 if answer is None:
                     answer = temp
@@ -444,13 +484,13 @@ class PDF(ModelBase):
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
-                    return answer[-horizon:]
+                    return answer[-horizon:, :series_dim]
 
-                output = output.cpu().numpy()[:, -config.horizon:, :]
+                output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
-                test = test.iloc[config.horizon:]
+                test = test.iloc[config.horizon :]
                 test = self.padding_data_for_forecast(test)
 
                 test_data_set, test_data_loader = forecasting_data_provider(
@@ -463,7 +503,7 @@ class PDF(ModelBase):
                 )
 
     def batch_forecast(
-            self, horizon: int, batch_maker: BatchMaker, **kwargs
+        self, horizon: int, batch_maker: BatchMaker, **kwargs
     ) -> np.ndarray:
         """
         Make predictions by batch.
@@ -483,7 +523,22 @@ class PDF(ModelBase):
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
+        series_dim = input_np.shape[-1]
 
+        if input_data["covariates"] is None:
+            covariates = {}
+        else:
+            covariates = input_data["covariates"]
+        exog_data = covariates.get("exog")
+        if exog_data is not None:
+            input_np = np.concatenate((input_np, exog_data), axis=2)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
         if self.config.norm:
             origin_shape = input_np.shape
             flattened_data = input_np.reshape((-1, input_np.shape[-1]))
@@ -491,8 +546,8 @@ class PDF(ModelBase):
 
         input_index = input_data["time_stamps"]
         padding_len = (
-                              math.ceil(horizon / self.config.horizon) + 1
-                      ) * self.config.horizon
+            math.ceil(horizon / self.config.horizon) + 1
+        ) * self.config.horizon
         all_mark = self._padding_time_stamp_mark(input_index, padding_len)
 
         answers = self._perform_rolling_predictions(horizon, input_np, all_mark, device)
@@ -503,14 +558,14 @@ class PDF(ModelBase):
                 answers.shape
             )
 
-        return answers
+        return answers[..., :series_dim]
 
     def _perform_rolling_predictions(
-            self,
-            horizon: int,
-            input_np: np.ndarray,
-            all_mark: np.ndarray,
-            device: torch.device,
+        self,
+        horizon: int,
+        input_np: np.ndarray,
+        all_mark: np.ndarray,
+        device: torch.device,
     ) -> list:
         """
         Perform rolling predictions using the given input data and marks.
@@ -541,14 +596,14 @@ class PDF(ModelBase):
                     output.cpu()
                     .numpy()
                     .reshape(real_batch_size, -1, column_num)[
-                    :, -self.config.horizon:, :
+                        :, -self.config.horizon :, :
                     ]
                 )
                 answers.append(answer)
                 if sum(a.shape[1] for a in answers) >= horizon:
                     break
                 rolling_time += 1
-                output = output.cpu().numpy()[:, -self.config.horizon:, :]
+                output = output.cpu().numpy()[:, -self.config.horizon :, :]
                 (
                     input_np,
                     target_np,
@@ -560,11 +615,11 @@ class PDF(ModelBase):
         return answers[:, -horizon:, :]
 
     def _get_rolling_data(
-            self,
-            input_np: np.ndarray,
-            output: Optional[np.ndarray],
-            all_mark: np.ndarray,
-            rolling_time: int,
+        self,
+        input_np: np.ndarray,
+        output: Optional[np.ndarray],
+        all_mark: np.ndarray,
+        rolling_time: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Prepare rolling data based on the current rolling time.
@@ -577,7 +632,7 @@ class PDF(ModelBase):
         """
         if rolling_time > 0:
             input_np = np.concatenate((input_np, output), axis=1)
-            input_np = input_np[:, -self.config.seq_len:, :]
+            input_np = input_np[:, -self.config.seq_len :, :]
         target_np = np.zeros(
             (
                 input_np.shape[0],
@@ -586,15 +641,15 @@ class PDF(ModelBase):
             )
         )
         target_np[:, : self.config.label_len, :] = input_np[
-                                                   :, -self.config.label_len:, :
-                                                   ]
+            :, -self.config.label_len :, :
+        ]
         advance_len = rolling_time * self.config.horizon
-        input_mark_np = all_mark[:, advance_len: self.config.seq_len + advance_len, :]
+        input_mark_np = all_mark[:, advance_len : self.config.seq_len + advance_len, :]
         start = self.config.seq_len - self.config.label_len + advance_len
         end = self.config.seq_len + self.config.horizon + advance_len
         target_mark_np = all_mark[
-                         :,
-                         start:end,
-                         :,
-                         ]
+            :,
+            start:end,
+            :,
+        ]
         return input_np, target_np, input_mark_np, target_mark_np
