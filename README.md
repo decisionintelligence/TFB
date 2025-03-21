@@ -27,7 +27,7 @@
 
 
 
-**Newly added baselines.** [x] means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard.
+**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
   - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575).
      
   - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216).
