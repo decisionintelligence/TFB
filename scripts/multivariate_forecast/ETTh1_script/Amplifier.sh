@@ -1,0 +1,7 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":96}' --model-name 'amplifier.Amplifier' --model-hyper-params '{"batch_size":256,"lr":0.02,"horizon":96,"seq_len":96,"features":"M","label_len":48,"hidden_size":64,"SCI":0}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh1/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":192}' --model-name 'amplifier.Amplifier' --model-hyper-params '{"batch_size":256,"lr":0.02,"horizon":192,"seq_len":96,"features":"M","label_len":48,"hidden_size":512,"SCI":0}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh1/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":336}' --model-name 'amplifier.Amplifier' --model-hyper-params '{"batch_size":256,"lr":0.03,"horizon":336,"seq_len":96,"features":"M","label_len":48,"hidden_size":512,"SCI":0}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh1/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh1.csv" --strategy-args '{"horizon":720}' --model-name 'amplifier.Amplifier' --model-hyper-params '{"batch_size":256,"lr":0.03,"horizon":720,"seq_len":96,"features":"M","label_len":48,"hidden_size":512,"SCI":0}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh1/Amplifier"
