@@ -23,7 +23,6 @@ from ...models.model_base import ModelBase, BatchMaker
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "data": "custom",
     "use_amp": 0,
-    "features": "M",
     "label_len": 48,
     "enc_in": 21,
     "dec_in": 21,
@@ -49,7 +48,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "num_epochs": 20,
     "num_workers": 0,
     "loss": "MSE",
-    "patience": 5
+    "patience": 5,
 }
 
 
@@ -198,7 +197,6 @@ class PatchMLP(ModelBase):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         with torch.no_grad():
             for input, target, input_mark, target_mark in valid_data_loader:
-
                 if "Solar" in config.data:
                     input_mark = None
                     target_mark = None
@@ -235,9 +233,8 @@ class PatchMLP(ModelBase):
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                f_dim = -1 if config.features == "MS" else 0
-                outputs = outputs[:, -config.pred_len :, f_dim:]
-                target = target[:, -config.pred_len :, f_dim:].to(device)
+                outputs = outputs[:, -config.pred_len :, :]
+                target = target[:, -config.pred_len :, :].to(device)
 
                 pred = outputs.detach().cpu()
                 true = target.detach().cpu()
@@ -370,9 +367,8 @@ class PatchMLP(ModelBase):
                                 input, input_mark, dec_inp, target_mark
                             )
 
-                        f_dim = -1 if config.features == "MS" else 0
-                        outputs = outputs[:, -config.pred_len :, f_dim:]
-                        target = target[:, -config.pred_len :, f_dim:].to(device)
+                        outputs = outputs[:, -config.pred_len :, :]
+                        target = target[:, -config.pred_len :, :].to(device)
                         loss = criterion(outputs, target)
                 else:
                     if config.output_attention:
@@ -380,9 +376,8 @@ class PatchMLP(ModelBase):
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                    f_dim = -1 if config.features == "MS" else 0
-                    outputs = outputs[:, -config.pred_len :, f_dim:]
-                    target = target[:, -config.pred_len :, f_dim:].to(device)
+                    outputs = outputs[:, -config.pred_len :, :]
+                    target = target[:, -config.pred_len :, :].to(device)
                     loss = criterion(outputs, target)
 
                 if config.use_amp == 1:
