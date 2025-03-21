@@ -28,17 +28,17 @@
 
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
-  - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575).
+  - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/patchmlp).
      
-  - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216).
+  - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/amplifier).
     
-  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859).
+  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/duet).
 
-  - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt).
+  - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/pdf).
 
-  - [x] **Pathformer** - Pathformer: Multi-scale transformers with adaptive pathways for time series forecasting [[ICLR 2024]](https://arxiv.org/pdf/2402.05956).
+  - [x] **Pathformer** - Pathformer: Multi-scale transformers with adaptive pathways for time series forecasting [[ICLR 2024]](https://arxiv.org/pdf/2402.05956), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/pathformer).
 
-  - [x] **FITS** - FITS: Modeling Time Series with 10k Parameters [[ICLR 2024]](https://arxiv.org/pdf/2307.03756).
+  - [x] **FITS** - FITS: Modeling Time Series with 10k Parameters [[ICLR 2024]](https://arxiv.org/pdf/2307.03756), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/fits).
 
     
 
