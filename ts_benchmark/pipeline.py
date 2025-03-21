@@ -36,6 +36,9 @@ PREDEFINED_DATASETS = {
     "user_forecast": DatasetInfo(
         size_value=["user"], datasrc_class=LocalForecastingDataSource
     ),
+    "pcdcnet": DatasetInfo(
+        size_value=["pcdcnet"], datasrc_class=LocalForecastingDataSource
+    ),
 }
 
 

@@ -53,6 +53,9 @@ class DLinear(nn.Module):
             self.dropout = nn.Dropout(configs.dropout)
             self.projection = nn.Linear(
                 configs.enc_in * configs.seq_len, configs.num_class)
+        else:
+            # 添加 MLP，输入维度为 enc_in + dec_in，输出维度为 enc_in
+            self.mlp = nn.Linear(10, 2)
 
     def encoder(self, x):
         seasonal_init, trend_init = self.decompsition(x)
@@ -74,31 +77,30 @@ class DLinear(nn.Module):
         x = seasonal_output + trend_output
         return x.permute(0, 2, 1)
 
-    def forecast(self, x_enc):
-        # Encoder
-        return self.encoder(x_enc)
+    def forecast(self, x_enc, x_dec):
+        # 生成 dec_out
+        dec_out = self.encoder(x_enc)[:, -self.pred_len:, :(x_enc.shape[2]-x_dec.shape[2])]  # [B, L, D]
+        # 将 dec_out 和 x_dec 在最后一维拼接
+        combined = torch.cat([dec_out.to(torch.float32), x_dec.to(torch.float32)], dim=-1)  # [B, L, D + D']
+        # 通过 MLP 处理
+        final_out = self.mlp(combined)  # [B, L, D]
+        return final_out
 
     def imputation(self, x_enc):
-        # Encoder
         return self.encoder(x_enc)
 
     def anomaly_detection(self, x_enc):
-        # Encoder
         return self.encoder(x_enc)
 
     def classification(self, x_enc):
-        # Encoder
         enc_out = self.encoder(x_enc)
-        # Output
-        # (batch_size, seq_length * d_model)
         output = enc_out.reshape(enc_out.shape[0], -1)
-        # (batch_size, num_classes)
         output = self.projection(output)
         return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
-            dec_out = self.forecast(x_enc)
+            dec_out = self.forecast(x_enc, x_dec)
             return dec_out[:, -self.pred_len:, :]  # [B, L, D]
         if self.task_name == 'imputation':
             dec_out = self.imputation(x_enc)

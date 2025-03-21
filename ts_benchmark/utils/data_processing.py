@@ -114,9 +114,9 @@ def split_channel(
         exog_columns = []
 
     # Split the DataFrame into target and exog parts
-    target_df = df.iloc[:, target_columns]
+    target_df = df[:, target_columns]
     exog_df = (
-        df.iloc[:, exog_columns] if exog_columns else None
+        df[:, exog_columns] if exog_columns else None
     )  # Directly return None if no exog columns
     return target_df, exog_df
 
@@ -129,4 +129,4 @@ def split_time(data: pd.DataFrame, index: int) -> Tuple[pd.DataFrame, pd.DataFra
     :param index: Split index position.
     :return: Split the first and second half of the data.
     """
-    return data.iloc[:index, :], data.iloc[index:, :]
+    return data[:index, :], data[index:, :]

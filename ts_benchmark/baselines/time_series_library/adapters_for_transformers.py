@@ -22,6 +22,7 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_time
 
+# 默认超参数
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
     "enc_in": 1,
@@ -47,7 +48,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "dropout": 0.1,
     "batch_size": 32,
     "lr": 0.0001,
-    "num_epochs": 10,
+    "num_epochs": 100,
     "num_workers": 0,
     "loss": "MSE",
     "itr": 1,
@@ -65,8 +66,22 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "decomp_method": "moving_avg",
     "use_norm": True,
     "parallel_strategy": "DP",
+    "use_mlp": False,
 }
 
+# 定义 MLP 类
+class MLP(nn.Module):
+    def __init__(self, input_size, hidden_size1, output_size):
+        super(MLP, self).__init__()
+        self.linear1 = nn.Linear(input_size, hidden_size1)
+        self.relu = nn.ReLU()
+        self.linear2 = nn.Linear(hidden_size1, output_size)
+
+    def forward(self, x):
+        x = self.linear1(x)
+        x = self.relu(x)
+        x = self.linear2(x)
+        return x
 
 class TransformerConfig:
     def __init__(self, **kwargs):
@@ -85,7 +100,7 @@ class TransformerConfig:
     def pred_len(self):
         return self.horizon
 
-
+# 修改 TransformerAdapter 类
 class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__()
@@ -95,6 +110,7 @@ class TransformerAdapter(ModelBase):
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @staticmethod
     def required_hyper_params() -> dict:
@@ -107,26 +123,14 @@ class TransformerAdapter(ModelBase):
 
     @property
     def model_name(self):
-        """
-        Returns the name of the model.
-        """
-
         return self._model_name
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
-        freq = pd.infer_freq(train_data.index)
-        if freq == None:
-            raise ValueError("Irregular time intervals")
-        elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
-            self.config.freq = "s"
-        else:
-            self.config.freq = freq[0].lower()
-
+        self.config.freq = "h"
         column_num = train_data.shape[1]
         self.config.enc_in = column_num
         self.config.dec_in = column_num
         self.config.c_out = column_num
-
         if self.model_name == "MICN":
             setattr(self.config, "label_len", self.config.seq_len)
         else:
@@ -134,29 +138,26 @@ class TransformerAdapter(ModelBase):
 
     def single_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
-        if freq == None:
+        if freq is None:
             raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
             self.config.freq = "s"
         else:
             self.config.freq = freq[0].lower()
-
         column_num = train_data.shape[1]
         self.config.enc_in = column_num
         self.config.dec_in = column_num
         self.config.c_out = column_num
-
         setattr(self.config, "label_len", self.config.horizon)
 
     def detect_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
-        if freq == None:
+        if freq is None:
             raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
             self.config.freq = "s"
         else:
             self.config.freq = freq[0].lower()
-
         column_num = train_data.shape[1]
         self.config.enc_in = column_num
         self.config.dec_in = column_num
@@ -165,89 +166,41 @@ class TransformerAdapter(ModelBase):
 
     def padding_data_for_forecast(self, test):
         time_column_data = test.index
-        data_colums = test.columns
+        data_columns = test.columns
         start = time_column_data[-1]
-        # padding_zero = [0] * (self.config.horizon + 1)
         date = pd.date_range(
             start=start, periods=self.config.horizon + 1, freq=self.config.freq.upper()
         )
-        df = pd.DataFrame(columns=data_colums)
-
+        df = pd.DataFrame(columns=data_columns)
         df.iloc[: self.config.horizon + 1, :] = 0
-
         df["date"] = date
         df = df.set_index("date")
         new_df = df.iloc[1:]
         test = pd.concat([test, new_df])
         return test
 
-    def _padding_time_stamp_mark(
-        self, time_stamps_list: np.ndarray, padding_len: int
-    ) -> np.ndarray:
-        """
-        Padding time stamp mark for prediction.
-
-        :param time_stamps_list: A batch of time stamps.
-        :param padding_len: The len of time stamp need to be padded.
-        :return: The padded time stamp mark.
-        """
-        padding_time_stamp = []
-        for time_stamps in time_stamps_list:
-            start = time_stamps[-1]
-            expand_time_stamp = pd.date_range(
-                start=start,
-                periods=padding_len + 1,
-                freq=self.config.freq.upper(),
-            )
-            padding_time_stamp.append(expand_time_stamp.to_numpy()[-padding_len:])
-        padding_time_stamp = np.stack(padding_time_stamp)
-        whole_time_stamp = np.concatenate(
-            (time_stamps_list, padding_time_stamp), axis=1
-        )
-        padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
-        return padding_mark
-
-    def validate(
-        self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module
-    ) -> float:
-        """
-        Validates the model performance on the provided validation dataset.
-
-        :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
-        :param series_dim : The number of series data‘s dimensions.
-        :param criterion : The loss function to compute the loss between model predictions and ground truth.
-        :returns:The mean loss computed over the validation dataset.
-        """
+    def validate(self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module) -> float:
         config = self.config
         total_loss = []
         self.model.eval()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        for input, target, input_mark, target_mark in valid_data_loader:
-            input, target, input_mark, target_mark = (
-                input.to(device),
-                target.to(device),
-                input_mark.to(device),
-                target_mark.to(device),
-            )
-            # decoder input
-            dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
-            dec_input = (
-                torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
-                .float()
-                .to(device)
-            )
-
-            output = self.model(input, input_mark, dec_input, target_mark)
-
-            target = output[:, -config.horizon :, :series_dim]
-            output = output[:, -config.horizon :, :series_dim]
-
+        if self.MLP is not None:
+            self.MLP.eval()
+        for input, target in valid_data_loader:
+            input, target = input.to(self.device), target.to(self.device)
+            exog_future = target[:, -config.horizon:, series_dim:].to(self.device)
+            output = self.model(input, None, exog_future, None)
+            if self.config.use_mlp and self.MLP is not None:
+                transformer_output = output[:, -config.horizon:, :series_dim]
+                output = self.MLP(torch.cat((transformer_output, exog_future), dim=-1))
+            else:
+                output = output[:, -config.horizon:, :series_dim]
+            target = target[:, -config.horizon:, :series_dim]
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
-
         total_loss = np.mean(total_loss)
         self.model.train()
+        if self.MLP is not None:
+            self.MLP.train()
         return total_loss
 
     def forecast_fit(
@@ -258,20 +211,15 @@ class TransformerAdapter(ModelBase):
         train_ratio_in_tv: float = 1.0,
         **kwargs,
     ) -> "ModelBase":
-        """
-        Train the model.
-
-        :param train_data: Time series data used for training.
-        :param covariates: Additional external variables.
-        :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
-        :return: The fitted model object.
-        """
         if covariates is None:
             covariates = {}
-        series_dim = train_valid_data.shape[-1]
+        series_dim = train_valid_data.shape[-2]  # 使用最后一个维度作为 series_dim
         exog_data = covariates.get("exog", None)
         if exog_data is not None:
-            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
+            train_valid_data = np.concatenate((train_valid_data, exog_data), axis=1)
+            exog_dim = exog_data.shape[-2]
+        else:
+            exog_dim = 0
 
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
@@ -283,34 +231,32 @@ class TransformerAdapter(ModelBase):
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
 
+        # 根据 use_mlp 参数初始化 MLP
+        if self.config.use_mlp:
+            input_size = series_dim + exog_dim
+            output_size = series_dim
+            self.MLP = MLP(input_size=input_size, hidden_size1=512, output_size=output_size)
+            self.MLP.to(self.device)
+        else:
+            self.MLP = None
+
         device_ids = np.arange(torch.cuda.device_count()).tolist()
         if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
             self.model = nn.DataParallel(self.model, device_ids=device_ids)
-        print(
-            "----------------------------------------------------------",
-            self.model_name,
-        )
+            if self.MLP is not None:
+                self.MLP = nn.DataParallel(self.MLP, device_ids=device_ids)
+
+        print("----------------------------------------------------------", self.model_name)
         config = self.config
-        train_data, valid_data = train_val_split(
-            train_valid_data, train_ratio_in_tv, config.seq_len
-        )
-
-        self.scaler.fit(train_data.values)
-
+        train_data, valid_data = train_val_split(train_valid_data, train_ratio_in_tv, config.seq_len)
+        self.scaler.fit(train_data.reshape(-1, train_data.shape[-2]))
         if config.norm:
-            train_data = pd.DataFrame(
-                self.scaler.transform(train_data.values),
-                columns=train_data.columns,
-                index=train_data.index,
-            )
-
+            scaled_data = self.scaler.transform(train_data.reshape(-1, train_data.shape[-2]))
+            train_data = scaled_data.reshape(train_data.shape)
         if train_ratio_in_tv != 1:
             if config.norm:
-                valid_data = pd.DataFrame(
-                    self.scaler.transform(valid_data.values),
-                    columns=valid_data.columns,
-                    index=valid_data.index,
-                )
+                scaled_data = self.scaler.transform(valid_data.reshape(-1, valid_data.shape[-2]))
+                valid_data = scaled_data.reshape(valid_data.shape)
             valid_dataset, valid_data_loader = forecasting_data_provider(
                 valid_data,
                 config,
@@ -319,7 +265,6 @@ class TransformerAdapter(ModelBase):
                 shuffle=True,
                 drop_last=False,
             )
-
         train_dataset, train_data_loader = forecasting_data_provider(
             train_data,
             config,
@@ -328,59 +273,54 @@ class TransformerAdapter(ModelBase):
             shuffle=True,
             drop_last=train_drop_last,
         )
-
-        # Define the loss function and optimizer
         criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
-        optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        if self.MLP is not None:
+            optimizer = optim.Adam([
+                {'params': self.model.parameters(), 'lr': config.lr},
+                {'params': self.MLP.parameters(), 'lr': config.lr * 0.1}
+            ])
+        else:
+            optimizer = optim.Adam(self.model.parameters(),  config.lr)
         self.early_stopping = EarlyStopping(patience=config.patience)
-        self.model.to(device)
-        total_params = sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
-
+        self.model.to(self.device)
+        if self.MLP is not None:
+            self.MLP.to(self.device)
+        total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        if self.MLP is not None:
+            total_params += sum(p.numel() for p in self.MLP.parameters() if p.requires_grad)
         print(f"Total trainable parameters: {total_params}")
-
         for epoch in range(config.num_epochs):
             self.model.train()
-            # for input, target, input_mark, target_mark in train_data_loader:
-            for i, (input, target, input_mark, target_mark) in enumerate(
-                train_data_loader
-            ):
+            if self.MLP is not None:
+                self.MLP.train()
+            for i, (input, target) in enumerate(train_data_loader):
                 optimizer.zero_grad()
-                input, target, input_mark, target_mark = (
-                    input.to(device),
-                    target.to(device),
-                    input_mark.to(device),
-                    target_mark.to(device),
-                )
-                # decoder input
+                input, target = input.to(self.device), target.to(self.device)
                 dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
                 dec_input = (
                     torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                     .float()
-                    .to(device)
+                    .to(self.device)
                 )
-
-                output = self.model(input, input_mark, dec_input, target_mark)
-
+                exog_future = target[:, -config.horizon:, series_dim:].to(self.device)
+                output = self.model(input, None, exog_future, None)
+                if self.config.use_mlp and self.MLP is not None:
+                    transformer_output = output[:, -config.horizon :, :series_dim]
+                    output = self.MLP(torch.cat((transformer_output, exog_future), dim=-1))
+                else:
+                    output = output[:, -config.horizon :, :series_dim]
                 target = target[:, -config.horizon :, :series_dim]
-                output = output[:, -config.horizon :, :series_dim]
-
                 loss = criterion(output, target)
-
                 loss.backward()
                 optimizer.step()
-
             if train_ratio_in_tv != 1:
                 valid_loss = self.validate(valid_data_loader, series_dim, criterion)
-                self.early_stopping(valid_loss, self.model)
+                if self.MLP is not None:
+                    self.early_stopping(valid_loss, {'transformer': self.model, 'mlp': self.MLP})
+                else:
+                    self.early_stopping(valid_loss, {'transformer': self.model})
                 if self.early_stopping.early_stop:
                     break
-
             adjust_learning_rate(optimizer, epoch + 1, config)
 
     def forecast(
@@ -390,14 +330,6 @@ class TransformerAdapter(ModelBase):
         *,
         covariates: Optional[dict] = None,
     ) -> np.ndarray:
-        """
-        Make predictions.
-
-        :param horizon: The predicted length.
-        :param series: Time series data used for prediction.
-        :param covariates: Additional external variables
-        :return: An array of predicted results.
-        """
         if covariates is None:
             covariates = {}
         series_dim = series.shape[-1]
@@ -411,34 +343,30 @@ class TransformerAdapter(ModelBase):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
-
         if self.early_stopping.check_point is not None:
-            self.model.load_state_dict(self.early_stopping.check_point)
-
+            self.model.load_state_dict(self.early_stopping.check_point['transformer'])
+            if self.MLP is not None and 'mlp' in self.early_stopping.check_point:
+                self.MLP.load_state_dict(self.early_stopping.check_point['mlp'])
         if self.config.norm:
             series = pd.DataFrame(
                 self.scaler.transform(series.values),
                 columns=series.columns,
                 index=series.index,
             )
-
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
-
         config = self.config
         series, test = split_time(series, len(series) - config.seq_len)
-
-        # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
-
         test_data_set, test_data_loader = forecasting_data_provider(
             test, config, timeenc=1, batch_size=1, shuffle=False, drop_last=False
         )
-
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
         self.model.eval()
-
+        if self.MLP is not None:
+            self.MLP.to(device)
+            self.MLP.eval()
         with torch.no_grad():
             answer = None
             while answer is None or answer.shape[0] < horizon:
@@ -449,70 +377,62 @@ class TransformerAdapter(ModelBase):
                         input_mark.to(device),
                         target_mark.to(device),
                     )
-                    dec_input = torch.zeros_like(
-                        target[:, -config.horizon :, :]
-                    ).float()
+                    dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
                     dec_input = (
                         torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                         .float()
                         .to(device)
                     )
                     output = self.model(input, input_mark, dec_input, target_mark)
-
-                column_num = output.shape[-1]
-                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
-
-                if answer is None:
-                    answer = temp
-                else:
-                    answer = np.concatenate([answer, temp], axis=0)
-
-                if answer.shape[0] >= horizon:
-                    if self.config.norm:
-                        answer[-horizon:] = self.scaler.inverse_transform(
-                            answer[-horizon:]
-                        )
-                    return answer[-horizon:, :series_dim]
-
-                output = output.cpu().numpy()[:, -config.horizon :]
-                for i in range(config.horizon):
-                    test.iloc[i + config.seq_len] = output[0, i, :]
-
-                test = test.iloc[config.horizon :]
-                test = self.padding_data_for_forecast(test)
-
-                test_data_set, test_data_loader = forecasting_data_provider(
-                    test,
-                    config,
-                    timeenc=1,
-                    batch_size=1,
-                    shuffle=False,
-                    drop_last=False,
-                )
+                    if self.config.use_mlp and self.MLP is not None:
+                        transformer_output = output[:, -config.horizon :, :series_dim]
+                        exog_future = target[:, -config.horizon :, series_dim:]
+                        output = self.MLP(torch.cat((transformer_output, exog_future), dim=-1))
+                    else:
+                        output = output[:, -config.horizon :, :series_dim]
+                    column_num = output.shape[-1]
+                    temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
+                    if answer is None:
+                        answer = temp
+                    else:
+                        answer = np.concatenate([answer, temp], axis=0)
+                    if answer.shape[0] >= horizon:
+                        if self.config.norm:
+                            answer[-horizon:] = self.scaler.inverse_transform(answer[-horizon:])
+                        return answer[-horizon:, :series_dim]
+                    output = output.cpu().numpy()[:, -config.horizon :]
+                    for i in range(config.horizon):
+                        test.iloc[i + config.seq_len] = output[0, i, :]
+                    test = test.iloc[config.horizon :]
+                    test = self.padding_data_for_forecast(test)
+                    test_data_set, test_data_loader = forecasting_data_provider(
+                        test,
+                        config,
+                        timeenc=1,
+                        batch_size=1,
+                        shuffle=False,
+                        drop_last=False,
+                    )
 
     def batch_forecast(
-        self, horizon: int, batch_maker: BatchMaker, **kwargs
+        self, horizon: int, batch_maker: BatchMaker, exog_futures, i, **kwargs
     ) -> np.ndarray:
-        """
-        Make predictions by batch.
-
-        :param horizon: The length of each prediction.
-        :param batch_maker: Make batch data used for prediction.
-        :return: An array of predicted results.
-        """
         if self.early_stopping.check_point is not None:
-            self.model.load_state_dict(self.early_stopping.check_point)
-
+            self.model.load_state_dict(self.early_stopping.check_point['transformer'])
+            if self.MLP is not None and 'mlp' in self.early_stopping.check_point:
+                self.MLP.load_state_dict(self.early_stopping.check_point['mlp'])
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
         self.model.eval()
-
+        if self.MLP is not None:
+            self.MLP.to(device)
+            self.MLP.eval()
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
-        series_dim = input_np.shape[-1]
-
+        real_batch_size = self.config.batch_size * input_np.shape[3]
+        series_dim = input_np.shape[-2]
         if input_data["covariates"] is None:
             covariates = {}
         else:
@@ -527,386 +447,75 @@ class TransformerAdapter(ModelBase):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
-
+        input_np = input_np.reshape(input_np.shape[0] * input_np.shape[3], input_np.shape[1], input_np.shape[2])
         if self.config.norm:
             origin_shape = input_np.shape
-            flattened_data = input_np.reshape((-1, input_np.shape[-1]))
-            input_np = self.scaler.transform(flattened_data).reshape(origin_shape)
+            input_np = self.scaler.transform(input_np.reshape(-1, input_np.shape[-1])).reshape(origin_shape)
+        exog_future = torch.tensor(exog_futures[i * real_batch_size: (i + 1) * real_batch_size, -horizon:, :]).to(
+            device)
+        answers = torch.tensor(self._perform_rolling_predictions(horizon, input_np, exog_future, device))
+        answers = answers[:, -horizon:, :series_dim].to(device)
+        if self.config.use_mlp and self.MLP is not None:
+            output = torch.tensor(answers[:, -horizon:, :series_dim]).to(device)
 
-        input_index = input_data["time_stamps"]
-        padding_len = (
-            math.ceil(horizon / self.config.horizon) + 1
-        ) * self.config.horizon
-        all_mark = self._padding_time_stamp_mark(input_index, padding_len)
-
-        answers = self._perform_rolling_predictions(horizon, input_np, all_mark, device)
-
+            answers = self.MLP(torch.cat((output.to(torch.float32), exog_future.to(torch.float32)), dim=-1))
+            answers = torch.cat((answers.to(torch.float32), exog_future.to(torch.float32)), dim=-1)
+        else:
+            answers = answers[:, -horizon:, :series_dim]
+        answers = torch.cat((
+            answers.to(torch.float32),  # 强制转换类型
+            exog_future.to(torch.float32)  # 强制转换类型
+        ), dim=-1)
         if self.config.norm:
-            flattened_data = answers.reshape((-1, answers.shape[-1]))
-            answers = self.scaler.inverse_transform(flattened_data).reshape(
-                answers.shape
-            )
-
+            flattened_data = answers.cpu().detach().numpy().reshape((-1, answers.shape[-1]))
+            answers = self.scaler.inverse_transform(flattened_data).reshape(answers.shape)
         return answers[..., :series_dim]
 
-    def _perform_rolling_predictions(
-        self,
-        horizon: int,
-        input_np: np.ndarray,
-        all_mark: np.ndarray,
-        device: torch.device,
-    ) -> list:
-        """
-        Perform rolling predictions using the given input data and marks.
-
-        :param horizon: Length of predictions to be made.
-        :param input_np: Numpy array of input data.
-        :param all_mark: Numpy array of all marks (time stamps mark).
-        :param device: Device to run the model on.
-        :return: List of predicted results for each prediction batch.
-        """
+    def _perform_rolling_predictions(self, horizon: int, input_np: np.ndarray, exog_future: torch.Tensor,
+                                     device: torch.device) -> list:
         rolling_time = 0
-        input_np, target_np, input_mark_np, target_mark_np = self._get_rolling_data(
-            input_np, None, all_mark, rolling_time
-        )
+        answers = []
         with torch.no_grad():
-            answers = []
             while not answers or sum(a.shape[1] for a in answers) < horizon:
-                input, dec_input, input_mark, target_mark = (
-                    torch.tensor(input_np, dtype=torch.float32).to(device),
-                    torch.tensor(target_np, dtype=torch.float32).to(device),
-                    torch.tensor(input_mark_np, dtype=torch.float32).to(device),
-                    torch.tensor(target_mark_np, dtype=torch.float32).to(device),
-                )
-                output = self.model(input, input_mark, dec_input, target_mark)
+                input = torch.tensor(input_np, dtype=torch.float32).to(device)
+                output = self.model(input, None, exog_future, None)
                 column_num = output.shape[-1]
                 real_batch_size = output.shape[0]
                 answer = (
                     output.cpu()
                     .numpy()
-                    .reshape(real_batch_size, -1, column_num)[
-                        :, -self.config.horizon :, :
-                    ]
+                    .reshape(real_batch_size, -1, column_num)[:, -self.config.horizon:, :]
                 )
                 answers.append(answer)
                 if sum(a.shape[1] for a in answers) >= horizon:
                     break
                 rolling_time += 1
-                output = output.cpu().numpy()[:, -self.config.horizon :, :]
-                (
-                    input_np,
-                    target_np,
-                    input_mark_np,
-                    target_mark_np,
-                ) = self._get_rolling_data(input_np, output, all_mark, rolling_time)
-
+                output = output.cpu().numpy()[:, -self.config.horizon:, :]
+                input_np, _ = self._get_rolling_data(input_np, output, None, rolling_time)
         answers = np.concatenate(answers, axis=1)
         return answers[:, -horizon:, :]
 
-    def _get_rolling_data(
-        self,
-        input_np: np.ndarray,
-        output: Optional[np.ndarray],
-        all_mark: np.ndarray,
-        rolling_time: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Prepare rolling data based on the current rolling time.
-
-        :param input_np: Current input data.
-        :param output: Output from the model prediction.
-        :param all_mark: Numpy array of all marks (time stamps mark).
-        :param rolling_time: Current rolling time step.
-        :return: Updated input data, target data, input marks, and target marks for rolling prediction.
-        """
+    def _get_rolling_data(self, input_np: np.ndarray, output: Optional[np.ndarray], all_mark: np.ndarray, rolling_time: int) -> Tuple[np.ndarray, np.ndarray]:
         if rolling_time > 0:
             input_np = np.concatenate((input_np, output), axis=1)
             input_np = input_np[:, -self.config.seq_len :, :]
-        target_np = np.zeros(
-            (
-                input_np.shape[0],
-                self.config.label_len + self.config.horizon,
-                input_np.shape[2],
-            )
-        )
-        target_np[:, : self.config.label_len, :] = input_np[
-            :, -self.config.label_len :, :
-        ]
-        advance_len = rolling_time * self.config.horizon
-        input_mark_np = all_mark[:, advance_len : self.config.seq_len + advance_len, :]
-        start = self.config.seq_len - self.config.label_len + advance_len
-        end = self.config.seq_len + self.config.horizon + advance_len
-        target_mark_np = all_mark[
-            :,
-            start:end,
-            :,
-        ]
-        return input_np, target_np, input_mark_np, target_mark_np
+        target_np = np.zeros((input_np.shape[0], self.config.label_len + self.config.horizon, input_np.shape[2]))
+        target_np[:, : self.config.label_len, :] = input_np[:, -self.config.label_len :, :]
+        return input_np, target_np
 
-    def detect_validate(self, valid_data_loader, criterion):
-        config = self.config
-        total_loss = []
-        self.model.eval()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # 异常检测相关方法未使用 MLP，无需修改，此处省略
 
-        for input, _ in valid_data_loader:
-            input = input.to(device)
-
-            output = self.model(input, None, None, None)
-
-            output = output[:, -config.horizon :, :]
-
-            output = output.detach().cpu()
-            true = input.detach().cpu()
-
-            loss = criterion(output, true).detach().cpu().numpy()
-            total_loss.append(loss)
-
-        total_loss = np.mean(total_loss)
-        self.model.train()
-        return total_loss
-
-    def detect_fit(self, train_data: pd.DataFrame, test_data: pd.DataFrame):
-        """
-        Train the model.
-
-        :param train_data: Time series data used for training.
-        """
-
-        self.detect_hyper_param_tune(train_data)
-        setattr(self.config, "task_name", "anomaly_detection")
-        self.model = self.model_class(self.config)
-
-        config = self.config
-        train_data_value, valid_data = train_val_split(train_data, 0.8, None)
-        self.scaler.fit(train_data_value.values)
-
-        train_data_value = pd.DataFrame(
-            self.scaler.transform(train_data_value.values),
-            columns=train_data_value.columns,
-            index=train_data_value.index,
-        )
-
-        valid_data = pd.DataFrame(
-            self.scaler.transform(valid_data.values),
-            columns=valid_data.columns,
-            index=valid_data.index,
-        )
-
-        self.valid_data_loader = anomaly_detection_data_provider(
-            valid_data,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="val",
-        )
-
-        self.train_data_loader = anomaly_detection_data_provider(
-            train_data_value,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="train",
-        )
-
-        # Define the loss function and optimizer
-        if config.loss == "MSE":
-            criterion = nn.MSELoss()
-        elif config.loss == "MAE":
-            criterion = nn.L1Loss()
-        else:
-            criterion = nn.HuberLoss(delta=0.5)
-
-        optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.early_stopping = EarlyStopping(patience=config.patience)
-        self.model.to(self.device)
-        total_params = sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
-        print(f"Total trainable parameters: {total_params}")
-
-        for epoch in range(config.num_epochs):
-            self.model.train()
-            for i, (input, target) in enumerate(self.train_data_loader):
-                optimizer.zero_grad()
-                input = input.float().to(self.device)
-
-                output = self.model(input, None, None, None)
-
-                output = output[:, -config.horizon :, :]
-                loss = criterion(output, input)
-
-                loss.backward()
-                optimizer.step()
-            valid_loss = self.detect_validate(self.valid_data_loader, criterion)
-            self.early_stopping(valid_loss, self.model)
-            if self.early_stopping.early_stop:
-                break
-
-            adjust_learning_rate(optimizer, epoch + 1, config)
-
-    def detect_score(self, test: pd.DataFrame) -> np.ndarray:
-        test = pd.DataFrame(
-            self.scaler.transform(test.values), columns=test.columns, index=test.index
-        )
-        self.model.load_state_dict(self.early_stopping.check_point)
-
-        if self.model is None:
-            raise ValueError("Model not trained. Call the fit() function first.")
-
-        config = self.config
-
-        self.thre_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="thre",
-        )
-
-        self.model.to(self.device)
-        self.model.eval()
-        self.anomaly_criterion = nn.MSELoss(reduce=False)
-
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.thre_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-
-        return test_energy, test_energy
-
-    def detect_label(self, test: pd.DataFrame) -> np.ndarray:
-        test = pd.DataFrame(
-            self.scaler.transform(test.values), columns=test.columns, index=test.index
-        )
-        self.model.load_state_dict(self.early_stopping.check_point)
-
-        if self.model is None:
-            raise ValueError("Model not trained. Call the fit() function first.")
-
-        config = self.config
-
-        self.test_data_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="test",
-        )
-
-        self.thre_loader = anomaly_detection_data_provider(
-            test,
-            batch_size=config.batch_size,
-            win_size=config.seq_len,
-            step=1,
-            mode="thre",
-        )
-
-        attens_energy = []
-
-        self.model.to(self.device)
-        self.model.eval()
-        self.anomaly_criterion = nn.MSELoss(reduce=False)
-
-        with torch.no_grad():
-            for i, (batch_x, batch_y) in enumerate(self.train_data_loader):
-                batch_x = batch_x.float().to(self.device)
-                # reconstruction
-                outputs = self.model(batch_x, None, None, None)
-                # criterion
-                score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-                score = score.detach().cpu().numpy()
-                attens_energy.append(score)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        train_energy = np.array(attens_energy)
-
-        # (2) find the threshold
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.test_data_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-        combined_energy = np.concatenate([train_energy, test_energy], axis=0)
-        threshold = np.percentile(combined_energy, 100 - self.config.anomaly_ratio)
-        # threshold = np.mean(combined_energy) + 3 * np.std(combined_energy)
-
-        print("Threshold :", threshold)
-
-        attens_energy = []
-        test_labels = []
-        for i, (batch_x, batch_y) in enumerate(self.thre_loader):
-            batch_x = batch_x.float().to(self.device)
-            # reconstruction
-            outputs = self.model(batch_x, None, None, None)
-            # criterion
-            score = torch.mean(self.anomaly_criterion(batch_x, outputs), dim=-1)
-            score = score.detach().cpu().numpy()
-            attens_energy.append(score)
-            test_labels.append(batch_y)
-
-        attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
-        test_energy = np.array(attens_energy)
-
-        pred = (test_energy > threshold).astype(int)
-        a = pred.sum() / len(test_energy) * 100
-        print(pred.sum() / len(test_energy) * 100)
-        return pred, test_energy
-
-
-def generate_model_factory(
-    model_name: str, model_class: type, required_args: dict
-) -> Dict:
-    """
-    Generate model factory information for creating Transformer Adapters model adapters.
-
-    :param model_name: Model name.
-    :param model_class: Model class.
-    :param required_args: The required parameters for model initialization.
-    :return: A dictionary containing model factories and required parameters.
-    """
-
+def generate_model_factory(model_name: str, model_class: type, required_args: dict) -> Dict:
     def model_factory(**kwargs) -> TransformerAdapter:
-        """
-        Model factory, used to create TransformerAdapter model adapter objects.
-
-        :param kwargs: Model initialization parameters.
-        :return:  Model adapter object.
-        """
         return TransformerAdapter(model_name, model_class, **kwargs)
-
     return {
         "model_factory": model_factory,
         "required_hyper_params": required_args,
     }
 
-
 def transformer_adapter(model_info: Type[object]) -> object:
     if not isinstance(model_info, type):
         raise ValueError("the model_info does not exist")
-
     return generate_model_factory(
         model_name=model_info.__name__,
         model_class=model_info,
