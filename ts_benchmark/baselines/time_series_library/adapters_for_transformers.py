@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from torch import optim
+from einops import rearrange
 
 from ts_benchmark.baselines.time_series_library.utils.tools import (
     EarlyStopping,
@@ -66,7 +67,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "decomp_method": "moving_avg",
     "use_norm": True,
     "parallel_strategy": "DP",
-    "use_mlp": False,
+    "use_mlp": True,
 }
 
 # 定义 MLP 类
@@ -249,14 +250,16 @@ class TransformerAdapter(ModelBase):
         print("----------------------------------------------------------", self.model_name)
         config = self.config
         train_data, valid_data = train_val_split(train_valid_data, train_ratio_in_tv, config.seq_len)
-        self.scaler.fit(train_data.reshape(-1, train_data.shape[-2]))
+        train_data_l = train_data.shape[0]
+        valid_data_l = valid_data.shape[0]
+        self.scaler.fit(rearrange(train_data,'l c n->(l n) c'))
         if config.norm:
-            scaled_data = self.scaler.transform(train_data.reshape(-1, train_data.shape[-2]))
-            train_data = scaled_data.reshape(train_data.shape)
+            scaled_data = self.scaler.transform(rearrange(train_data,'l c n->(l n) c'))
+            train_data = rearrange(scaled_data, '(l n) c -> l c n', l=train_data_l)
         if train_ratio_in_tv != 1:
             if config.norm:
-                scaled_data = self.scaler.transform(valid_data.reshape(-1, valid_data.shape[-2]))
-                valid_data = scaled_data.reshape(valid_data.shape)
+                scaled_data = self.scaler.transform(rearrange(valid_data,'l c n->(l n) c'))
+                valid_data = rearrange(scaled_data, '(l n) c -> l c n', l=valid_data_l)
             valid_dataset, valid_data_loader = forecasting_data_provider(
                 valid_data,
                 config,
@@ -447,10 +450,11 @@ class TransformerAdapter(ModelBase):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
-        input_np = input_np.reshape(input_np.shape[0] * input_np.shape[3], input_np.shape[1], input_np.shape[2])
+        input_np = rearrange(input_np, 'b l c n -> (b n) l c')
+        input_np_b = input_np.shape[0]
         if self.config.norm:
-            origin_shape = input_np.shape
-            input_np = self.scaler.transform(input_np.reshape(-1, input_np.shape[-1])).reshape(origin_shape)
+            scaled_data = self.scaler.transform(rearrange(input_np,'b l c->(b l) c'))
+            input_np = rearrange(scaled_data, '(b l) c -> b l c', b=input_np_b)
         exog_future = torch.tensor(exog_futures[i * real_batch_size: (i + 1) * real_batch_size, -horizon:, :]).to(
             device)
         answers = torch.tensor(self._perform_rolling_predictions(horizon, input_np, exog_future, device))
@@ -459,7 +463,6 @@ class TransformerAdapter(ModelBase):
             output = torch.tensor(answers[:, -horizon:, :series_dim]).to(device)
 
             answers = self.MLP(torch.cat((output.to(torch.float32), exog_future.to(torch.float32)), dim=-1))
-            answers = torch.cat((answers.to(torch.float32), exog_future.to(torch.float32)), dim=-1)
         else:
             answers = answers[:, -horizon:, :series_dim]
         answers = torch.cat((
@@ -467,8 +470,9 @@ class TransformerAdapter(ModelBase):
             exog_future.to(torch.float32)  # 强制转换类型
         ), dim=-1)
         if self.config.norm:
-            flattened_data = answers.cpu().detach().numpy().reshape((-1, answers.shape[-1]))
-            answers = self.scaler.inverse_transform(flattened_data).reshape(answers.shape)
+            answers_b = answers.shape[0]
+            scaled_data = self.scaler.inverse_transform(rearrange(answers.cpu().detach().numpy(), 'b l c->(b l) c'))
+            answers = rearrange(scaled_data, '(b l) c -> b l c', b=answers_b)
         return answers[..., :series_dim]
 
     def _perform_rolling_predictions(self, horizon: int, input_np: np.ndarray, exog_future: torch.Tensor,

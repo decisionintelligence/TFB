@@ -2,6 +2,7 @@
 import abc
 import traceback
 from typing import Any, Optional
+from einops import rearrange
 
 import pandas as pd
 import numpy as np
@@ -104,5 +105,5 @@ class ForecastingStrategy(Strategy, metaclass=abc.ABCMeta):
             train_valid_data,
             int(len(train_valid_data) * train_ratio_in_tv),
         )
-        scaler = StandardScaler().fit(train_data)
+        scaler = StandardScaler().fit(rearrange(train_data,"l c n->(l n) c"))
         return scaler

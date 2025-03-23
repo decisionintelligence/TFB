@@ -391,7 +391,7 @@ class RollingForecast(ForecastingStrategy):
         )
         end_fit_time = time.time()
 
-        eval_scaler = self._get_eval_scaler(target_train_valid_data.reshape(-1, target_train_valid_data.shape[-2]), train_ratio_in_tv)
+        eval_scaler = self._get_eval_scaler(target_train_valid_data, train_ratio_in_tv)
 
         index_list = self._get_index(train_length, test_length, horizon, stride)
         index_list = index_list[:num_rollings]
