@@ -193,3 +193,7 @@ If you have any questions or suggestions, feel free to contact:
 
 
 Or describe it in Issues.
+
+We invite you to join the OpenTS community on WeChat. We run a group chat on WeChat, and you can get the access by scanning the [QR code](./docs/figures/QR.png). By joining the community, you can get the latest updates on OpenTS, share your ideas, and discuss with other members.
+
+Those who wish to join can first scan the QR code below to contact me via WeChat. Please include your name and research direction in the remarks when adding me. After your application is approved, we will invite you to join the group. Once you are in the group, please update your group nickname to "Name + School/Institution + Research Direction." Members who fail to update their remarks within a week will be regularly removed by the administrator.
