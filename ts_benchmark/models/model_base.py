@@ -3,6 +3,7 @@ import abc
 
 import numpy as np
 import pandas as pd
+from typing import List, Optional, Tuple, Dict
 
 
 def annotate(**kwargs):
@@ -46,19 +47,32 @@ class ModelBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def forecast_fit(
-        self, train_data: pd.DataFrame, *, train_ratio_in_tv: float = 1.0, **kwargs
+        self,
+        train_valid_data: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs,
     ) -> "ModelBase":
         """
         Fit a model on time series data
 
-        :param train_data: Time series data.
+        :param train_valid_data: Time series data used for training and validation.
+        :param covariates: Additional external variables
+            key "exog" : the corresponding exogenous data aligned with `train_data`.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.
             If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
 
     @abc.abstractmethod
-    def forecast(self, horizon: int, series: pd.DataFrame, **kwargs) -> np.ndarray:
+    def forecast(
+        self,
+        horizon: int,
+        series: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+    ) -> np.ndarray:
         """
         Forecasting with the model
 
@@ -66,6 +80,8 @@ class ModelBase(metaclass=abc.ABCMeta):
 
         :param horizon: Forecast length.
         :param series: Time series data to make inferences on.
+        :param covariates: Additional external variables.
+            key "exog" : the corresponding exogenous data aligned with `series`.
         :return: Forecast result.
         """
 

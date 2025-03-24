@@ -10,7 +10,7 @@ from ts_benchmark.data.data_pool import DataPool
 from ts_benchmark.evaluation.strategy.constants import FieldNames
 from ts_benchmark.evaluation.strategy.strategy import Strategy
 from ts_benchmark.models import ModelFactory
-from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_processing import split_time
 from ts_benchmark.utils.random_utils import fix_random_seed, fix_all_random_seed
 
 
@@ -97,7 +97,7 @@ class ForecastingStrategy(Strategy, metaclass=abc.ABCMeta):
         :param train_ratio_in_tv: The ratio of the training series when performing train-validation split.
         :return: A scaler object.
         """
-        train_data, _ = split_before(
+        train_data, _ = split_time(
             train_valid_data,
             int(len(train_valid_data) * train_ratio_in_tv),
         )

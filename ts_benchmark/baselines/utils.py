@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from ts_benchmark.baselines.time_series_library.utils.timefeatures import (
     time_features,
 )
-from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_processing import split_time
 
 
 class SlidingWindowDataLoader:
@@ -112,13 +112,13 @@ def train_val_split(train_data, ratio, seq_len):
     elif seq_len is not None:
         border = int((train_data.shape[0]) * ratio)
 
-        train_data_value, valid_data_rest = split_before(train_data, border)
-        train_data_rest, valid_data = split_before(train_data, border - seq_len)
+        train_data_value, valid_data_rest = split_time(train_data, border)
+        train_data_rest, valid_data = split_time(train_data, border - seq_len)
         return train_data_value, valid_data
     else:
         border = int((train_data.shape[0]) * ratio)
 
-        train_data_value, valid_data_rest = split_before(train_data, border)
+        train_data_value, valid_data_rest = split_time(train_data, border)
         return train_data_value, valid_data_rest
 
 

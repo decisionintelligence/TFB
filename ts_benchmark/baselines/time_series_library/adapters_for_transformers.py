@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 
@@ -19,7 +20,7 @@ from ts_benchmark.baselines.utils import (
     get_time_mark,
 )
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
-from ts_benchmark.utils.data_processing import split_before
+from ts_benchmark.utils.data_processing import split_time
 
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
@@ -63,7 +64,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
     "use_norm": True,
-    "parallel_strategy": "DP"
+    "parallel_strategy": "DP",
 }
 
 
@@ -75,8 +76,10 @@ class TransformerConfig:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        if self.parallel_strategy not in [None, 'DP']:
-            raise ValueError("Invalid value for parallel_strategy. Supported values are 'DP' and None.")
+        if self.parallel_strategy not in [None, "DP"]:
+            raise ValueError(
+                "Invalid value for parallel_strategy. Supported values are 'DP' and None."
+            )
 
     @property
     def pred_len(self):
@@ -204,7 +207,17 @@ class TransformerAdapter(ModelBase):
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
 
-    def validate(self, valid_data_loader, criterion):
+    def validate(
+        self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module
+    ) -> float:
+        """
+        Validates the model performance on the provided validation dataset.
+
+        :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
+        :param series_dim : The number of series data‘s dimensions.
+        :param criterion : The loss function to compute the loss between model predictions and ground truth.
+        :returns:The mean loss computed over the validation dataset.
+        """
         config = self.config
         total_loss = []
         self.model.eval()
@@ -227,8 +240,9 @@ class TransformerAdapter(ModelBase):
 
             output = self.model(input, input_mark, dec_input, target_mark)
 
-            target = target[:, -config.horizon :, :]
-            output = output[:, -config.horizon :, :]
+            target = target[:, -config.horizon :, :series_dim]
+            output = output[:, -config.horizon :, :series_dim]
+
             loss = criterion(output, target).detach().cpu().numpy()
             total_loss.append(loss)
 
@@ -237,15 +251,28 @@ class TransformerAdapter(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float
+        self,
+        train_valid_data: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs,
     ) -> "ModelBase":
         """
         Train the model.
 
-        :param train_data: Time series data used for training.
+        :param train_valid_data: Time series data used for training and validation.
+        :param covariates: Additional external variables.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = train_valid_data.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
+
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
             self.single_forecasting_hyper_param_tune(train_valid_data)
@@ -255,7 +282,7 @@ class TransformerAdapter(ModelBase):
 
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
-        
+
         device_ids = np.arange(torch.cuda.device_count()).tolist()
         if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
             self.model = nn.DataParallel(self.model, device_ids=device_ids)
@@ -340,44 +367,66 @@ class TransformerAdapter(ModelBase):
 
                 output = self.model(input, input_mark, dec_input, target_mark)
 
-                target = target[:, -config.horizon :, :]
-                output = output[:, -config.horizon :, :]
+                target = target[:, -config.horizon :, :series_dim]
+                output = output[:, -config.horizon :, :series_dim]
+
                 loss = criterion(output, target)
 
                 loss.backward()
                 optimizer.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, criterion)
+                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
 
             adjust_learning_rate(optimizer, epoch + 1, config)
 
-    def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
+    def forecast(
+        self,
+        horizon: int,
+        series: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+    ) -> np.ndarray:
         """
         Make predictions.
 
         :param horizon: The predicted length.
-        :param testdata: Time series data used for prediction.
+        :param series: Time series data used for prediction.
+        :param covariates: Additional external variables
         :return: An array of predicted results.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = series.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            series = pd.concat([series, exog_data], axis=1)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
+
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
         if self.config.norm:
-            train = pd.DataFrame(
-                self.scaler.transform(train.values),
-                columns=train.columns,
-                index=train.index,
+            series = pd.DataFrame(
+                self.scaler.transform(series.values),
+                columns=series.columns,
+                index=series.index,
             )
 
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_before(train, len(train) - config.seq_len)
+        series, test = split_time(series, len(series) - config.seq_len)
 
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
@@ -423,9 +472,9 @@ class TransformerAdapter(ModelBase):
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
-                    return answer[-horizon:]
+                    return answer[-horizon:, :series_dim]
 
-                output = output.cpu().numpy()[:, -config.horizon :, :]
+                output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
@@ -462,6 +511,22 @@ class TransformerAdapter(ModelBase):
 
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
+        series_dim = input_np.shape[-1]
+
+        if input_data["covariates"] is None:
+            covariates = {}
+        else:
+            covariates = input_data["covariates"]
+        exog_data = covariates.get("exog")
+        if exog_data is not None:
+            input_np = np.concatenate((input_np, exog_data), axis=2)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
 
         if self.config.norm:
             origin_shape = input_np.shape
@@ -482,7 +547,7 @@ class TransformerAdapter(ModelBase):
                 answers.shape
             )
 
-        return answers
+        return answers[..., :series_dim]
 
     def _perform_rolling_predictions(
         self,
