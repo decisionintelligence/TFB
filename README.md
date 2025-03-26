@@ -13,6 +13,8 @@
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
 
+🚩 **News** (2025.03) **TFB has added a new practical feature: support for predicting only a subset of input variables**.
+
 🚩 **News** (2025.03) **We maintain a [WeChat group](./docs/figures/QR.png) to facilitate discussions about TFB and [OpenTS](https://decisionintelligence.github.io/OpenTS/)**.
 
 🚩 **News** (2024.09) **You can find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
@@ -154,6 +156,10 @@ If you want to run datasets in parallel, test multiple datasets, or test multipl
 4. How long the look-back window is used for the multivariate forecasting evaluation results?
    
 You can find answer [here](https://github.com/decisionintelligence/TFB/issues/40).
+
+5. How to predict only a subset of input variables?
+   
+You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
 
 ## Citation
 
