@@ -13,7 +13,7 @@
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
 
-🚩 **News** (2025.03) **TFB has added a new practical feature: support for predicting only a subset of input variables**.
+🚩 **News** (2025.03) **TFB has added a [new practical feature](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md): support for predicting only a subset of input variables**.
 
 🚩 **News** (2025.03) **We maintain a [WeChat group](./docs/figures/QR.png) to facilitate discussions about TFB and [OpenTS](https://decisionintelligence.github.io/OpenTS/)**.
 
