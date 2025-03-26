@@ -157,7 +157,11 @@ If you want to run datasets in parallel, test multiple datasets, or test multipl
    
 You can find answer [here](https://github.com/decisionintelligence/TFB/issues/40).
 
-5. How to predict only a subset of input variables?
+5. How to train models with multiple gpus using DataParallel?
+  
+You can find answer [here](./docs/tutorials/steps_to_train_models_with_multi_gpus_using_dp.md).
+
+6. How to predict only a subset of input variables?
    
 You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
 
