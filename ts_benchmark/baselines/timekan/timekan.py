@@ -21,7 +21,7 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.baselines.timekan.models.timekan_model import TimeKANModeL
 from ...models.model_base import ModelBase, BatchMaker
 
-DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
+DEFAULT_HYPER_PARAMS = {
     "lradj": "type1",
     "data": "custom",
     "label_len": 48,
@@ -55,10 +55,10 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "anomaly_ratio": 0.25,
     "num_workers": 10,
     "itr": 1,
-    "num_epochs": 10, 
+    "num_epochs": 10,
     "batch_size": 16,
     "patience": 10,
-    "lr": 0.001, 
+    "lr": 0.001,
     "des": "test",
     "loss": "MSE",
     "pct_start": 0.2,
@@ -73,9 +73,9 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
 }
 
 
-class TransformerConfig:
+class TimeKANConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_TimeKAN_BASED_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
@@ -89,7 +89,7 @@ class TransformerConfig:
 class TimeKAN(ModelBase):
     def __init__(self, **kwargs):
         super(TimeKAN, self).__init__()
-        self.config = TransformerConfig(**kwargs)
+        self.config = TimeKANConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
@@ -406,7 +406,7 @@ class TimeKAN(ModelBase):
 
         config = self.config
         series, test = split_time(series, len(series) - config.seq_len)
-        # Additional timestamp marks required to generate transformer class methods
+        # Additional timestamp marks required to generate TimeKAN class methods
         test = self.padding_data_for_forecast(test)
 
         test_data_set, test_data_loader = forecasting_data_provider(
