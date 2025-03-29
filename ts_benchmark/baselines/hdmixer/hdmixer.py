@@ -40,7 +40,7 @@ DEFAULT_HYPER_PARAMS = {
     "patience": 10,
     "lr": 0.0001,
     "loss": "MAE",
-    "lradj": "type1",
+    "lradj": "type3",
     "pct_start": 0.3,
     "e_layers": 1,
     "d_model": 16,
