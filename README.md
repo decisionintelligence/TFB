@@ -30,8 +30,13 @@
 
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
+
+  - [ ] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
+
+  - [ ] **HDMixer** - HDMixer: Hierarchical Dependency with Extendable Patch for Multivariate Time Series Forecasting [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer).
+
   - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/patchmlp).
-     
+    
   - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/amplifier).
     
   - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/duet).
@@ -155,14 +160,16 @@ If you want to run datasets in parallel, test multiple datasets, or test multipl
 
 4. How long the look-back window is used for the multivariate forecasting evaluation results?
    
+
 You can find answer [here](https://github.com/decisionintelligence/TFB/issues/40).
 
 5. How to train models with multiple gpus using DataParallel?
-  
+
 You can find answer [here](./docs/tutorials/steps_to_train_models_with_multi_gpus_using_dp.md).
 
 6. How to predict only a subset of input variables?
    
+
 You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
 
 ## Citation

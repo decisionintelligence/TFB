@@ -20,7 +20,7 @@ from ts_benchmark.utils.data_processing import split_time
 from .utils.tools import EarlyStopping, adjust_learning_rate
 from ...models.model_base import ModelBase, BatchMaker
 
-DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
+DEFAULT_HYPER_PARAMS = {
     "k": 2,
     "enc_in": 1,
     "dec_in": 1,
@@ -70,9 +70,9 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
 }
 
 
-class TransformerConfig:
+class PathformerConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
@@ -86,7 +86,7 @@ class TransformerConfig:
 class Pathformer(ModelBase):
     def __init__(self, **kwargs):
         super(Pathformer, self).__init__()
-        self.config = TransformerConfig(**kwargs)
+        self.config = PathformerConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
@@ -106,7 +106,7 @@ class Pathformer(ModelBase):
 
     @property
     def model_name(self):
-        return "pathformer"
+        return "Pathformer"
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)

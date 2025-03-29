@@ -1,24 +1,25 @@
+from typing import Optional, Tuple
+
 import math
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
-
-from ts_benchmark.baselines.duet.utils.tools import EarlyStopping, adjust_learning_rate
-from ts_benchmark.utils.data_processing import split_time
-from typing import Type, Dict, Optional, Tuple
 from torch import optim
-import numpy as np
 from torch.utils.data import DataLoader
-import pandas as pd
+
+from ts_benchmark.baselines.duet.models.duet_model import DUETModel
+from ts_benchmark.baselines.duet.utils.tools import EarlyStopping, adjust_learning_rate
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
     get_time_mark,
 )
-from ts_benchmark.baselines.duet.models.duet_model import DUETModel
+from ts_benchmark.utils.data_processing import split_time
 from ...models.model_base import ModelBase, BatchMaker
 
-DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
+DEFAULT_HYPER_PARAMS = {
     "enc_in": 1,
     "dec_in": 1,
     "c_out": 1,
@@ -54,9 +55,9 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
 }
 
 
-class TransformerConfig:
+class DUETConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
@@ -70,7 +71,7 @@ class TransformerConfig:
 class DUET(ModelBase):
     def __init__(self, **kwargs):
         super(DUET, self).__init__()
-        self.config = TransformerConfig(**kwargs)
+        self.config = DUETConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
