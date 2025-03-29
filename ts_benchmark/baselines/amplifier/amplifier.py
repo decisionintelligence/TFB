@@ -1,23 +1,28 @@
+from typing import Optional, Tuple
+
 import math
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
-
-from ts_benchmark.baselines.amplifier.utils.tools import EarlyStopping, adjust_learning_rate
-from ts_benchmark.utils.data_processing import split_before
-from typing import Type, Dict, Optional, Tuple
 from torch import optim
-import numpy as np
-import pandas as pd
+from torch.utils.data import DataLoader
+
+from ts_benchmark.baselines.amplifier.models.amplifier_model import AmplifierModel
+from ts_benchmark.baselines.amplifier.utils.tools import (
+    EarlyStopping,
+    adjust_learning_rate,
+)
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
-    get_time_mark
+    get_time_mark,
 )
-from ts_benchmark.baselines.amplifier.models.amplifier_model import AmplifierModel
+from ts_benchmark.utils.data_processing import split_time
 from ...models.model_base import ModelBase, BatchMaker
 
-DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
+DEFAULT_HYPER_PARAMS = {
     "use_amp": 0,
     "label_len": 48,
     "embed": "timeF",
@@ -34,9 +39,9 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
 }
 
 
-class TransformerConfig:
+class AmplifierConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
@@ -50,7 +55,7 @@ class TransformerConfig:
 class Amplifier(ModelBase):
     def __init__(self, **kwargs):
         super(Amplifier, self).__init__()
-        self.config = TransformerConfig(**kwargs)
+        self.config = AmplifierConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
@@ -69,7 +74,7 @@ class Amplifier(ModelBase):
         return {
             "seq_len": "input_chunk_length",
             "horizon": "output_chunk_length",
-            "norm": "norm"
+            "norm": "norm",
         }
 
     def __repr__(self) -> str:
@@ -171,7 +176,17 @@ class Amplifier(ModelBase):
         )
         padding_mark = get_time_mark(whole_time_stamp, 1, self.config.freq)
         return padding_mark
-    def validate(self, valid_data_loader, criterion):
+
+    def validate(
+        self, valid_data_loader: DataLoader, series_dim: int, criterion: torch.nn.Module
+    ) -> float:
+        """
+        Validates the model performance on the provided validation dataset.
+        :param valid_data_loader: A PyTorch DataLoader for the validation dataset.
+        :param series_dim : The number of series data‘s dimensions.
+        :param criterion : The loss function to compute the loss between model predictions and ground truth.
+        :returns:The mean loss computed over the validation dataset.
+        """
         config = self.config
         total_loss = []
         self.model.eval()
@@ -186,23 +201,31 @@ class Amplifier(ModelBase):
                 )
 
                 # decoder input
-                dec_inp = torch.zeros_like(target[:, -config.pred_len:, :]).float()
-                dec_inp = torch.cat([target[:, :config.label_len, :], dec_inp], dim=1).float().to(device)
+                dec_inp = torch.zeros_like(target[:, -config.pred_len :, :]).float()
+                dec_inp = (
+                    torch.cat([target[:, : config.label_len, :], dec_inp], dim=1)
+                    .float()
+                    .to(device)
+                )
                 # encoder - decoder
                 if config.use_amp == 1:
                     with torch.cuda.amp.autocast():
                         if config.output_attention == 1:
-                            outputs = self.model(input, input_mark, dec_inp, target_mark)[0]
+                            outputs = self.model(
+                                input, input_mark, dec_inp, target_mark
+                            )[0]
                         else:
-                            outputs = self.model(input, input_mark, dec_inp, target_mark)
+                            outputs = self.model(
+                                input, input_mark, dec_inp, target_mark
+                            )
                 else:
                     if config.output_attention == 1:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)[0]
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                outputs = outputs[:, -config.pred_len:, :]
-                target = target[:, -config.pred_len:, :].to(device)
+                target = target[:, -config.horizon :, :series_dim]
+                outputs = outputs[:, -config.horizon :, :series_dim]
 
                 pred = outputs.detach().cpu()
                 true = target.detach().cpu()
@@ -214,14 +237,27 @@ class Amplifier(ModelBase):
         self.model.train()
         return total_loss
 
-    def forecast_fit(self, train_valid_data: pd.DataFrame, train_ratio_in_tv: float) -> "ModelBase":
+    def forecast_fit(
+        self,
+        train_valid_data: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+        train_ratio_in_tv: float = 1.0,
+        **kwargs,
+    ) -> "ModelBase":
         """
         Train the model.
-
-        :param train_data: Time data data used for training.
+        :param train_valid_data: Time series data used for training and validation.
+        :param covariates: Additional external variables.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
         :return: The fitted model object.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = train_valid_data.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            train_valid_data = pd.concat([train_valid_data, exog_data], axis=1)
 
         if train_valid_data.shape[1] == 1:
             train_drop_last = False
@@ -297,7 +333,7 @@ class Amplifier(ModelBase):
             self.model.train()
             # for input, target, input_mark, target_mark in train_data_loader:
             for i, (input, target, input_mark, target_mark) in enumerate(
-                    train_data_loader
+                train_data_loader
             ):
                 optimizer.zero_grad()
                 input, target, input_mark, target_mark = (
@@ -308,19 +344,27 @@ class Amplifier(ModelBase):
                 )
 
                 # decoder input
-                dec_inp = torch.zeros_like(target[:, -config.pred_len:, :]).float()
-                dec_inp = torch.cat([target[:, :config.label_len, :], dec_inp], dim=1).float().to(device)
+                dec_inp = torch.zeros_like(target[:, -config.pred_len :, :]).float()
+                dec_inp = (
+                    torch.cat([target[:, : config.label_len, :], dec_inp], dim=1)
+                    .float()
+                    .to(device)
+                )
 
                 # encoder - decoder
                 if config.use_amp == 1:
                     with torch.cuda.amp.autocast():
                         if config.output_attention == 1:
-                            outputs = self.model(input, input_mark, dec_inp, target_mark)[0]
+                            outputs = self.model(
+                                input, input_mark, dec_inp, target_mark
+                            )[0]
                         else:
-                            outputs = self.model(input, input_mark, dec_inp, target_mark)
+                            outputs = self.model(
+                                input, input_mark, dec_inp, target_mark
+                            )
 
-                        outputs = outputs[:, -self.args.pred_len:, :]
-                        batch_y = batch_y[:, -self.args.pred_len:, :].to(device)
+                        outputs = outputs[:, -self.args.pred_len :, :]
+                        batch_y = batch_y[:, -self.args.pred_len :, :].to(device)
                         loss = criterion(outputs, target)
                 else:
                     if config.output_attention == 1:
@@ -328,8 +372,9 @@ class Amplifier(ModelBase):
                     else:
                         outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                    outputs = outputs[:, -config.pred_len:, :]
-                    target = target[:, -config.pred_len:, :].to(device)
+                    target = target[:, -config.horizon :, :series_dim]
+                    outputs = outputs[:, -config.horizon :, :series_dim]
+
                     loss = criterion(outputs, target)
 
                 if config.use_amp == 1:
@@ -341,37 +386,54 @@ class Amplifier(ModelBase):
                     optimizer.step()
 
             if train_ratio_in_tv != 1:
-                valid_loss = self.validate(valid_data_loader, criterion)
+                valid_loss = self.validate(valid_data_loader, series_dim, criterion)
                 self.early_stopping(valid_loss, self.model)
                 if self.early_stopping.early_stop:
                     break
 
             adjust_learning_rate(optimizer, epoch + 1, config)
 
-    def forecast(self, horizon: int, train: pd.DataFrame) -> np.ndarray:
+    def forecast(
+        self,
+        horizon: int,
+        series: pd.DataFrame,
+        *,
+        covariates: Optional[dict] = None,
+    ) -> np.ndarray:
         """
         Make predictions.
-
         :param horizon: The predicted length.
-        :param testdata: Time data data used for prediction.
+        :param series: Time series data used for prediction.
+        :param covariates: Additional external variables
         :return: An array of predicted results.
         """
+        if covariates is None:
+            covariates = {}
+        series_dim = series.shape[-1]
+        exog_data = covariates.get("exog", None)
+        if exog_data is not None:
+            series = pd.concat([series, exog_data], axis=1)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
         if self.config.norm:
-            train = pd.DataFrame(
-                self.scaler.transform(train.values),
-                columns=train.columns,
-                index=train.index,
+            series = pd.DataFrame(
+                self.scaler.transform(series.values),
+                columns=series.columns,
+                index=series.index,
             )
-
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
 
         config = self.config
-        train, test = split_before(train, len(train) - config.seq_len)
-
+        series, test = split_time(series, len(series) - config.seq_len)
         # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
 
@@ -397,7 +459,7 @@ class Amplifier(ModelBase):
                     output, _ = self.model(input)
 
                 column_num = output.shape[-1]
-                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon:]
+                temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
 
                 if answer is None:
                     answer = temp
@@ -409,13 +471,13 @@ class Amplifier(ModelBase):
                         answer[-horizon:] = self.scaler.inverse_transform(
                             answer[-horizon:]
                         )
-                    return answer[-horizon:]
+                    return answer[-horizon:, :series_dim]
 
-                output = output.cpu().numpy()[:, -config.horizon:, :]
+                output = output.cpu().numpy()[:, -config.horizon :]
                 for i in range(config.horizon):
                     test.iloc[i + config.seq_len] = output[0, i, :]
 
-                test = test.iloc[config.horizon:]
+                test = test.iloc[config.horizon :]
                 test = self.padding_data_for_forecast(test)
 
                 test_data_set, test_data_loader = forecasting_data_provider(
@@ -449,6 +511,23 @@ class Amplifier(ModelBase):
         input_data = batch_maker.make_batch(self.config.batch_size, self.config.seq_len)
         input_np = input_data["input"]
 
+        series_dim = input_np.shape[-1]
+
+        if input_data["covariates"] is None:
+            covariates = {}
+        else:
+            covariates = input_data["covariates"]
+        exog_data = covariates.get("exog")
+        if exog_data is not None:
+            input_np = np.concatenate((input_np, exog_data), axis=2)
+            if (
+                hasattr(self.config, "output_chunk_length")
+                and horizon != self.config.output_chunk_length
+            ):
+                raise ValueError(
+                    f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
+                )
+
         if self.config.norm:
             origin_shape = input_np.shape
             flattened_data = input_np.reshape((-1, input_np.shape[-1]))
@@ -468,7 +547,7 @@ class Amplifier(ModelBase):
                 answers.shape
             )
 
-        return answers
+        return answers[..., :series_dim]
 
     def _perform_rolling_predictions(
         self,

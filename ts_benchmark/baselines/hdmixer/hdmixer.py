@@ -5,44 +5,63 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from torch import optim
-
-from ts_benchmark.baselines.fits.fits_model import FITSModel
+from torch.utils.data import DataLoader
+from ts_benchmark.baselines.hdmixer.models.HDMixer import HDMixerModel
+from ts_benchmark.baselines.hdmixer.utils.tools import (
+    EarlyStopping,
+    adjust_learning_rate,
+)
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
     get_time_mark,
 )
 from ts_benchmark.utils.data_processing import split_time
-from ..time_series_library.utils.tools import EarlyStopping, adjust_learning_rate
 from ...models.model_base import ModelBase, BatchMaker
 
 DEFAULT_HYPER_PARAMS = {
-    "embed": "timeF",
-    "freq": "h",
-    "lradj": "type1",
-    "factor": 1,
-    "activation": "gelu",
-    "dropout": 0.1,
-    "batch_size": 32,
-    "lr": 0.0001,
+    "enc_in": 1,
+    "mix_time": 1,
+    "mix_variable": 1,
+    "mix_channel": 1,
+    "deform_patch": 1,
+    "deform_range": 0.25,
+    "lambda_": 1e-1,
+    "r": 1e-2,
+    "mlp_ratio": 1,
+    "window_size": 6,
+    "shift_size": 3,
+    "weight_decay": 1e-3,
+    "num_workers": 10,
     "num_epochs": 100,
-    "num_workers": 0,
-    "loss": "MSE",
-    "itr": 1,
-    "distil": True,
-    "patience": 3,
-    "cut_freq": 0,
-    "train_mode": 1,
-    "base_T": 24,
-    "H_order": 2,
-    "individual": False,
+    "batch_size": 32,
+    "patience": 10,
+    "lr": 0.0001,
+    "loss": "MAE",
+    "lradj": "type1",
+    "pct_start": 0.3,
+    "e_layers": 1,
+    "d_model": 16,
+    "d_ff": 32,
+    "n_heads": 4,
+    "fc_dropout": 0.3,
+    "head_dropout": 0,
+    "dropout": 0.8,
+    "individual": 0,
+    "patch_len": 16,
+    "stride": 8,
+    "padding_patch": "end",
+    "revin": 1,
+    "affine": 0,
+    "subtract_last": 0,
+    "decomposition": 0,
+    "kernel_size": 25,
 }
 
 
-class FITSConfig:
+class HDMixerConfig:
     def __init__(self, **kwargs):
         for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
@@ -55,20 +74,17 @@ class FITSConfig:
         return self.horizon
 
 
-class FITS(ModelBase):
+class HDMixer(ModelBase):
     def __init__(self, **kwargs):
-        super(FITS, self).__init__()
-        self.config = FITSConfig(**kwargs)
+        super(HDMixer, self).__init__()
+        self.config = HDMixerConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
-        self.config.cut_freq = (
-            int(self.seq_len // self.config.base_T + 1) * self.config.H_order + 10
-        )
 
     @property
     def model_name(self):
-        return "FITS"
+        return "HDMixer"
 
     @staticmethod
     def required_hyper_params() -> dict:
@@ -82,6 +98,12 @@ class FITS(ModelBase):
             "horizon": "output_chunk_length",
             "norm": "norm",
         }
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the model name.
+        """
+        return self.model_name
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
         freq = pd.infer_freq(train_data.index)
@@ -117,6 +139,21 @@ class FITS(ModelBase):
         self.config.c_out = column_num
 
         setattr(self.config, "label_len", self.config.horizon)
+
+    def detect_hyper_param_tune(self, train_data: pd.DataFrame):
+        freq = pd.infer_freq(train_data.index)
+        if freq == None:
+            raise ValueError("Irregular time intervals")
+        elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
+            self.config.freq = "s"
+        else:
+            self.config.freq = freq[0].lower()
+
+        column_num = train_data.shape[1]
+        self.config.enc_in = column_num
+        self.config.dec_in = column_num
+        self.config.c_out = column_num
+        self.config.label_len = 48
 
     def padding_data_for_forecast(self, test):
         time_column_data = test.index
@@ -176,28 +213,34 @@ class FITS(ModelBase):
         total_loss = []
         self.model.eval()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        with torch.no_grad():
+            for input, target, input_mark, target_mark in valid_data_loader:
+                input, target, input_mark, target_mark = (
+                    input.to(device),
+                    target.to(device),
+                    input_mark.to(device),
+                    target_mark.to(device),
+                )
 
-        for input, target, input_mark, target_mark in valid_data_loader:
-            input, target, input_mark, target_mark = (
-                input.to(device),
-                target.to(device),
-                input_mark.to(device),
-                target_mark.to(device),
-            )
-            # decoder input
-            dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
-            dec_input = (
-                torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
-                .float()
-                .to(device)
-            )
+                output, PaEN_Loss = self.model(input)
 
-            output, low = self.model(input)
+                target = target[:, -config.horizon :, :series_dim]
+                output = output[:, -config.horizon :, :series_dim]
 
-            target = target[:, -config.horizon :, :series_dim]
-            output = output[:, -config.horizon :, :series_dim]
-            loss = criterion(output, target).detach().cpu().numpy()
-            total_loss.append(loss)
+                # Arctangent loss with weight decay
+                self.ratio = np.array(
+                    [
+                        -1 * math.atan(i + 1) + math.pi / 4 + 1
+                        for i in range(self.config.horizon)
+                    ]
+                )
+                self.ratio = torch.tensor(self.ratio).unsqueeze(-1).to("cuda")
+
+                output = output * self.ratio
+                target = target * self.ratio
+
+                loss = criterion(output, target).detach().cpu().numpy()
+                total_loss.append(loss)
 
         total_loss = np.mean(total_loss)
         self.model.train()
@@ -232,8 +275,7 @@ class FITS(ModelBase):
             train_drop_last = True
             self.multi_forecasting_hyper_param_tune(train_valid_data)
 
-        setattr(self.config, "task_name", "short_term_forecast")
-        self.model = FITSModel(self.config)
+        self.model = HDMixerModel(self.config)
 
         print(
             "----------------------------------------------------------",
@@ -312,20 +354,29 @@ class FITS(ModelBase):
                     target_mark.to(device),
                 )
                 # decoder input
-                dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
-                dec_input = (
-                    torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
-                    .float()
-                    .to(device)
-                )
 
-                output, low = self.model(input)
+                output, PaEN_Loss = self.model(input)
 
                 target = target[:, -config.horizon :, :series_dim]
                 output = output[:, -config.horizon :, :series_dim]
+
+                # Arctangent loss with weight decay
+                self.ratio = np.array(
+                    [
+                        -1 * math.atan(i + 1) + math.pi / 4 + 1
+                        for i in range(self.config.horizon)
+                    ]
+                )
+                self.ratio = torch.tensor(self.ratio).unsqueeze(-1).to("cuda")
+
+                output = output * self.ratio
+                target = target * self.ratio
+
                 loss = criterion(output, target)
 
-                loss.backward()
+                total_loss = loss + PaEN_Loss
+                total_loss.backward()
+
                 optimizer.step()
 
             if train_ratio_in_tv != 1:
@@ -363,6 +414,7 @@ class FITS(ModelBase):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
+
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point)
 
@@ -399,15 +451,8 @@ class FITS(ModelBase):
                         input_mark.to(device),
                         target_mark.to(device),
                     )
-                    dec_input = torch.zeros_like(
-                        target[:, -config.horizon :, :]
-                    ).float()
-                    dec_input = (
-                        torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
-                        .float()
-                        .to(device)
-                    )
-                    output, low = self.model(input)
+
+                    output, PaEN_Loss = self.model(input)
 
                 column_num = output.shape[-1]
                 temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
@@ -478,7 +523,6 @@ class FITS(ModelBase):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
-
         if self.config.norm:
             origin_shape = input_np.shape
             flattened_data = input_np.reshape((-1, input_np.shape[-1]))
@@ -529,7 +573,7 @@ class FITS(ModelBase):
                     torch.tensor(input_mark_np, dtype=torch.float32).to(device),
                     torch.tensor(target_mark_np, dtype=torch.float32).to(device),
                 )
-                output, low = self.model(input)
+                output, PaEN_Loss = self.model(input)
                 column_num = output.shape[-1]
                 real_batch_size = output.shape[0]
                 answer = (
