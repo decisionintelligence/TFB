@@ -13,6 +13,8 @@
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
 
+🚩 **News** (2025.04) **TFB has added two new datasets: PEMS03 and PEMS07, bringing the total to 27 multivariate datasets**.
+
 🚩 **News** (2025.03) **TFB has added a [new practical feature](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md): support for predicting only a subset of input variables**.
 
 🚩 **News** (2025.03) **We maintain a [WeChat group](./docs/figures/QR.png) to facilitate discussions about TFB and [OpenTS](https://decisionintelligence.github.io/OpenTS/)**.
@@ -30,7 +32,8 @@
 
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
-
+  - [ ] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
+        
   - [ ] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
 
   - [ ] **HDMixer** - HDMixer: Hierarchical Dependency with Extendable Patch for Multivariate Time Series Forecasting [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer).
