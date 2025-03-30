@@ -75,7 +75,7 @@ DEFAULT_HYPER_PARAMS = {
 
 class TimeKANConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TimeKAN_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
