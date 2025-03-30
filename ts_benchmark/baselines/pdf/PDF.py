@@ -440,7 +440,6 @@ class PDF(ModelBase):
 
         config = self.config
         series, test = split_time(series, len(series) - config.seq_len)
-        # Additional timestamp marks required to generate transformer class methods
         test = self.padding_data_for_forecast(test)
 
         test_data_set, test_data_loader = forecasting_data_provider(
