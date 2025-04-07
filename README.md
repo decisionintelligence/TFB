@@ -194,6 +194,7 @@ If you find this repo useful, please cite our paper.
   title     = {DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting},
   author    = {Xiangfei Qiu and Xingjian Wu and Yan Lin and Chenjuan Guo and Jilin Hu and Bin Yang},
   booktitle = {SIGKDD},
+  pages     = {1185-1196},
   year      = {2025}
 }
 ```
