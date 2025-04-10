@@ -176,8 +176,10 @@ You can find answer [here](./docs/tutorials/steps_to_train_models_with_multi_gpu
 
 6. How to predict only a subset of input variables?
    
-
 You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
+
+7. Is there code in TFB's code base to compute the characteristics of the dataset?
+TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.
 
 ## Citation
 
