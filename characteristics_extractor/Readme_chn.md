@@ -54,13 +54,13 @@ pip install rpy2==3.5.16 pandas==1.5.3 scipy==1.10.1 numpy==1.24.4 statsmodels==
 
   - 对于多变量时间序列文件而言，例如输入的文件名为: `Exchange.csv`，会在用户指定的输出文件夹下（默认为characteristics文件夹）输出4个对应文件
 
-    - `All_characteristics_Exchange.csv.csv`: 包含本代码内计算的所有时间序列特征, 每一行代表多变量中的一个变量对应的时间序列特征
+    - `All_characteristics_Exchange.csv`: 包含本代码内计算的所有时间序列特征, 每一行代表多变量中的一个变量对应的时间序列特征
 
-    - `TFB_characteristics_Exchange.csv.csv`: 包含TFB论文内使用的时间序列特征, 每一行代表多变量中的一个变量对应的时间序列特征
+    - `TFB_characteristics_Exchange.csv`: 包含TFB论文内使用的时间序列特征, 每一行代表多变量中的一个变量对应的时间序列特征
 
-    - `mean_All_characteristics_Exchange.csv.csv`: 包含本代码内计算的所有时间序列特征, 将多变量中所有变量对应的每一个时间序列特征求均值
+    - `mean_All_characteristics_Exchange.csv`: 包含本代码内计算的所有时间序列特征, 将多变量中所有变量对应的每一个时间序列特征求均值
 
-    - `mean_TFB_characteristics_Exchange.csv.csv`: 包含TFB论文内使用的时间序列特征, 将多变量中所有变量对应的每一个时间序列特征求均值
+    - `mean_TFB_characteristics_Exchange.csv`: 包含TFB论文内使用的时间序列特征, 将多变量中所有变量对应的每一个时间序列特征求均值
 
 
 

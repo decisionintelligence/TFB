@@ -54,13 +54,13 @@ The input data format needs to be TFB, supporting a three-column long table form
 
   - For multivariate time series files, for example, if the input file is named `Exchange.csv`, four corresponding files will be generated in the user-specified output directory (default is the "characteristics" folder):
 
-    - `All_characteristics_Exchange.csv.csv`: Contains all time series features calculated by this code. Each row corresponds to the time series features of one variable in the multivariate series.
+    - `All_characteristics_Exchange.csv`: Contains all time series features calculated by this code. Each row corresponds to the time series features of one variable in the multivariate series.
 
-    - `TFB_characteristics_Exchange.csv.csv`: Contains the time series features used in the TFB paper. Each row corresponds to the time series features of one variable in the multivariate series.
+    - `TFB_characteristics_Exchange.csv`: Contains the time series features used in the TFB paper. Each row corresponds to the time series features of one variable in the multivariate series.
 
-    - `mean_All_characteristics_Exchange.csv.csv`: Contains all time series features calculated by this code, with each feature averaged across all variables in the multivariate series.
+    - `mean_All_characteristics_Exchange.csv`: Contains all time series features calculated by this code, with each feature averaged across all variables in the multivariate series.
 
-    - `mean_TFB_characteristics_Exchange.csv.csv`: Contains the time series features used in the TFB paper, with each feature averaged across all variables in the multivariate series.
+    - `mean_TFB_characteristics_Exchange.csv`: Contains the time series features used in the TFB paper, with each feature averaged across all variables in the multivariate series.
 
 
 
@@ -70,6 +70,6 @@ For more details, please refer to [here](https://github.com/decisionintelligence
 
 
 
-## 5. 代码文件
+## 5. Code File
 
-点击[这里](https://github.com/decisionintelligence/TFB/tree/master/characteristics_extractor/Characteristics_Extractor.py)看代码.
+Click [here](https://github.com/decisionintelligence/TFB/tree/master/characteristics_extractor/Characteristics_Extractor.py) to view the code.
