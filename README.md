@@ -19,7 +19,7 @@
 
 🚩 **News** (2025.04) **TFB has added two new datasets: PEMS03 and PEMS07, bringing the total to 27 multivariate datasets**.
 
-🚩 **News** (2025.03) **TFB has added a [new practical feature](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md): support for predicting only a subset of input variables**.
+🚩 **News** (2025.03) **TFB has added a new practical feature: support for predicting only a subset of input variables. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_predict_only_a_subset_of_input_variables_chn.pdf) and [English](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md) documentation are provided.**
 
 🚩 **News** (2025.03) **We maintain a [WeChat group](./docs/figures/QR.png) to facilitate discussions about TFB and [OpenTS](https://decisionintelligence.github.io/OpenTS/)**.
 
