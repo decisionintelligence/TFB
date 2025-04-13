@@ -1,5 +1,8 @@
 ## Steps to evaluating your own time series
 
+> [!IMPORTANT]
+> The first and second steps must be taken！
+
 1. Download the datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). 
 2. Put the downloaded data under the folder ./dataset.
 3. Process your dataset into three columns in [TFB format](#TFB-data-format) using code like [here](#Example-code).  
