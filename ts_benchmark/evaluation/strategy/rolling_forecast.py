@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple, Any, Dict
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
+from einops import rearrange
 
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
@@ -408,8 +409,9 @@ class RollingForecast(ForecastingStrategy):
 
         targets = batch_maker.make_batch_eval(horizon)["target"]
         exog_futures= batch_maker.make_batch_eval(horizon)["covariates"].get("exog", None)
-        targets = targets.reshape(targets.shape[0]*targets.shape[3],targets.shape[1],targets.shape[2])
-        exog_futures = exog_futures.reshape(exog_futures.shape[0] * exog_futures.shape[3], exog_futures.shape[1], exog_futures.shape[2])
+        # Convert reshape to rearrange
+        targets = rearrange(targets, 'b t c n -> (b n) t c')
+        exog_futures = rearrange(exog_futures, 'b t c n -> (b n) t c')
         i=0
         while predict_batch_maker.has_more_batches():
             start_inference_time = time.time()

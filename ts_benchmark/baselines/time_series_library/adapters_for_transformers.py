@@ -23,7 +23,6 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_time
 
-# 默认超参数
 DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "top_k": 5,
     "enc_in": 1,
@@ -65,12 +64,10 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "down_sampling_layers": 3,
     "down_sampling_method": "avg",
     "decomp_method": "moving_avg",
-    "use_norm": True,
     "parallel_strategy": "DP",
-    "use_mlp": True,
+    "use_mlp": False,
 }
 
-# 定义 MLP 类
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size1, output_size):
         super(MLP, self).__init__()
@@ -101,14 +98,14 @@ class TransformerConfig:
     def pred_len(self):
         return self.horizon
 
-# 修改 TransformerAdapter 类
 class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__()
         self.config = TransformerConfig(**kwargs)
         self._model_name = model_name
         self.model_class = model_class
-        self.scaler = StandardScaler()
+        self.scaler1 = StandardScaler()
+        self.scaler2 = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -205,16 +202,16 @@ class TransformerAdapter(ModelBase):
         return total_loss
 
     def forecast_fit(
-        self,
-        train_valid_data: pd.DataFrame,
-        *,
-        covariates: Optional[dict] = None,
-        train_ratio_in_tv: float = 1.0,
-        **kwargs,
+            self,
+            train_valid_data: pd.DataFrame,
+            *,
+            covariates: Optional[dict] = None,
+            train_ratio_in_tv: float = 1.0,
+            **kwargs,
     ) -> "ModelBase":
         if covariates is None:
             covariates = {}
-        series_dim = train_valid_data.shape[-2]  # 使用最后一个维度作为 series_dim
+        series_dim = train_valid_data.shape[-2]
         exog_data = covariates.get("exog", None)
         if exog_data is not None:
             train_valid_data = np.concatenate((train_valid_data, exog_data), axis=1)
@@ -232,11 +229,10 @@ class TransformerAdapter(ModelBase):
         setattr(self.config, "task_name", "short_term_forecast")
         self.model = self.model_class(self.config)
 
-        # 根据 use_mlp 参数初始化 MLP
         if self.config.use_mlp:
             input_size = series_dim + exog_dim
             output_size = series_dim
-            self.MLP = MLP(input_size=input_size, hidden_size1=512, output_size=output_size)
+            self.MLP = MLP(input_size=input_size, hidden_size1=2048, output_size=output_size)
             self.MLP.to(self.device)
         else:
             self.MLP = None
@@ -252,14 +248,47 @@ class TransformerAdapter(ModelBase):
         train_data, valid_data = train_val_split(train_valid_data, train_ratio_in_tv, config.seq_len)
         train_data_l = train_data.shape[0]
         valid_data_l = valid_data.shape[0]
-        self.scaler.fit(rearrange(train_data,'l c n->(l n) c'))
-        if config.norm:
-            scaled_data = self.scaler.transform(rearrange(train_data,'l c n->(l n) c'))
-            train_data = rearrange(scaled_data, '(l n) c -> l c n', l=train_data_l)
+
+        # 分别 fit 两个 scaler
+        if exog_dim > 0:
+            # Fit scaler1 for series data
+            self.scaler1.fit(rearrange(train_data[:, :series_dim, :], 'l c n->(l n) c'))
+            # Fit scaler2 for exog data
+            self.scaler2.fit(rearrange(train_data[:, series_dim:, :], 'l c n->(l n) c'))
+
+            if config.norm:
+                # Scale series data
+                scaled_series = self.scaler1.transform(rearrange(train_data[:, :series_dim, :], 'l c n->(l n) c'))
+                train_series = rearrange(scaled_series, '(l n) c -> l c n', l=train_data_l)
+
+                # Scale exog data
+                scaled_exog = self.scaler2.transform(rearrange(train_data[:, series_dim:, :], 'l c n->(l n) c'))
+                train_exog = rearrange(scaled_exog, '(l n) c -> l c n', l=train_data_l)
+
+                # Concatenate scaled data
+                train_data = np.concatenate([train_series, train_exog], axis=1)
+        else:
+            # Only series data, use scaler1
+            self.scaler1.fit(rearrange(train_data, 'l c n->(l n) c'))
+            if config.norm:
+                scaled_data = self.scaler1.transform(rearrange(train_data, 'l c n->(l n) c'))
+                train_data = rearrange(scaled_data, '(l n) c -> l c n', l=train_data_l)
         if train_ratio_in_tv != 1:
             if config.norm:
-                scaled_data = self.scaler.transform(rearrange(valid_data,'l c n->(l n) c'))
-                valid_data = rearrange(scaled_data, '(l n) c -> l c n', l=valid_data_l)
+                if exog_dim > 0:
+                    # Scale validation series data
+                    scaled_series = self.scaler1.transform(rearrange(valid_data[:, :series_dim, :], 'l c n->(l n) c'))
+                    valid_series = rearrange(scaled_series, '(l n) c -> l c n', l=valid_data_l)
+
+                    # Scale validation exog data
+                    scaled_exog = self.scaler2.transform(rearrange(valid_data[:, series_dim:, :], 'l c n->(l n) c'))
+                    valid_exog = rearrange(scaled_exog, '(l n) c -> l c n', l=valid_data_l)
+
+                    # Concatenate scaled data
+                    valid_data = np.concatenate([valid_series, valid_exog], axis=1)
+                else:
+                    scaled_data = self.scaler1.transform(rearrange(valid_data, 'l c n->(l n) c'))
+                    valid_data = rearrange(scaled_data, '(l n) c -> l c n', l=valid_data_l)
             valid_dataset, valid_data_loader = forecasting_data_provider(
                 valid_data,
                 config,
@@ -283,7 +312,7 @@ class TransformerAdapter(ModelBase):
                 {'params': self.MLP.parameters(), 'lr': config.lr * 0.1}
             ])
         else:
-            optimizer = optim.Adam(self.model.parameters(),  config.lr)
+            optimizer = optim.Adam(self.model.parameters(), config.lr)
         self.early_stopping = EarlyStopping(patience=config.patience)
         self.model.to(self.device)
         if self.MLP is not None:
@@ -299,7 +328,7 @@ class TransformerAdapter(ModelBase):
             for i, (input, target) in enumerate(train_data_loader):
                 optimizer.zero_grad()
                 input, target = input.to(self.device), target.to(self.device)
-                dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
+                dec_input = torch.zeros_like(target[:, -config.horizon:, :]).float()
                 dec_input = (
                     torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                     .float()
@@ -308,11 +337,11 @@ class TransformerAdapter(ModelBase):
                 exog_future = target[:, -config.horizon:, series_dim:].to(self.device)
                 output = self.model(input, None, exog_future, None)
                 if self.config.use_mlp and self.MLP is not None:
-                    transformer_output = output[:, -config.horizon :, :series_dim]
+                    transformer_output = output[:, -config.horizon:, :series_dim]
                     output = self.MLP(torch.cat((transformer_output, exog_future), dim=-1))
                 else:
-                    output = output[:, -config.horizon :, :series_dim]
-                target = target[:, -config.horizon :, :series_dim]
+                    output = output[:, -config.horizon:, :series_dim]
+                target = target[:, -config.horizon:, :series_dim]
                 loss = criterion(output, target)
                 loss.backward()
                 optimizer.step()
@@ -327,11 +356,11 @@ class TransformerAdapter(ModelBase):
             adjust_learning_rate(optimizer, epoch + 1, config)
 
     def forecast(
-        self,
-        horizon: int,
-        series: pd.DataFrame,
-        *,
-        covariates: Optional[dict] = None,
+            self,
+            horizon: int,
+            series: pd.DataFrame,
+            *,
+            covariates: Optional[dict] = None,
     ) -> np.ndarray:
         if covariates is None:
             covariates = {}
@@ -340,8 +369,8 @@ class TransformerAdapter(ModelBase):
         if exog_data is not None:
             series = pd.concat([series, exog_data], axis=1)
             if (
-                hasattr(self.config, "output_chunk_length")
-                and horizon != self.config.output_chunk_length
+                    hasattr(self.config, "output_chunk_length")
+                    and horizon != self.config.output_chunk_length
             ):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
@@ -350,12 +379,31 @@ class TransformerAdapter(ModelBase):
             self.model.load_state_dict(self.early_stopping.check_point['transformer'])
             if self.MLP is not None and 'mlp' in self.early_stopping.check_point:
                 self.MLP.load_state_dict(self.early_stopping.check_point['mlp'])
+
         if self.config.norm:
-            series = pd.DataFrame(
-                self.scaler.transform(series.values),
-                columns=series.columns,
-                index=series.index,
-            )
+            if exog_data is not None:
+                # Scale series data with scaler1
+                series_values = series.iloc[:, :series_dim].values
+                scaled_series = self.scaler1.transform(series_values)
+
+                # Scale exog data with scaler2
+                exog_values = series.iloc[:, series_dim:].values
+                scaled_exog = self.scaler2.transform(exog_values)
+
+                # Combine scaled data
+                scaled_values = np.concatenate([scaled_series, scaled_exog], axis=1)
+                series = pd.DataFrame(
+                    scaled_values,
+                    columns=series.columns,
+                    index=series.index,
+                )
+            else:
+                series = pd.DataFrame(
+                    self.scaler1.transform(series.values),
+                    columns=series.columns,
+                    index=series.index,
+                )
+
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
         config = self.config
@@ -380,7 +428,7 @@ class TransformerAdapter(ModelBase):
                         input_mark.to(device),
                         target_mark.to(device),
                     )
-                    dec_input = torch.zeros_like(target[:, -config.horizon :, :]).float()
+                    dec_input = torch.zeros_like(target[:, -config.horizon:, :]).float()
                     dec_input = (
                         torch.cat([target[:, : config.label_len, :], dec_input], dim=1)
                         .float()
@@ -388,25 +436,26 @@ class TransformerAdapter(ModelBase):
                     )
                     output = self.model(input, input_mark, dec_input, target_mark)
                     if self.config.use_mlp and self.MLP is not None:
-                        transformer_output = output[:, -config.horizon :, :series_dim]
-                        exog_future = target[:, -config.horizon :, series_dim:]
+                        transformer_output = output[:, -config.horizon:, :series_dim]
+                        exog_future = target[:, -config.horizon:, series_dim:]
                         output = self.MLP(torch.cat((transformer_output, exog_future), dim=-1))
                     else:
-                        output = output[:, -config.horizon :, :series_dim]
+                        output = output[:, -config.horizon:, :series_dim]
                     column_num = output.shape[-1]
-                    temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
+                    temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon:]
                     if answer is None:
                         answer = temp
                     else:
                         answer = np.concatenate([answer, temp], axis=0)
                     if answer.shape[0] >= horizon:
                         if self.config.norm:
-                            answer[-horizon:] = self.scaler.inverse_transform(answer[-horizon:])
+                            # Only inverse transform series data with scaler1
+                            answer[-horizon:] = self.scaler1.inverse_transform(answer[-horizon:])
                         return answer[-horizon:, :series_dim]
-                    output = output.cpu().numpy()[:, -config.horizon :]
+                    output = output.cpu().numpy()[:, -config.horizon:]
                     for i in range(config.horizon):
                         test.iloc[i + config.seq_len] = output[0, i, :]
-                    test = test.iloc[config.horizon :]
+                    test = test.iloc[config.horizon:]
                     test = self.padding_data_for_forecast(test)
                     test_data_set, test_data_loader = forecasting_data_provider(
                         test,
@@ -418,7 +467,7 @@ class TransformerAdapter(ModelBase):
                     )
 
     def batch_forecast(
-        self, horizon: int, batch_maker: BatchMaker, exog_futures, i, **kwargs
+            self, horizon: int, batch_maker: BatchMaker, exog_futures, i, **kwargs
     ) -> np.ndarray:
         if self.early_stopping.check_point is not None:
             self.model.load_state_dict(self.early_stopping.check_point['transformer'])
@@ -442,40 +491,61 @@ class TransformerAdapter(ModelBase):
             covariates = input_data["covariates"]
         exog_data = covariates.get("exog")
         if exog_data is not None:
+            exog_dim = exog_data.shape[-2]
             input_np = np.concatenate((input_np, exog_data), axis=2)
             if (
-                hasattr(self.config, "output_chunk_length")
-                and horizon != self.config.output_chunk_length
+                    hasattr(self.config, "output_chunk_length")
+                    and horizon != self.config.output_chunk_length
             ):
                 raise ValueError(
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
+        else:
+            exog_dim = 0
+
         input_np = rearrange(input_np, 'b l c n -> (b n) l c')
         input_np_b = input_np.shape[0]
+
         if self.config.norm:
-            scaled_data = self.scaler.transform(rearrange(input_np,'b l c->(b l) c'))
-            input_np = rearrange(scaled_data, '(b l) c -> b l c', b=input_np_b)
+            if exog_dim > 0:
+                # Scale series data with scaler1
+                series_data = input_np[:, :, :series_dim]
+                scaled_series = self.scaler1.transform(rearrange(series_data, 'b l c->(b l) c'))
+                scaled_series = rearrange(scaled_series, '(b l) c -> b l c', b=input_np_b)
+
+                # Scale exog data with scaler2
+                exog_data = input_np[:, :, series_dim:]
+                scaled_exog = self.scaler2.transform(rearrange(exog_data, 'b l c->(b l) c'))
+                scaled_exog = rearrange(scaled_exog, '(b l) c -> b l c', b=input_np_b)
+
+                # Combine scaled data
+                input_np = np.concatenate([scaled_series, scaled_exog], axis=2)
+            else:
+                scaled_data = self.scaler1.transform(rearrange(input_np, 'b l c->(b l) c'))
+                input_np = rearrange(scaled_data, '(b l) c -> b l c', b=input_np_b)
+
         exog_future = torch.tensor(exog_futures[i * real_batch_size: (i + 1) * real_batch_size, -horizon:, :]).to(
             device)
-        answers = torch.tensor(self._perform_rolling_predictions(horizon, input_np, exog_future, device))
+
+        if self.config.norm and exog_dim > 0:
+            exog_future_np = exog_future.cpu().numpy()
+            exog_future_b = exog_future_np.shape[0]
+            scaled_exog_future = self.scaler2.transform(rearrange(exog_future_np, 'b l c->(b l) c'))
+            scaled_exog_future = rearrange(scaled_exog_future, '(b l) c -> b l c', b=exog_future_b)
+            exog_future = torch.tensor(scaled_exog_future).to(device)
+
+        answers = torch.tensor(self._perform_rolling_predictions(horizon, input_np, exog_future, series_dim, device))
         answers = answers[:, -horizon:, :series_dim].to(device)
-        if self.config.use_mlp and self.MLP is not None:
-            output = torch.tensor(answers[:, -horizon:, :series_dim]).to(device)
 
-            answers = self.MLP(torch.cat((output.to(torch.float32), exog_future.to(torch.float32)), dim=-1))
-        else:
-            answers = answers[:, -horizon:, :series_dim]
-        answers = torch.cat((
-            answers.to(torch.float32),  # 强制转换类型
-            exog_future.to(torch.float32)  # 强制转换类型
-        ), dim=-1)
         if self.config.norm:
+            # Only inverse transform series data with scaler1
             answers_b = answers.shape[0]
-            scaled_data = self.scaler.inverse_transform(rearrange(answers.cpu().detach().numpy(), 'b l c->(b l) c'))
+            scaled_data = self.scaler1.inverse_transform(rearrange(answers.cpu().detach().numpy(), 'b l c->(b l) c'))
             answers = rearrange(scaled_data, '(b l) c -> b l c', b=answers_b)
-        return answers[..., :series_dim]
 
-    def _perform_rolling_predictions(self, horizon: int, input_np: np.ndarray, exog_future: torch.Tensor,
+        return answers
+
+    def _perform_rolling_predictions(self, horizon: int, input_np: np.ndarray, exog_future: torch.Tensor, series_dim,
                                      device: torch.device) -> list:
         rolling_time = 0
         answers = []
@@ -483,6 +553,11 @@ class TransformerAdapter(ModelBase):
             while not answers or sum(a.shape[1] for a in answers) < horizon:
                 input = torch.tensor(input_np, dtype=torch.float32).to(device)
                 output = self.model(input, None, exog_future, None)
+                if self.config.use_mlp and self.MLP is not None:
+                    output = torch.tensor(output[:, -horizon:, :series_dim]).to(device)
+                    output = self.MLP(torch.cat((output.to(torch.float32), exog_future.to(torch.float32)), dim=-1))
+                else:
+                    output = output[:, -horizon:, :series_dim]
                 column_num = output.shape[-1]
                 real_batch_size = output.shape[0]
                 answer = (
@@ -499,23 +574,25 @@ class TransformerAdapter(ModelBase):
         answers = np.concatenate(answers, axis=1)
         return answers[:, -horizon:, :]
 
-    def _get_rolling_data(self, input_np: np.ndarray, output: Optional[np.ndarray], all_mark: np.ndarray, rolling_time: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_rolling_data(self, input_np: np.ndarray, output: Optional[np.ndarray], all_mark: np.ndarray,
+                          rolling_time: int) -> Tuple[np.ndarray, np.ndarray]:
         if rolling_time > 0:
             input_np = np.concatenate((input_np, output), axis=1)
-            input_np = input_np[:, -self.config.seq_len :, :]
+            input_np = input_np[:, -self.config.seq_len:, :]
         target_np = np.zeros((input_np.shape[0], self.config.label_len + self.config.horizon, input_np.shape[2]))
-        target_np[:, : self.config.label_len, :] = input_np[:, -self.config.label_len :, :]
+        target_np[:, : self.config.label_len, :] = input_np[:, -self.config.label_len:, :]
         return input_np, target_np
 
-    # 异常检测相关方法未使用 MLP，无需修改，此处省略
 
 def generate_model_factory(model_name: str, model_class: type, required_args: dict) -> Dict:
     def model_factory(**kwargs) -> TransformerAdapter:
         return TransformerAdapter(model_name, model_class, **kwargs)
+
     return {
         "model_factory": model_factory,
         "required_hyper_params": required_args,
     }
+
 
 def transformer_adapter(model_info: Type[object]) -> object:
     if not isinstance(model_info, type):
