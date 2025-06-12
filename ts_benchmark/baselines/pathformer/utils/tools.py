@@ -56,11 +56,11 @@ class EarlyStopping:
         self.delta = delta
         self.check_point = None
 
-    def __call__(self, val_loss, model):
+    def __call__(self, val_loss, models):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, models)
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
@@ -68,14 +68,14 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, models)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model):
+    def save_checkpoint(self, val_loss, models):
         print(
             f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
         )
-        self.check_point = copy.deepcopy(model.state_dict())
+        self.check_point = {key: model.state_dict() for key, model in models.items()}
         # self.check_point = model.state_dict()
         self.val_loss_min = val_loss
 
