@@ -48,7 +48,7 @@ class ModelBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def forecast_fit(
         self,
-        train_data: pd.DataFrame,
+        train_valid_data: pd.DataFrame,
         *,
         covariates: Optional[dict] = None,
         train_ratio_in_tv: float = 1.0,
@@ -57,7 +57,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         """
         Fit a model on time series data
 
-        :param train_data: Time series data.
+        :param train_valid_data: Time series data used for training and validation.
         :param covariates: Additional external variables
             key "exog" : the corresponding exogenous data aligned with `train_data`.
         :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set.

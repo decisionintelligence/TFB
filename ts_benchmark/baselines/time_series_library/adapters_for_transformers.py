@@ -23,7 +23,7 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_time
 
-DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
+DEFAULT_HYPER_PARAMS = {
     "top_k": 5,
     "enc_in": 1,
     "dec_in": 1,
@@ -81,9 +81,9 @@ class MLP(nn.Module):
         x = self.linear2(x)
         return x
 
-class TransformerConfig:
+class TSLibConfig:
     def __init__(self, **kwargs):
-        for key, value in DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS.items():
+        for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
 
         for key, value in kwargs.items():
@@ -101,7 +101,7 @@ class TransformerConfig:
 class TransformerAdapter(ModelBase):
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__()
-        self.config = TransformerConfig(**kwargs)
+        self.config = TSLibConfig(**kwargs)
         self._model_name = model_name
         self.model_class = model_class
         self.scaler1 = StandardScaler()
@@ -209,6 +209,14 @@ class TransformerAdapter(ModelBase):
             train_ratio_in_tv: float = 1.0,
             **kwargs,
     ) -> "ModelBase":
+        """
+        Train the model.
+
+        :param train_valid_data: Time series data used for training and validation.
+        :param covariates: Additional external variables.
+        :param train_ratio_in_tv: Represents the splitting ratio of the training set validation set. If it is equal to 1, it means that the validation set is not partitioned.
+        :return: The fitted model object.
+        """
         if covariates is None:
             covariates = {}
         series_dim = train_valid_data.shape[-2]

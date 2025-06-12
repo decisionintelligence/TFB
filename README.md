@@ -3,7 +3,7 @@
 </div>
 
 
-[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  [![Visits Badge](https://badges.pufler.dev/visits/decisionintelligence/TFB)](https://badges.pufler.dev/visits/decisionintelligence/TFB)
+[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  
 
 # TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
@@ -13,7 +13,17 @@
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
 
+🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark (TAB) and Time Series Foundation Model Benchmark (TSFM-Bench).**
 
+🚩 **News** (2025.04) **TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.**
+
+🚩 **News** (2025.04) **[DUET](https://arxiv.org/pdf/2412.10859) has released the results of a long-term forecasting task with unified hyperparameters, where the input length is fixed at 96 for all experiments. Click [here](https://github.com/decisionintelligence/DUET/blob/main/figures/DUET_unified_seq_len_96.pdf) to view the results, and click [here](https://github.com/decisionintelligence/DUET/blob/main/scripts/multivariate_forecast/DUET_unified_seq_len_96.sh) to view the script for reproducing the results.**
+
+🚩 **News** (2025.04) **TFB has added two new datasets: PEMS03 and PEMS07, bringing the total to 27 multivariate datasets**.
+
+🚩 **News** (2025.03) **TFB has added a new practical feature: support for predicting only a subset of input variables. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_predict_only_a_subset_of_input_variables_chn.pdf) and [English](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md) documentation are provided.**
+
+🚩 **News** (2025.03) **We maintain a [WeChat group](./docs/figures/QR.png) to facilitate discussions about TFB and [OpenTS](https://decisionintelligence.github.io/OpenTS/)**.
 
 🚩 **News** (2024.09) **You can find detailed API documentation [here](https://tfb-docs.readthedocs.io/en/latest/index.html)**. 
 
@@ -27,15 +37,24 @@
 
 
 
-**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard.
+**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
+  - [ ] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
+        
+  - [ ] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
 
-  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859).
+  - [ ] **HDMixer** - HDMixer: Hierarchical Dependency with Extendable Patch for Multivariate Time Series Forecasting [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer).
 
-  - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt).
+  - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/patchmlp).
+    
+  - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/amplifier).
+    
+  - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/duet).
 
-  - [x] **Pathformer** - Pathformer: Multi-scale transformers with adaptive pathways for time series forecasting [[ICLR 2024]](https://arxiv.org/pdf/2402.05956).
+  - [x] **PDF** - Periodicity Decoupling Framework for Long-term Series Forecasting [[ICLR 2024]](https://openreview.net/pdf?id=dp27P5HBBt), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/pdf).
 
-  - [x] **FITS** - FITS: Modeling Time Series with 10k Parameters [[ICLR 2024]](https://arxiv.org/pdf/2307.03756).
+  - [x] **Pathformer** - Pathformer: Multi-scale transformers with adaptive pathways for time series forecasting [[ICLR 2024]](https://arxiv.org/pdf/2402.05956), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/pathformer).
+
+  - [x] **FITS** - FITS: Modeling Time Series with 10k Parameters [[ICLR 2024]](https://arxiv.org/pdf/2307.03756), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/fits).
 
     
 
@@ -71,7 +90,8 @@ The table below provides a visual overview of how TFB's key features compare to 
 ![image-20240514151134923](docs/figures/Comparison_with_Related_Libraries.png)
 
 ## Quickstart
-
+> [!IMPORTANT]
+> this project is fully tested under python 3.8, it is recommended that you set the Python version to 3.8.
 1. Installation:
 
 - From PyPI
@@ -102,7 +122,7 @@ docker run -it -v $(pwd)/:/app/ tfb:latest bash
 
 2. Data preparation:
 
-You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link). Then place the downloaded data under the folder `./dataset`. 
+You can obtained the well pre-processed datasets from [Google Drive](https://drive.google.com/file/d/1vgpOmAygokoUt235piWKUjfwao6KwLv7/view?usp=drive_link) or [Baidu Drive](https://pan.baidu.com/s/1ycq7ufOD2eFOjDkjr0BfSg?pwd=bpry). Then place the downloaded data under the folder `./dataset`. 
 
 3. Train and evaluate model:
 
@@ -149,7 +169,20 @@ If you want to run datasets in parallel, test multiple datasets, or test multipl
 
 4. How long the look-back window is used for the multivariate forecasting evaluation results?
    
+
 You can find answer [here](https://github.com/decisionintelligence/TFB/issues/40).
+
+5. How to train models with multiple gpus using DataParallel?
+
+You can find answer [here](./docs/tutorials/steps_to_train_models_with_multi_gpus_using_dp.md).
+
+6. How to predict only a subset of input variables?
+   
+You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
+
+7. Is there code in TFB's code base to compute the characteristics of the dataset?
+   
+TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.
 
 ## Citation
 
@@ -170,6 +203,7 @@ If you find this repo useful, please cite our paper.
   title     = {DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting},
   author    = {Xiangfei Qiu and Xingjian Wu and Yan Lin and Chenjuan Guo and Jilin Hu and Bin Yang},
   booktitle = {SIGKDD},
+  pages     = {1185-1196},
   year      = {2025}
 }
 ```
@@ -185,7 +219,11 @@ The development of this library has been supported by **Huawei Cloud**, and we w
 If you have any questions or suggestions, feel free to contact:
 
 - [Xiangfei Qiu](https://qiu69.github.io/) (xfqiu@stu.ecnu.edu.cn)
-- Xingjian Wu (xjwu@stu.ecnu.edu.cn)
+- [Xingjian Wu](https://ccloud0525.github.io/) (xjwu@stu.ecnu.edu.cn)
 
 
 Or describe it in Issues.
+
+We invite you to join the OpenTS community on WeChat. We run a group chat on WeChat, and you can get the access by scanning the [QR code](./docs/figures/QR.png). By joining the community, you can get the latest updates on OpenTS, share your ideas, and discuss with other members.
+
+Those who wish to join can first scan the [QR code](./docs/figures/QR.png) to contact me via WeChat. Please **include your name and research direction in the remarks** when adding me. After your application is approved, we will invite you to join the group. Once you are in the group, please update your group nickname to **"Name + School/Institution + Research Direction."** Members who fail to update their remarks within a week will be regularly removed by the administrator.

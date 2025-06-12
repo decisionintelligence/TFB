@@ -9,8 +9,11 @@ from sklearn.preprocessing import StandardScaler
 from torch import optim
 from torch.utils.data import DataLoader
 
-from ts_benchmark.baselines.duet.models.duet_model import DUETModel
-from ts_benchmark.baselines.duet.utils.tools import EarlyStopping, adjust_learning_rate
+from ts_benchmark.baselines.xpatch.models.xPatch import xPatchModel
+from ts_benchmark.baselines.xpatch.utils.tools import (
+    EarlyStopping,
+    adjust_learning_rate,
+)
 from ts_benchmark.baselines.utils import (
     forecasting_data_provider,
     train_val_split,
@@ -21,41 +24,24 @@ from ...models.model_base import ModelBase, BatchMaker
 
 DEFAULT_HYPER_PARAMS = {
     "enc_in": 1,
-    "dec_in": 1,
-    "c_out": 1,
-    "e_layers": 2,
-    "d_layers": 1,
-    "d_model": 512,
-    "d_ff": 2048,
-    "hidden_size": 256,
-    "freq": "h",
-    "factor": 1,
-    "n_heads": 8,
-    "seg_len": 6,
-    "win_size": 2,
-    "activation": "gelu",
-    "output_attention": 0,
     "patch_len": 16,
     "stride": 8,
-    "period_len": 4,
-    "dropout": 0.2,
-    "fc_dropout": 0.2,
-    "moving_avg": 25,
-    "batch_size": 256,
-    "lradj": "type3",
-    "lr": 0.02,
+    "padding_patch": "end",
+    "ma_type": "ema",
+    "alpha": 0.3,
+    "beta": 0.3,
+    "num_workers": 10,
     "num_epochs": 100,
-    "num_workers": 0,
-    "loss": "huber",
+    "batch_size": 32,
     "patience": 10,
-    "num_experts": 4,
-    "noisy_gating": True,
-    "k": 1,
-    "CI": True,
+    "lr": 0.0001,
+    "loss": "MAE",
+    "lradj": "type1",
+    "revin": 1,
 }
 
 
-class DUETConfig:
+class xPatchConfig:
     def __init__(self, **kwargs):
         for key, value in DEFAULT_HYPER_PARAMS.items():
             setattr(self, key, value)
@@ -68,17 +54,17 @@ class DUETConfig:
         return self.horizon
 
 
-class DUET(ModelBase):
+class xPatch(ModelBase):
     def __init__(self, **kwargs):
-        super(DUET, self).__init__()
-        self.config = DUETConfig(**kwargs)
+        super(xPatch, self).__init__()
+        self.config = xPatchConfig(**kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
 
     @property
     def model_name(self):
-        return "DUET"
+        return "xPatch"
 
     @staticmethod
     def required_hyper_params() -> dict:
@@ -216,10 +202,23 @@ class DUET(ModelBase):
                     target_mark.to(device),
                 )
 
-                output, _ = self.model(input)
+                output = self.model(input)
 
                 target = target[:, -config.horizon :, :series_dim]
                 output = output[:, -config.horizon :, :series_dim]
+
+                # Arctangent loss with weight decay
+                self.ratio = np.array(
+                    [
+                        -1 * math.atan(i + 1) + math.pi / 4 + 1
+                        for i in range(self.config.horizon)
+                    ]
+                )
+                self.ratio = torch.tensor(self.ratio).unsqueeze(-1).to("cuda")
+
+                output = output * self.ratio
+                target = target * self.ratio
+
                 loss = criterion(output, target).detach().cpu().numpy()
                 total_loss.append(loss)
 
@@ -256,7 +255,7 @@ class DUET(ModelBase):
             train_drop_last = True
             self.multi_forecasting_hyper_param_tune(train_valid_data)
 
-        self.model = DUETModel(self.config)
+        self.model = xPatchModel(self.config)
 
         print(
             "----------------------------------------------------------",
@@ -336,13 +335,26 @@ class DUET(ModelBase):
                 )
                 # decoder input
 
-                output, loss_importance = self.model(input)
+                output = self.model(input)
 
                 target = target[:, -config.horizon :, :series_dim]
                 output = output[:, -config.horizon :, :series_dim]
+
+                # Arctangent loss with weight decay
+                self.ratio = np.array(
+                    [
+                        -1 * math.atan(i + 1) + math.pi / 4 + 1
+                        for i in range(self.config.horizon)
+                    ]
+                )
+                self.ratio = torch.tensor(self.ratio).unsqueeze(-1).to("cuda")
+
+                output = output * self.ratio
+                target = target * self.ratio
+
                 loss = criterion(output, target)
 
-                total_loss = loss + loss_importance
+                total_loss = loss
                 total_loss.backward()
 
                 optimizer.step()
@@ -419,7 +431,7 @@ class DUET(ModelBase):
                         target_mark.to(device),
                     )
 
-                    output, _ = self.model(input)
+                    output = self.model(input)
 
                 column_num = output.shape[-1]
                 temp = output.cpu().numpy().reshape(-1, column_num)[-config.horizon :]
@@ -540,7 +552,7 @@ class DUET(ModelBase):
                     torch.tensor(input_mark_np, dtype=torch.float32).to(device),
                     torch.tensor(target_mark_np, dtype=torch.float32).to(device),
                 )
-                output, _ = self.model(input)
+                output = self.model(input)
                 column_num = output.shape[-1]
                 real_batch_size = output.shape[0]
                 answer = (
