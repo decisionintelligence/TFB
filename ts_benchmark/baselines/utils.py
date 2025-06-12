@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
 
 from ts_benchmark.baselines.time_series_library.utils.timefeatures import (
     time_features,
@@ -185,6 +185,68 @@ def get_time_mark(
     return data_stamp.astype(np.float32)
 
 
+class DatasetForTransformer(Dataset):
+    def __init__(
+            self,
+            dataset: np.ndarray,
+            history_len: int = 10,
+            prediction_len: int = 2,
+            label_len: int = 5,
+            timeenc: int = 1,
+            freq: str = "h",
+    ):
+        self.dataset = dataset  # [t, c, n]
+        self.history_length = history_len
+        self.prediction_length = prediction_len
+        self.label_length = label_len
+        self.timeenc = timeenc
+        self.freq = freq
+
+    def __len__(self) -> int:
+        return len(self.dataset) - self.history_length - self.prediction_length + 1
+
+    def __getitem__(self, index):
+        s_begin = index
+        s_end = s_begin + self.history_length
+        r_begin = s_end - self.label_length
+        r_end = r_begin + self.label_length + self.prediction_length
+
+        seq_x = self.dataset[s_begin:s_end]  # [history_len, c, n]
+        seq_y = self.dataset[r_begin:r_end]  # [label_len + prediction_len, c, n]
+
+        seq_x = np.transpose(seq_x, (2, 0, 1))  # [n, history_len, c]
+        seq_y = np.transpose(seq_y, (2, 0, 1))  # [n, label_len + prediction_len, c]
+
+        seq_x = torch.tensor(seq_x, dtype=torch.float32)
+        seq_y = torch.tensor(seq_y, dtype=torch.float32)
+
+        return seq_x, seq_y
+
+
+def custom_collate_fn(batch):
+    """
+    自定义 collate_fn，处理批次中的元组 (seq_x, seq_y)，并转换为目标形状。
+
+    参数：
+        batch: list of tuples [(seq_x1, seq_y1), (seq_x2, seq_y2), ...]
+
+    返回：
+        tuple: (seq_x_reshaped, seq_y_reshaped)
+    """
+    seq_x_list = [item[0] for item in batch]  # list of [n, history_len, c]
+    seq_y_list = [item[1] for item in batch]  # list of [n, label_len + prediction_len, c]
+
+    seq_x = torch.stack(seq_x_list, dim=0)  # [batch_size, n, history_len, c]
+    batch_size, n, history_len, c = seq_x.shape
+    seq_x_reshaped = seq_x.reshape(batch_size * n, history_len, c)
+
+    seq_y = torch.stack(seq_y_list, dim=0)  # [batch_size, n, label_len + prediction_len, c]
+    batch_size, n, future_len, c = seq_y.shape
+    seq_y_reshaped = seq_y.reshape(batch_size * n, future_len, c)
+
+    return seq_x_reshaped, seq_y_reshaped
+
+
 def forecasting_data_provider(data, config, timeenc, batch_size, shuffle, drop_last):
     dataset = DatasetForTransformer(
         dataset=data,
@@ -200,62 +262,9 @@ def forecasting_data_provider(data, config, timeenc, batch_size, shuffle, drop_l
         shuffle=shuffle,
         num_workers=config.num_workers,
         drop_last=drop_last,
+        collate_fn=custom_collate_fn,
     )
-
     return dataset, data_loader
-
-
-class DatasetForTransformer:
-    def __init__(
-        self,
-        dataset: pd.DataFrame,
-        history_len: int = 10,
-        prediction_len: int = 2,
-        label_len: int = 5,
-        timeenc: int = 1,
-        freq: str = "h",
-    ):
-        # init
-
-        self.dataset = dataset
-        self.history_length = history_len
-        self.prediction_length = prediction_len
-        self.label_length = label_len
-        self.current_index = 0
-        self.timeenc = timeenc
-        self.freq = freq
-        self.__read_data__()
-
-    def __len__(self) -> int:
-        """
-        Returns the length of the data loader.
-
-        :return: The length of the data loader.
-        """
-        return len(self.dataset) - self.history_length - self.prediction_length + 1
-
-    def __read_data__(self):
-        df_stamp = self.dataset.reset_index()
-        df_stamp = df_stamp[["date"]].values.transpose(1, 0)
-        data_stamp = get_time_mark(df_stamp, self.timeenc, self.freq)[0]
-        self.data_stamp = data_stamp
-
-    def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.history_length
-        r_begin = s_end - self.label_length
-        r_end = r_begin + self.label_length + self.prediction_length
-
-        seq_x = self.dataset[s_begin:s_end]
-        seq_y = self.dataset[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-
-        seq_x = torch.tensor(seq_x.values, dtype=torch.float32)
-        seq_y = torch.tensor(seq_y.values, dtype=torch.float32)
-        seq_x_mark = torch.tensor(seq_x_mark, dtype=torch.float32)
-        seq_y_mark = torch.tensor(seq_y_mark, dtype=torch.float32)
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
 
 
 class SegLoader(object):
