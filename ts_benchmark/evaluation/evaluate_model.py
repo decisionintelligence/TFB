@@ -149,14 +149,16 @@ def eval_model(
 
     eval_backend = ParallelBackend()
     result_list = []
-    for series_name in tqdm.tqdm(
-        series_list, desc=f"scheduling {model_factory.model_name}"
-    ):
-        # TODO: refactor data model to optimize communication cost in parallel mode
-        result_list.append(
-            eval_backend.schedule(strategy.execute, (series_name, model_factory))
+    # for series_name in tqdm.tqdm(
+    #     series_list, desc=f"scheduling {model_factory.model_name}"
+    # ):
+    #     # TODO: refactor data model to optimize communication cost in parallel mode
+    #     result_list.append(
+    #         eval_backend.schedule(strategy.execute, (series_name, model_factory))
+    #     )
+    result_list.append(
+            eval_backend.schedule(strategy.execute, (series_list, model_factory))
         )
-
     return EvalResult(strategy, result_list, model_factory, series_list)
 
 

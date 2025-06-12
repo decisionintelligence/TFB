@@ -25,8 +25,8 @@
         "strategy_args": {
             "strategy_name": "rolling_forecast",
             "horizon": 336,
-            "tv_ratio": 0.8,
-            "train_ratio_in_tv": {"ETTm1.csv": 0.75, "ETTm2.csv": 0.75, "PEMS04.csv": 0.75, "PEMS08.csv": 0.75, "PEMS03.csv": 0.75, "PEMS07.csv": 0.75, "AQShunyi.csv": 0.75, "AQWan.csv": 0.75, "ETTh1.csv": 0.75, "ETTh2.csv": 0.75, "Solar.csv": 0.75, "__default__": 0.875},
+            "tv_ratio": 0.7501711156742,
+            "train_ratio_in_tv": {"ETTm1.csv": 0.75, "ETTm2.csv": 0.75, "PEMS04.csv": 0.75, "PEMS08.csv": 0.75, "AQShunyi.csv": 0.75, "AQWan.csv": 0.75, "ETTh1.csv": 0.75, "ETTh2.csv": 0.75, "Solar.csv": 0.75, "__default__": 0.66651459854015},
             "stride": 1,
             "num_rollings": 48000,
             "seed": 2021,

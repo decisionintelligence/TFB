@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple, Any, Dict
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
+from einops import rearrange
 
 from ts_benchmark.evaluation.metrics import regression_metrics
 from ts_benchmark.evaluation.strategy.constants import FieldNames
@@ -39,22 +40,22 @@ class RollingForecastEvalBatchMaker:
         index_list = self.index_list[
             self.current_sample_count : self.current_sample_count + batch_size
         ]
-        series = self.series.values
+        series = self.series
         predict_batch = self._make_batch_data(
             series, np.array(index_list) - win_size, win_size
         )
 
-        indexes = self.series.index
-        time_stamps_batch = self._make_batch_data(
-            indexes, np.array(index_list) - win_size, win_size
-        )
+        # indexes = self.series.index
+        # time_stamps_batch = self._make_batch_data(
+        #     indexes, np.array(index_list) - win_size, win_size
+        # )
         covariates_batch = self._make_batch_covariates(
             np.array(index_list) - win_size, win_size
         )
         self.current_sample_count += len(index_list)
         return {
             "input": predict_batch,
-            "time_stamps": time_stamps_batch,
+            # "time_stamps": time_stamps_batch,
             "covariates": covariates_batch,
         }
 
@@ -65,7 +66,7 @@ class RollingForecastEvalBatchMaker:
         :param horizon: The size of horizon.
         :return: All data to be used for batch evaluation.
         """
-        series = self.series.values
+        series = self.series
         test_batch = self._make_batch_data(series, np.array(self.index_list), horizon)
         covariates_batch = self._make_batch_covariates(
             np.array(self.index_list), horizon
@@ -374,6 +375,9 @@ class RollingForecast(ForecastingStrategy):
         target_train_valid_data, exog_train_valid_data = split_channel(
             train_valid_data, target_channel
         )
+        target_test_data, exog_test_data = split_channel(
+            test_data, target_channel
+        )
         target4batch, exog_data4batch = split_channel(series, target_channel)
         covariates_train, covariates4batch = {}, {}
         covariates_train["exog"] = exog_train_valid_data
@@ -402,15 +406,23 @@ class RollingForecast(ForecastingStrategy):
         all_predicts = []
         total_inference_time = 0
         predict_batch_maker = RollingForecastPredictBatchMaker(batch_maker)
+
+        targets = batch_maker.make_batch_eval(horizon)["target"]
+        exog_futures= batch_maker.make_batch_eval(horizon)["covariates"].get("exog", None)
+        # Convert reshape to rearrange
+        targets = rearrange(targets, 'b t c n -> (b n) t c')
+        exog_futures = rearrange(exog_futures, 'b t c n -> (b n) t c')
+        i=0
         while predict_batch_maker.has_more_batches():
             start_inference_time = time.time()
-            predicts = model.batch_forecast(horizon, predict_batch_maker)
+            predicts = model.batch_forecast(horizon, predict_batch_maker,exog_futures,i)
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
             all_predicts.append(predicts)
+            i=i+1
 
         all_predicts = np.concatenate(all_predicts, axis=0)
-        targets = batch_maker.make_batch_eval(horizon)["target"]
+
         if len(targets) != len(all_predicts):
             raise RuntimeError("Predictions' len don't equal targets' len!")
 
@@ -420,7 +432,7 @@ class RollingForecast(ForecastingStrategy):
                 target,
                 predicts,
                 eval_scaler,
-                target_train_valid_data.values,
+                target_train_valid_data.reshape(-1, target_train_valid_data.shape[-2]),
             )
             all_test_results.append(single_series_results)
         single_series_results = np.mean(np.stack(all_test_results), axis=0).tolist()
