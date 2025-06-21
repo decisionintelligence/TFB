@@ -5,6 +5,7 @@ from torch import optim
 from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 from .models.amplifier_model import AmplifierModel
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "use_amp": 0,
     "label_len": 48,
@@ -22,6 +23,15 @@ MODEL_HYPER_PARAMS = {
 }
 
 class Amplifier(Advanced_Model_Base):
+    """
+    Amplifier adapter class.
+
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _init_model: Initializes an instance of the AmplifierModel.
+        _process: Executes the model's forward pass and returns the output.
+        _init_criterion_and_optimizer: Defines the loss function and optimizer.
+    """
     def __init__(self, **kwargs):
         super(Amplifier, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 

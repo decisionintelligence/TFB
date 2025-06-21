@@ -18,6 +18,7 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.utils.data_processing import split_time
 from .model_base import ModelBase, BatchMaker
 
+# Default hyper parameters
 DEFAULT_HYPER_PARAMS = {
     "use_amp": 0,
     "loss": "huber",
@@ -50,6 +51,19 @@ class Config:
 
 
 class Advanced_Model_Base(ModelBase):
+    """
+    Base class for adapters, inherited from ModelBase.
+
+    This class provides a foundational framework and common functionalities for adapters in time series forecasting tasks,
+    including model initialization, configuration of loss functions and optimizers, data processing, learning rate adjustment, and early stopping mechanisms.
+    Subclasses must implement the _process method to define specific data processing and modeling logic.
+
+    Attributes:
+        config: Configuration object containing training parameters and hyperparameters.
+        scaler: Tool for data standardization.
+        seq_len: Length of the input sequence.
+        win_size: Window size, default is equal to seq_len.
+    """
     def __init__(self, model_config, **kwargs):
         super(Advanced_Model_Base, self).__init__()
         self.config = Config(model_config, **kwargs)
@@ -59,26 +73,37 @@ class Advanced_Model_Base(ModelBase):
 
     def _init_model(self):
         """
-        init model
+        Initialize the model.
 
-        :return: real model.
+        This method is intended to be implemented by subclasses to initialize the specific model.
+        The current implementation raises a NotImplementedError to indicate that this method should be overridden in subclasses.
+
+        :return: The actual model object. The specific type of the return value should be defined by subclasses.
         """
         raise NotImplementedError("model must be implemented.")
 
     def _adjust_lr(self, optimizer, epoch, config):
         """
-         init model
-        :param optimizer: optimizer.
-        :param epoch: current epoch.
-        :param config: config.
+        Adjusts the learning rate of the optimizer based on the current epoch and configuration.
+
+        This function is typically called during training to update the learning rate
+        according to a predefined schedule or strategy defined in the [adjust_learning_rate](file:///Users/pandajunkai/project/python/benchamrk/TFB/ts_benchmark/baselines/utils.py#L15-L32) function.
+
+        :param optimizer: The optimizer for which the learning rate will be adjusted.
+        :param epoch: The current training epoch used to calculate the new learning rate.
+        :param config: Configuration object containing parameters that control learning rate adjustment.
         """
         adjust_learning_rate(optimizer, epoch, config)
 
     def _init_criterion_and_optimizer(self):
         """
-        init criterion and optimizer
+        Initializes the task loss function and optimizer.
 
-        :return: criterion, optimizer.
+        This method configures the task loss function and the optimizer based on the settings in `self.config`.
+        Default supported loss functions include Mean Squared Error (MSE), Mean Absolute Error (MAE), and Huber Loss.
+        And the Adam optimizer is used with the model's parameters and the learning rate specified in the configuration.
+
+        :return: A tuple containing the initialized task loss function (`criterion`) and the optimizer (`optimizer`).
         """
         if self.config.loss == "MSE":
             criterion = nn.MSELoss()
@@ -90,15 +115,65 @@ class Advanced_Model_Base(ModelBase):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         return criterion, optimizer
 
-    # modeling and getting additional loss
+
     def _process(self, input, target, input_mark, target_mark):
+        """
+        A method that needs to be implemented by subclasses to process data and model, and calculate additional loss.
+
+        This method's purpose is to serve as a template method, defining a standard process for data processing and modeling,
+        as well as calculating any additional losses. Subclasses should implement specific processing and calculation logic
+        based on their own needs.
+
+        Parameters:
+        - input: The input data, the specific form and meaning depend on the implementation of the subclass.
+        - target: The target data, used in conjunction with input data for processing and loss calculation.
+        - input_mark: Marks or metadata for the input data, assisting in data processing or model training.
+        - target_mark: Marks or metadata for the target data, similarly assisting in data processing or model training.
+
+        Returns:
+        - dict: A dictionary containing at least one key:
+            - 'output' (necessary): The model output tensor.
+            - 'additional_loss' (optional): An additional loss if it exists.
+
+        Raises:
+        - NotImplementedError: If the subclass does not implement this method, a NotImplementedError will be raised when calling this method.
+        """
         raise NotImplementedError("Process must be implemented")
 
     def _post_process(self, output, target):
+        """
+        Performs post-processing on the output and target data.
+
+        This function is designed to process the output and target data after the model's forward computation,
+        and return them directly in this example. The specific post-processing logic may include, but is not limited to,
+        data format conversion, dimensionality matching, data type conversion, etc.
+
+        Parameters:
+        - output: The output data from the model, with no specific data format or type assumed.
+        - target: The target data, which is the expected result, also without a fixed data format or type.
+
+        Returns:
+        - output: The output data after post-processing, which in this case is the same as the input.
+        - target: The target data after post-processing, which in this case is the same as the input.
+        """
         return output, target
 
     # early stop
     def _init_early_stopping(self):
+        """
+        Initializes the early stopping strategy for training.
+
+        This function is used to create an instance of EarlyStopping, which helps prevent overfitting
+        during model training by halting the training process when the validation performance
+        does not improve for a specified number of consecutive iterations.
+
+        Parameters:
+        None directly, but it uses self.config.patience as the patience parameter for EarlyStopping.
+
+        Returns:
+        An instance of EarlyStopping, which monitors the model's performance metrics and determines
+        when to stop the training.
+        """
         return EarlyStopping(patience=self.config.patience)
 
 

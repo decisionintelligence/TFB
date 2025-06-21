@@ -7,6 +7,7 @@ from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 from .models.HDMixer import HDMixerModel
 from .utils.tools import adjust_learning_rate
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "enc_in": 1,
     "mix_time": 1,
@@ -47,6 +48,15 @@ MODEL_HYPER_PARAMS = {
 }
 
 class HDMixer(Advanced_Model_Base):
+    """
+    HDMixer adapter class.
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _init_model: Initializes an instance of the AmplifierModel.
+        _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
+        _post_process: Performs post-processing on the output and target data.
+        _process: Executes the model's forward pass and returns the output.
+    """
     def __init__(self, **kwargs):
         super(HDMixer, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 

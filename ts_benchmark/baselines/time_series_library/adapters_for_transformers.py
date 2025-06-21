@@ -6,6 +6,7 @@ from torch import optim
 
 from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "top_k": 5,
     "enc_in": 1,
@@ -53,6 +54,15 @@ MODEL_HYPER_PARAMS = {
 }
 
 class TransformerAdapter(Advanced_Model_Base):
+    """
+    Time Series Library adapter class.
+
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _init_model: Initializes an instance of the AmplifierModel.
+        _init_criterion_and_optimizer: Defines the loss function and optimizer.
+        _process: Executes the model's forward pass and returns the output.
+    """
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
         self._model_name = model_name

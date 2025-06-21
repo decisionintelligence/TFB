@@ -1,6 +1,7 @@
 from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 from .fits_model import FITSModel
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "embed": "timeF",
     "freq": "h",
@@ -24,6 +25,14 @@ MODEL_HYPER_PARAMS = {
 }
 
 class FITS(Advanced_Model_Base):
+    """
+    FITS adapter class.
+
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _init_model: Initializes an instance of the AmplifierModel.
+        _process: Executes the model's forward pass and returns the output.
+    """
     def __init__(self, **kwargs):
         super(FITS, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 

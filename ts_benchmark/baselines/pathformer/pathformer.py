@@ -4,6 +4,7 @@ from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 from .models.pathformer_model import PathformerModel
 from .utils.tools import EarlyStopping, adjust_learning_rate
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "k": 2,
     "enc_in": 1,
@@ -54,6 +55,16 @@ MODEL_HYPER_PARAMS = {
 }
 
 class Pathformer(Advanced_Model_Base):
+    """
+    Pathformer adapter class.
+
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
+        _init_model: Initializes an instance of the AmplifierModel.
+        _init_early_stopping: Initializes the early stopping strategy for training.
+        _process: Executes the model's forward pass and returns the output.
+    """
     def __init__(self, **kwargs):
         super(Pathformer, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
         self.config.adj_lr_in_batch = True if self.config.lradj == "TST" else False

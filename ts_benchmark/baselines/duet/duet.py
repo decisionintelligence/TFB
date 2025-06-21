@@ -1,6 +1,7 @@
 from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
 from .models.duet_model import DUETModel
 
+# model hyper params
 MODEL_HYPER_PARAMS = {
     "enc_in": 1,
     "dec_in": 1,
@@ -37,6 +38,14 @@ MODEL_HYPER_PARAMS = {
 }
 
 class DUET(Advanced_Model_Base):
+    """
+    DUET adapter class.
+
+    Attributes:
+        model_name (str): Name of the model for identification purposes.
+        _init_model: Initializes an instance of the DUETModel.
+        _process: Executes the model's forward pass and returns the output.
+    """
     def __init__(self, **kwargs):
         super(DUET, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
