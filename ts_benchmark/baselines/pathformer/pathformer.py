@@ -2,7 +2,7 @@ from torch.optim import lr_scheduler
 
 from ts_benchmark.baselines.pathformer.models.pathformer_model import PathformerModel
 from ts_benchmark.baselines.pathformer.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
+from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {

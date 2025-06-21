@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import optim
 
 from ts_benchmark.baselines.time_series_library.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
+from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
