@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 from torch import optim
 
-from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
+from ts_benchmark.baselines.time_series_library.utils.tools import adjust_learning_rate
+from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -53,13 +54,14 @@ MODEL_HYPER_PARAMS = {
     "task_name": "short_term_forecast"
 }
 
-class TransformerAdapter(Advanced_Model_Base):
+class TransformerAdapter(DeepForecastingModelBase):
     """
     Time Series Library adapter class.
 
     Attributes:
         model_name (str): Name of the model for identification purposes.
         _init_model: Initializes an instance of the AmplifierModel.
+        _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _init_criterion_and_optimizer: Defines the loss function and optimizer.
         _process: Executes the model's forward pass and returns the output.
     """
@@ -74,6 +76,9 @@ class TransformerAdapter(Advanced_Model_Base):
 
     def _init_model(self):
         return self.model_class(self.config)
+
+    def _adjust_lr(self, optimizer, epoch, config):
+        adjust_learning_rate(optimizer, epoch, config)
 
     def _init_criterion_and_optimizer(self):
         # Define the loss function and optimizer

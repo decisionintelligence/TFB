@@ -15,16 +15,16 @@ from ts_benchmark.utils.data_processing import split_time
 
 def adjust_learning_rate(optimizer, epoch, args):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))
-    if args.lradj == 'type1':
+    if args.lradj == 'stepLR':
         lr_adjust = {epoch: args.lr * (0.5 ** ((epoch - 1) // 1))}
-    elif args.lradj == 'type2':
+    elif args.lradj == 'multistepLR':
         lr_adjust = {
             2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
             10: 5e-7, 15: 1e-7, 20: 5e-8
         }
-    elif args.lradj == 'type3':
+    elif args.lradj == 'FlatThenExponentialLR':
         lr_adjust = {epoch: args.lr if epoch < 3 else args.lr * (0.9 ** ((epoch - 3) // 1))}
-    elif args.lradj == 'constant':
+    elif args.lradj == 'constantLR':
         lr_adjust = {epoch: args.lr}
     if epoch in lr_adjust.keys():
         lr = lr_adjust[epoch]
@@ -45,9 +45,14 @@ class EarlyStopping:
 
     def __call__(self, val_loss, model):
         score = -val_loss
+        improved = False
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            improved = True
+            print(
+                f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
+            )
+            self.val_loss_min = val_loss
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
@@ -55,8 +60,13 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            improved = True
+            print(
+                f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
+            )
+            self.val_loss_min = val_loss
             self.counter = 0
+        return  improved
 
     def save_checkpoint(self, val_loss, model):
         print(

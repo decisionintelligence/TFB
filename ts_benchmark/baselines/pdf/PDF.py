@@ -1,8 +1,8 @@
 from torch.optim import lr_scheduler
 
-from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
-from .models.PDF import Model as PDF_model
-from .utils.tools import EarlyStopping, adjust_learning_rate
+from ts_benchmark.baselines.pdf.models.PDF import Model as PDF_model
+from ts_benchmark.baselines.pdf.utils.tools import adjust_learning_rate
+from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -55,7 +55,7 @@ MODEL_HYPER_PARAMS = {
     "use_amp": False,
 }
 
-class PDF(Advanced_Model_Base):
+class PDF(DeepForecastingModelBase):
     """
     PDF adapter class.
 
@@ -63,7 +63,6 @@ class PDF(Advanced_Model_Base):
         model_name (str): Name of the model for identification purposes.
         _adjust_lr: Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _init_model: Initializes an instance of the AmplifierModel.
-        _init_early_stopping: Initializes the early stopping strategy for training.
         _process: Executes the model's forward pass and returns the output.
     """
     def __init__(self, **kwargs):
@@ -92,9 +91,6 @@ class PDF(Advanced_Model_Base):
 
     def _init_model(self):
         return PDF_model(self.config)
-
-    def _init_early_stopping(self):
-        return EarlyStopping(patience=self.config.patience)
 
     def _process(self, input, target, input_mark, target_mark):
         output = self.model(input)

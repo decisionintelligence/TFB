@@ -1,7 +1,8 @@
 import torch
 
-from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
-from .models.patchmlp_model import PatchMLPModel
+from ts_benchmark.baselines.patchmlp.models.patchmlp_model import PatchMLPModel
+from ts_benchmark.baselines.patchmlp.utils.tools import adjust_learning_rate
+from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -35,13 +36,14 @@ MODEL_HYPER_PARAMS = {
     "patience": 5,
 }
 
-class PatchMLP(Advanced_Model_Base):
+class PatchMLP(DeepForecastingModelBase):
     """
     PatchMLP adapter class.
 
     Attributes:
         model_name (str): Name of the model for identification purposes.
         _init_model: Initializes an instance of the AmplifierModel.
+        _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
     def __init__(self, **kwargs):
@@ -53,6 +55,9 @@ class PatchMLP(Advanced_Model_Base):
 
     def _init_model(self):
         return PatchMLPModel(self.config)
+
+    def _adjust_lr(self, optimizer, epoch, config):
+        adjust_learning_rate(optimizer, epoch, config)
 
     def _process(self, input, target, input_mark, target_mark):
         dec_inp = torch.zeros_like(target[:, -self.config.pred_len:, :]).float()

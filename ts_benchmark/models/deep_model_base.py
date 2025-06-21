@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import Optional, Tuple
 
@@ -15,15 +16,15 @@ from ts_benchmark.baselines.utils import (
     train_val_split,
     get_time_mark,
 )
+from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_time
-from .model_base import ModelBase, BatchMaker
 
 # Default hyper parameters
 DEFAULT_HYPER_PARAMS = {
     "use_amp": 0,
     "loss": "huber",
     "batch_size": 256,
-    "lradj": "type3",
+    "lradj": "FlatThenExponentialLR",
     "lr": 0.02,
     "num_workers": 0,
     "patience": 10,
@@ -50,22 +51,19 @@ class Config:
         return self.horizon
 
 
-class Advanced_Model_Base(ModelBase):
+class DeepForecastingModelBase(ModelBase):
     """
-    Base class for adapters, inherited from ModelBase.
+    Base class for deep learning model in forecasting tasks, inherited from ModelBase.
 
-    This class provides a foundational framework and common functionalities for adapters in time series forecasting tasks,
-    including model initialization, configuration of loss functions and optimizers, data processing, learning rate adjustment, and early stopping mechanisms.
-    Subclasses must implement the _process method to define specific data processing and modeling logic.
+    This class provides a framework and default functionalities for adapters in time series forecasting tasks,
+    including model initialization, configuration of loss functions and optimizers, data processing,
+    learning rate adjustment, save checkpoints and early stopping mechanisms.
 
-    Attributes:
-        config: Configuration object containing training parameters and hyperparameters.
-        scaler: Tool for data standardization.
-        seq_len: Length of the input sequence.
-        win_size: Window size, default is equal to seq_len.
+    Subclasses must implement _init_model and _process methods to define specific data processing and modeling logic.
+
     """
     def __init__(self, model_config, **kwargs):
-        super(Advanced_Model_Base, self).__init__()
+        super(DeepForecastingModelBase, self).__init__()
         self.config = Config(model_config, **kwargs)
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
@@ -76,7 +74,8 @@ class Advanced_Model_Base(ModelBase):
         Initialize the model.
 
         This method is intended to be implemented by subclasses to initialize the specific model.
-        The current implementation raises a NotImplementedError to indicate that this method should be overridden in subclasses.
+        The current implementation raises a NotImplementedError to indicate that this method should
+        be overridden in subclasses.
 
         :return: The actual model object. The specific type of the return value should be defined by subclasses.
         """
@@ -86,14 +85,29 @@ class Advanced_Model_Base(ModelBase):
         """
         Adjusts the learning rate of the optimizer based on the current epoch and configuration.
 
-        This function is typically called during training to update the learning rate
-        according to a predefined schedule or strategy defined in the [adjust_learning_rate](file:///Users/pandajunkai/project/python/benchamrk/TFB/ts_benchmark/baselines/utils.py#L15-L32) function.
+        This method is typically called to update the learning rate according to a predefined schedule.
 
         :param optimizer: The optimizer for which the learning rate will be adjusted.
         :param epoch: The current training epoch used to calculate the new learning rate.
         :param config: Configuration object containing parameters that control learning rate adjustment.
         """
         adjust_learning_rate(optimizer, epoch, config)
+
+    def save_checkpoint(self, model):
+        """
+        Save the model checkpoint.
+
+        This function saves the model's state dictionary (state_dict) to be used
+        for restoring the model at a later time. A deep copy of the state_dict is returned.
+
+        Parameters:
+        - model (torch.nn.Module): The current instance of the model being trained.
+
+        Returns:
+        - OrderedDict: A deep copy of the model's state_dict, which can be used to restore
+          the model's parameters in the future.
+        """
+        return copy.deepcopy(model.state_dict())
 
     def _init_criterion_and_optimizer(self):
         """
@@ -120,9 +134,9 @@ class Advanced_Model_Base(ModelBase):
         """
         A method that needs to be implemented by subclasses to process data and model, and calculate additional loss.
 
-        This method's purpose is to serve as a template method, defining a standard process for data processing and modeling,
-        as well as calculating any additional losses. Subclasses should implement specific processing and calculation logic
-        based on their own needs.
+        This method's purpose is to serve as a template method, defining a standard process for data processing
+        and modeling, as well as calculating any additional losses. Subclasses should implement specific processing
+        and calculation logic based on their own needs.
 
         Parameters:
         - input: The input data, the specific form and meaning depend on the implementation of the subclass.
@@ -136,7 +150,8 @@ class Advanced_Model_Base(ModelBase):
             - 'additional_loss' (optional): An additional loss if it exists.
 
         Raises:
-        - NotImplementedError: If the subclass does not implement this method, a NotImplementedError will be raised when calling this method.
+        - NotImplementedError: If the subclass does not implement this method, a NotImplementedError will be raised
+                               when calling this method.
         """
         raise NotImplementedError("Process must be implemented")
 
@@ -158,7 +173,6 @@ class Advanced_Model_Base(ModelBase):
         """
         return output, target
 
-    # early stop
     def _init_early_stopping(self):
         """
         Initializes the early stopping strategy for training.
@@ -179,7 +193,7 @@ class Advanced_Model_Base(ModelBase):
 
     @property
     def model_name(self):
-        return "Advanced_Model_Base"
+        return "DeepForecastingModelBase"
 
     @staticmethod
     def required_hyper_params() -> dict:
@@ -463,7 +477,9 @@ class Advanced_Model_Base(ModelBase):
 
             if train_ratio_in_tv != 1:
                 valid_loss = self.validate(valid_data_loader, series_dim, criterion)
-                self.early_stopping(valid_loss, self.model)
+                improved = self.early_stopping(valid_loss, self.model)
+                if improved:
+                    self.check_point = self.save_checkpoint(self.model)
                 if self.early_stopping.early_stop:
                     break
 
@@ -498,8 +514,8 @@ class Advanced_Model_Base(ModelBase):
                     f"Error: 'exog' is enabled during training, but horizon ({horizon}) != output_chunk_length ({self.config.output_chunk_length}) during forecast."
                 )
 
-        if self.early_stopping.check_point is not None:
-            self.model.load_state_dict(self.early_stopping.check_point)
+        if self.check_point is not None:
+            self.model.load_state_dict(self.check_point)
 
         if self.config.norm:
             series = pd.DataFrame(
@@ -578,8 +594,8 @@ class Advanced_Model_Base(ModelBase):
         :param batch_maker: Make batch data used for prediction.
         :return: An array of predicted results.
         """
-        if self.early_stopping.check_point is not None:
-            self.model.load_state_dict(self.early_stopping.check_point)
+        if self.check_point is not None:
+            self.model.load_state_dict(self.check_point)
 
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")

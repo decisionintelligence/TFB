@@ -1,5 +1,6 @@
-from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
-from .fits_model import FITSModel
+from ts_benchmark.baselines.fits.fits_model import FITSModel
+from ts_benchmark.baselines.time_series_library.utils.tools import adjust_learning_rate
+from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -24,13 +25,14 @@ MODEL_HYPER_PARAMS = {
     "individual": False,
 }
 
-class FITS(Advanced_Model_Base):
+class FITS(DeepForecastingModelBase):
     """
     FITS adapter class.
 
     Attributes:
         model_name (str): Name of the model for identification purposes.
         _init_model: Initializes an instance of the AmplifierModel.
+        _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
     def __init__(self, **kwargs):
@@ -42,6 +44,9 @@ class FITS(Advanced_Model_Base):
 
     def _init_model(self):
         return FITSModel(self.config)
+
+    def _adjust_lr(self, optimizer, epoch, config):
+        adjust_learning_rate(optimizer, epoch, config)
 
     def _process(self, input, target, input_mark, target_mark):
         output, low = self.model(input)

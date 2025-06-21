@@ -1,11 +1,11 @@
 import math
-import torch
 
 import numpy as np
+import torch
 
-from ts_benchmark.models.advanced_model_base import Advanced_Model_Base
-from .models.HDMixer import HDMixerModel
-from .utils.tools import adjust_learning_rate
+from ts_benchmark.baselines.hdmixer.models.HDMixer import HDMixerModel
+from ts_benchmark.baselines.hdmixer.utils.tools import adjust_learning_rate
+from ts_benchmark.models.deep_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -47,7 +47,7 @@ MODEL_HYPER_PARAMS = {
     "kernel_size": 25,
 }
 
-class HDMixer(Advanced_Model_Base):
+class HDMixer(DeepForecastingModelBase):
     """
     HDMixer adapter class.
     Attributes:
