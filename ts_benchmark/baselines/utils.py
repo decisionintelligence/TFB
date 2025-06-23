@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import copy
 from typing import Tuple
 
 import numpy as np
@@ -41,7 +40,6 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        self.check_point = None
 
     def __call__(self, val_loss, model):
         score = -val_loss
@@ -67,14 +65,6 @@ class EarlyStopping:
             self.val_loss_min = val_loss
             self.counter = 0
         return  improved
-
-    def save_checkpoint(self, val_loss, model):
-        print(
-            f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
-        )
-        self.check_point = copy.deepcopy(model.state_dict())
-        # self.check_point = model.state_dict()
-        self.val_loss_min = val_loss
 
 
 class SlidingWindowDataLoader:
