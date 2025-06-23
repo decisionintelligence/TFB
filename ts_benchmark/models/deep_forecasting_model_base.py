@@ -31,6 +31,7 @@ DEFAULT_HYPER_PARAMS = {
     "num_epochs": 100,
     "adj_lr_in_epoch": True,
     "adj_lr_in_batch": False,
+    "parallel_strategy": None,
 }
 
 
@@ -378,6 +379,9 @@ class DeepForecastingModelBase(ModelBase):
 
         self.model = self._init_model()
 
+        device_ids = np.arange(torch.cuda.device_count()).tolist()
+        if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
+            self.model = nn.DataParallel(self.model, device_ids=device_ids)
         print(
             "----------------------------------------------------------",
             self.model_name,
