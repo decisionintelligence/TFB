@@ -3,7 +3,7 @@
 </div>
 
 
-[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  [![Visits Badge](https://badges.pufler.dev/visits/decisionintelligence/TFB)](https://badges.pufler.dev/visits/decisionintelligence/TFB)
+[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  
 
 # TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
 
@@ -12,6 +12,8 @@
 > 1、If you find this project helpful, please don't forget to give it a ⭐ Star to show your support. Thank you!
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
+
+🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark (TAB) and Time Series Foundation Model Benchmark (TSFM-Bench).**
 
 🚩 **News** (2025.04) **TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.**
 
@@ -217,7 +219,7 @@ The development of this library has been supported by **Huawei Cloud**, and we w
 If you have any questions or suggestions, feel free to contact:
 
 - [Xiangfei Qiu](https://qiu69.github.io/) (xfqiu@stu.ecnu.edu.cn)
-- Xingjian Wu (xjwu@stu.ecnu.edu.cn)
+- [Xingjian Wu](https://ccloud0525.github.io/) (xjwu@stu.ecnu.edu.cn)
 
 
 Or describe it in Issues.
