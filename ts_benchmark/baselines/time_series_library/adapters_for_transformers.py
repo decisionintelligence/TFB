@@ -330,8 +330,13 @@ class TransformerAdapter(ModelBase):
         )
 
         # Define the loss function and optimizer
-        criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
+        if config.loss == "MSE":
+            criterion = nn.MSELoss()
+        elif config.loss == "MAE":
+            criterion = nn.L1Loss()
+        else:
+            criterion = nn.HuberLoss(delta=0.5)
+
         optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
