@@ -28,7 +28,7 @@ DEFAULT_HYPER_PARAMS = {
     "embed": "timeF",
     "SCI": 0,
     "enc_in": 1,
-    "hidden_size": 256,
+    "hidden_size": 128,
     "output_attention": 0,
     "batch_size": 32,
     "lradj": "type1",
