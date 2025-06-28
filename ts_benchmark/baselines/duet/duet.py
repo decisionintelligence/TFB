@@ -52,6 +52,7 @@ DEFAULT_HYPER_PARAMS = {
     "noisy_gating": True,
     "k": 1,
     "CI": True,
+    "parallel_strategy": "DP"
 }
 
 
@@ -63,6 +64,8 @@ class DUETConfig:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        if self.parallel_strategy not in [None, 'DP']:
+            raise ValueError("Invalid value for parallel_strategy. Supported values are 'DP' and None.")
     @property
     def pred_len(self):
         return self.horizon
@@ -257,6 +260,11 @@ class DUET(ModelBase):
             self.multi_forecasting_hyper_param_tune(train_valid_data)
 
         self.model = DUETModel(self.config)
+
+        device_ids = np.arange(torch.cuda.device_count()).tolist()
+        print(device_ids)
+        if len(device_ids) > 1 and self.config.parallel_strategy == "DP":
+            self.model = nn.DataParallel(self.model, device_ids=device_ids)
 
         print(
             "----------------------------------------------------------",
