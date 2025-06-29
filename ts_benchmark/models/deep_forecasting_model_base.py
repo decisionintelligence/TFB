@@ -476,7 +476,7 @@ class DeepForecastingModelBase(ModelBase):
                     total_loss.backward()
                     optimizer.step()
 
-                if self.config.adj_lr_in_batch:
+                if self.config.lradj == "TST":
                     self._adjust_lr(optimizer, epoch + 1, config)
 
             if train_ratio_in_tv != 1:
@@ -487,7 +487,7 @@ class DeepForecastingModelBase(ModelBase):
                 if self.early_stopping.early_stop:
                     break
 
-            if self.config.adj_lr_in_epoch:
+            if self.config.lradj != "TST":
                 self._adjust_lr(optimizer, epoch + 1, config)
 
     def forecast(

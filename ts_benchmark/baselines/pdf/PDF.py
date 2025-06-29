@@ -14,7 +14,7 @@ MODEL_HYPER_PARAMS = {
     "serial_conv": False,
     "add": True,
     "patch_len": [1],
-    "kernel_list": [3, 7, 11],
+    "kernel_list": [3, 7, 9, 11],
     "period": [24],
     "stride": [1],
     "max_seq_len": 1024,
@@ -70,27 +70,17 @@ class PDF(DeepForecastingModelBase):
     """
     def __init__(self, **kwargs):
         super(PDF, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
-        self.config.adj_lr_in_batch = True if self.config.lradj == "TST" else False
-        self.config.adj_lr_in_epoch = True if self.config.lradj != "TST" else False
 
     @property
     def model_name(self):
         return "PDF"
 
     def _adjust_lr(self, optimizer, epoch, config):
-        if not hasattr(self, "scheduler"):
-            train_steps = len(self.train_data_loader)
-            self.scheduler = lr_scheduler.OneCycleLR(
-                optimizer=optimizer,
-                steps_per_epoch=train_steps,
-                pct_start=config.pct_start,
-                epochs=config.train_epochs,
-                max_lr=config.learning_rate,
-            )
         adjust_learning_rate(
-            optimizer, self.scheduler, epoch + 1, config, printout=False
+            optimizer, self.scheduler, epoch, config, printout=False
         )
-        self.scheduler.step()
+        if self.config.lradj == "TST":
+            self.scheduler.step()
 
     def _init_criterion_and_optimizer(self):
         if self.config.loss == "MSE":
@@ -101,6 +91,14 @@ class PDF(DeepForecastingModelBase):
             criterion = nn.HuberLoss(delta=0.5)
 
         optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate)
+        train_steps = len(self.train_data_loader)
+        self.scheduler = lr_scheduler.OneCycleLR(
+            optimizer=optimizer,
+            steps_per_epoch=train_steps,
+            pct_start=self.config.pct_start,
+            epochs=self.config.train_epochs,
+            max_lr=self.config.learning_rate,
+        )
         return criterion, optimizer
 
     def _init_model(self):
