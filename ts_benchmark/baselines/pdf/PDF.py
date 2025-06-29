@@ -1,3 +1,5 @@
+import torch.nn as nn
+from torch import optim
 from torch.optim import lr_scheduler
 
 from ts_benchmark.baselines.pdf.models.PDF import Model as PDF_model
@@ -52,7 +54,8 @@ MODEL_HYPER_PARAMS = {
     "loss": "MSE",
     "learning_rate": 0.0001,
     "lradj": "type3",
-    "use_amp": False,
+    "use_amp": 0,
+    "task_name": "short_term_forecast",
 }
 
 class PDF(DeepForecastingModelBase):
@@ -88,6 +91,17 @@ class PDF(DeepForecastingModelBase):
             optimizer, self.scheduler, epoch + 1, config, printout=False
         )
         self.scheduler.step()
+
+    def _init_criterion_and_optimizer(self):
+        if self.config.loss == "MSE":
+            criterion = nn.MSELoss()
+        elif self.config.loss == "MAE":
+            criterion = nn.L1Loss()
+        else:
+            criterion = nn.HuberLoss(delta=0.5)
+
+        optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate)
+        return criterion, optimizer
 
     def _init_model(self):
         return PDF_model(self.config)

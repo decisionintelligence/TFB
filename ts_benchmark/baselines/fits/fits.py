@@ -25,6 +25,7 @@ MODEL_HYPER_PARAMS = {
     "individual": False,
 }
 
+
 class FITS(DeepForecastingModelBase):
     """
     FITS adapter class.
@@ -35,8 +36,12 @@ class FITS(DeepForecastingModelBase):
         _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(FITS, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
+        self.config.cut_freq = (
+            int(self.seq_len // self.config.base_T + 1) * self.config.H_order + 10
+        )
 
     @property
     def model_name(self):
