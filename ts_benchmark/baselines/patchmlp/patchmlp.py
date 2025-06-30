@@ -24,7 +24,7 @@ MODEL_HYPER_PARAMS = {
     "seq_len": 96,
     "activation": "gelu",
     "output_attention": 0,
-    "use_norm": 1,
+    "use_norm": True,
     "dropout": 0.1,
     "moving_avg": 13,
     "batch_size": 32,

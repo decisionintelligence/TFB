@@ -31,8 +31,8 @@ MODEL_HYPER_PARAMS = {
     "stride": 8,
     "dropout": 0.1,
     "batch_size": 512,
-    "learning_rate": 0.0001,
-    "train_epochs": 30,
+    "lr": 0.0001,
+    "num_epochs": 30,
     "num_workers": 0,
     "loss": "MAE",
     "itr": 1,
@@ -82,14 +82,14 @@ class Pathformer(DeepForecastingModelBase):
         else:
             criterion = nn.HuberLoss(delta=0.5)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         train_steps = len(self.train_data_loader)
         self.scheduler = lr_scheduler.OneCycleLR(
             optimizer=optimizer,
             steps_per_epoch=train_steps,
             pct_start=self.config.pct_start,
-            epochs=self.config.train_epochs,
-            max_lr=self.config.learning_rate,
+            epochs=self.config.num_epochs,
+            max_lr=self.config.lr,
         )
         return criterion, optimizer
 

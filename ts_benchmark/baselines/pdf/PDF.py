@@ -27,7 +27,7 @@ MODEL_HYPER_PARAMS = {
     "norm": "BatchNorm",
     "attn_dropout": 0.05,
     "dropout": 0.25,
-    "act": "gelu",
+    "activation": "gelu",
     "key_padding_mask": "auto",
     "padding_var": None,
     "attn_mask": None,
@@ -41,18 +41,18 @@ MODEL_HYPER_PARAMS = {
     "padding_patch": "end",
     "pretrain_head": False,
     "head_type": "flatten",
-    "individual": 0,
+    "individual": False,
     "revin": 1,
     "affine": 0,
     "subtract_last": 0,
     "verbose": False,
     "pct_start": 0.3,
-    "train_epochs": 100,
+    "num_epochs": 100,
     "patience": 10,
     "batch_size": 128,
     "num_workers": 0,
     "loss": "MSE",
-    "learning_rate": 0.0001,
+    "lr": 0.0001,
     "lradj": "type3",
     "use_amp": 0,
     "task_name": "short_term_forecast",
@@ -90,14 +90,14 @@ class PDF(DeepForecastingModelBase):
         else:
             criterion = nn.HuberLoss(delta=0.5)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         train_steps = len(self.train_data_loader)
         self.scheduler = lr_scheduler.OneCycleLR(
             optimizer=optimizer,
             steps_per_epoch=train_steps,
             pct_start=self.config.pct_start,
-            epochs=self.config.train_epochs,
-            max_lr=self.config.learning_rate,
+            epochs=self.config.num_epochs,
+            max_lr=self.config.lr,
         )
         return criterion, optimizer
 

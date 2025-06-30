@@ -36,7 +36,7 @@ MODEL_HYPER_PARAMS = {
     "fc_dropout": 0.3,
     "head_dropout": 0,
     "dropout": 0.8,
-    "individual": 0,
+    "individual": False,
     "patch_len": 16,
     "stride": 8,
     "padding_patch": "end",
