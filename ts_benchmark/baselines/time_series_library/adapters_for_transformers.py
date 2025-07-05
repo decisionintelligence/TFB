@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from torch import optim
 
-from ts_benchmark.baselines.time_series_library.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -51,8 +50,9 @@ MODEL_HYPER_PARAMS = {
     "decomp_method": "moving_avg",
     "use_norm": True,
     "parallel_strategy": "DP",
-    "task_name": "short_term_forecast"
+    "task_name": "short_term_forecast",
 }
+
 
 class TransformerAdapter(DeepForecastingModelBase):
     """
@@ -65,6 +65,7 @@ class TransformerAdapter(DeepForecastingModelBase):
         _init_criterion_and_optimizer: Defines the loss function and optimizer.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, model_name, model_class, **kwargs):
         super(TransformerAdapter, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
         self._model_name = model_name
@@ -77,19 +78,9 @@ class TransformerAdapter(DeepForecastingModelBase):
     def _init_model(self):
         return self.model_class(self.config)
 
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
-
-    def _init_criterion_and_optimizer(self):
-        # Define the loss function and optimizer
-        criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
-        return criterion, optimizer
-
     def _process(self, input, target, input_mark, target_mark):
         # decoder input
-        dec_input = torch.zeros_like(target[:, -self.config.horizon:, :]).float()
+        dec_input = torch.zeros_like(target[:, -self.config.horizon :, :]).float()
         dec_input = (
             torch.cat([target[:, : self.config.label_len, :], dec_input], dim=1)
             .float()
@@ -98,6 +89,7 @@ class TransformerAdapter(DeepForecastingModelBase):
         output = self.model(input, input_mark, dec_input, target_mark)
 
         return {"output": output}
+
 
 def generate_model_factory(
     model_name: str, model_class: type, required_args: dict

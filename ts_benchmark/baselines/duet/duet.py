@@ -1,6 +1,5 @@
 from ts_benchmark.baselines.duet.models.duet_model import DUETModel
-from ts_benchmark.baselines.duet.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -38,6 +37,7 @@ MODEL_HYPER_PARAMS = {
     "CI": True,
 }
 
+
 class DUET(DeepForecastingModelBase):
     """
     DUET adapter class.
@@ -48,6 +48,7 @@ class DUET(DeepForecastingModelBase):
         _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(DUET, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -57,9 +58,6 @@ class DUET(DeepForecastingModelBase):
 
     def _init_model(self):
         return DUETModel(self.config)
-
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
 
     def _process(self, input, target, input_mark, target_mark):
         output, loss_importance = self.model(input)

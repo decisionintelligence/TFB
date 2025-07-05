@@ -1,8 +1,7 @@
 import torch
 
 from ts_benchmark.baselines.patchmlp.models.patchmlp_model import PatchMLPModel
-from ts_benchmark.baselines.patchmlp.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -36,6 +35,7 @@ MODEL_HYPER_PARAMS = {
     "patience": 5,
 }
 
+
 class PatchMLP(DeepForecastingModelBase):
     """
     PatchMLP adapter class.
@@ -46,6 +46,7 @@ class PatchMLP(DeepForecastingModelBase):
         _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(PatchMLP, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -56,11 +57,8 @@ class PatchMLP(DeepForecastingModelBase):
     def _init_model(self):
         return PatchMLPModel(self.config)
 
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
-
     def _process(self, input, target, input_mark, target_mark):
-        dec_inp = torch.zeros_like(target[:, -self.config.pred_len:, :]).float()
+        dec_inp = torch.zeros_like(target[:, -self.config.pred_len :, :]).float()
         dec_inp = (
             torch.cat([target[:, : self.config.label_len, :], dec_inp], dim=1)
             .float()
@@ -70,15 +68,11 @@ class PatchMLP(DeepForecastingModelBase):
         if self.config.use_amp == 1:
             with torch.cuda.amp.autocast():
                 if self.config.output_attention == 1:
-                    outputs = self.model(
-                        input, input_mark, dec_inp, target_mark
-                    )[0]
+                    outputs = self.model(input, input_mark, dec_inp, target_mark)[0]
                 else:
-                    outputs = self.model(
-                        input, input_mark, dec_inp, target_mark
-                    )
+                    outputs = self.model(input, input_mark, dec_inp, target_mark)
 
-                outputs = outputs[:, -self.config.pred_len:, :]
+                outputs = outputs[:, -self.config.pred_len :, :]
         else:
             if self.config.output_attention:
                 outputs = self.model(input, input_mark, dec_inp, target_mark)[0]

@@ -4,7 +4,7 @@ from torch.optim import lr_scheduler
 
 from ts_benchmark.baselines.pdf.models.PDF import Model as PDF_model
 from ts_benchmark.baselines.pdf.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -58,6 +58,7 @@ MODEL_HYPER_PARAMS = {
     "task_name": "short_term_forecast",
 }
 
+
 class PDF(DeepForecastingModelBase):
     """
     PDF adapter class.
@@ -68,6 +69,7 @@ class PDF(DeepForecastingModelBase):
         _init_model: Initializes an instance of the AmplifierModel.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(PDF, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -76,9 +78,7 @@ class PDF(DeepForecastingModelBase):
         return "PDF"
 
     def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(
-            optimizer, self.scheduler, epoch, config, printout=False
-        )
+        adjust_learning_rate(optimizer, self.scheduler, epoch, config, printout=False)
         if self.config.lradj == "TST":
             self.scheduler.step()
 

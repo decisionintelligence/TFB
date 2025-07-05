@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import logging
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 from torch.utils.data import DataLoader
@@ -19,12 +20,14 @@ from ts_benchmark.baselines.utils import (
 from ts_benchmark.models.model_base import ModelBase, BatchMaker
 from ts_benchmark.utils.data_processing import split_time
 
+logger = logging.getLogger(__name__)
+
 # Default hyper parameters
 DEFAULT_HYPER_PARAMS = {
     "use_amp": 0,
-    "loss": "huber",
+    "loss": "type3",
     "batch_size": 256,
-    "lradj": "FlatThenExponentialLR",
+    "lradj": "type3",
     "lr": 0.02,
     "num_workers": 0,
     "patience": 10,
@@ -47,10 +50,11 @@ class Config:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    @property
-    def pred_len(self):
-        return self.horizon
-
+        if hasattr(self, "horizon"):
+            logger.warning(
+                "The model parameter horizon is deprecated. Please use pred_len."
+            )
+            setattr(self, "pred_len", self.horizon)
 
 class DeepForecastingModelBase(ModelBase):
     """
@@ -63,6 +67,7 @@ class DeepForecastingModelBase(ModelBase):
     Subclasses must implement _init_model and _process methods to define specific data processing and modeling logic.
 
     """
+
     def __init__(self, model_config, **kwargs):
         super(DeepForecastingModelBase, self).__init__()
         self.config = Config(model_config, **kwargs)
@@ -130,7 +135,6 @@ class DeepForecastingModelBase(ModelBase):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         return criterion, optimizer
 
-
     def _process(self, input, target, input_mark, target_mark):
         """
         A method that needs to be implemented by subclasses to process data and model, and calculate additional loss.
@@ -190,7 +194,6 @@ class DeepForecastingModelBase(ModelBase):
         when to stop the training.
         """
         return EarlyStopping(patience=self.config.patience)
-
 
     @property
     def model_name(self):
@@ -335,8 +338,8 @@ class DeepForecastingModelBase(ModelBase):
                 out_loss = self._process(input, target, input_mark, target_mark)
                 additional_loss = 0
                 output = out_loss["output"]
-                if 'additional_loss' in out_loss:
-                    additional_loss = out_loss['additional_loss']
+                if "additional_loss" in out_loss:
+                    additional_loss = out_loss["additional_loss"]
                 target = target[:, -config.horizon :, :series_dim]
                 output = output[:, -config.horizon :, :series_dim]
                 output, target = self._post_process(output, target)
@@ -458,8 +461,8 @@ class DeepForecastingModelBase(ModelBase):
                 out_loss = self._process(input, target, input_mark, target_mark)
                 additional_loss = 0
                 output = out_loss["output"]
-                if 'additional_loss' in out_loss:
-                    additional_loss = out_loss['additional_loss']
+                if "additional_loss" in out_loss:
+                    additional_loss = out_loss["additional_loss"]
 
                 target = target[:, -config.horizon :, :series_dim]
                 output = output[:, -config.horizon :, :series_dim]

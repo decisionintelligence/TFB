@@ -3,8 +3,7 @@ import torch.nn as nn
 from torch import optim
 
 from ts_benchmark.baselines.amplifier.models.amplifier_model import AmplifierModel
-from ts_benchmark.baselines.amplifier.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -23,6 +22,7 @@ MODEL_HYPER_PARAMS = {
     "patience": 3,
 }
 
+
 class Amplifier(DeepForecastingModelBase):
     """
     Amplifier adapter class.
@@ -34,6 +34,7 @@ class Amplifier(DeepForecastingModelBase):
         _process: Executes the model's forward pass and returns the output.
         _init_criterion_and_optimizer: Defines the loss function and optimizer.
     """
+
     def __init__(self, **kwargs):
         super(Amplifier, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -50,11 +51,8 @@ class Amplifier(DeepForecastingModelBase):
     def _init_model(self):
         return AmplifierModel(self.config)
 
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
-
     def _process(self, input, target, input_mark, target_mark):
-        dec_inp = torch.zeros_like(target[:, -self.config.pred_len:, :]).float()
+        dec_inp = torch.zeros_like(target[:, -self.config.pred_len :, :]).float()
         dec_inp = (
             torch.cat([target[:, : self.config.label_len, :], dec_inp], dim=1)
             .float()
@@ -64,13 +62,9 @@ class Amplifier(DeepForecastingModelBase):
         if self.config.use_amp == 1:
             with torch.cuda.amp.autocast():
                 if self.config.output_attention == 1:
-                    outputs = self.model(
-                        input, input_mark, dec_inp, target_mark
-                    )[0]
+                    outputs = self.model(input, input_mark, dec_inp, target_mark)[0]
                 else:
-                    outputs = self.model(
-                        input, input_mark, dec_inp, target_mark
-                    )
+                    outputs = self.model(input, input_mark, dec_inp, target_mark)
         else:
             if self.config.output_attention == 1:
                 outputs = self.model(input, input_mark, dec_inp, target_mark)[0]

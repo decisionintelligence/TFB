@@ -1,6 +1,5 @@
 from ts_benchmark.baselines.fits.fits_model import FITSModel
-from ts_benchmark.baselines.time_series_library.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -49,9 +48,6 @@ class FITS(DeepForecastingModelBase):
 
     def _init_model(self):
         return FITSModel(self.config)
-
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
 
     def _process(self, input, target, input_mark, target_mark):
         output, low = self.model(input)

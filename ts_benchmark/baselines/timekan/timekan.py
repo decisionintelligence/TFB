@@ -1,6 +1,5 @@
 from ts_benchmark.baselines.timekan.models.timekan_model import TimeKANModeL
-from ts_benchmark.baselines.timekan.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -48,8 +47,9 @@ MODEL_HYPER_PARAMS = {
     "comment": "none",
     "p_hidden_dims": [128, 128],
     "p_hidden_layers": 2,
-    "task_name": "long_term_forecast"
+    "task_name": "long_term_forecast",
 }
+
 
 class TimeKAN(DeepForecastingModelBase):
     """
@@ -61,6 +61,7 @@ class TimeKAN(DeepForecastingModelBase):
         _adjust_lr：Adjusts the learning rate of the optimizer based on the current epoch and configuration.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(TimeKAN, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -70,9 +71,6 @@ class TimeKAN(DeepForecastingModelBase):
 
     def _init_model(self):
         return TimeKANModeL(self.config)
-
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
 
     def _process(self, input, target, input_mark, target_mark):
         output = self.model(input)

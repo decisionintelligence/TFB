@@ -4,8 +4,7 @@ import numpy as np
 import torch
 
 from ts_benchmark.baselines.xpatch.models.xPatch import xPatchModel
-from ts_benchmark.baselines.xpatch.utils.tools import adjust_learning_rate
-from ts_benchmark.models.deep_forecasting_model_base import DeepForecastingModelBase
+from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 # model hyper params
 MODEL_HYPER_PARAMS = {
@@ -26,6 +25,7 @@ MODEL_HYPER_PARAMS = {
     "revin": 1,
 }
 
+
 class xPatch(DeepForecastingModelBase):
     """
     xPatch adapter class.
@@ -37,6 +37,7 @@ class xPatch(DeepForecastingModelBase):
         _post_process: Performs post-processing on the output and target data.
         _process: Executes the model's forward pass and returns the output.
     """
+
     def __init__(self, **kwargs):
         super(xPatch, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
 
@@ -46,9 +47,6 @@ class xPatch(DeepForecastingModelBase):
 
     def _init_model(self):
         return xPatchModel(self.config)
-
-    def _adjust_lr(self, optimizer, epoch, config):
-        adjust_learning_rate(optimizer, epoch, config)
 
     def _post_process(self, output, target):
         self.ratio = np.array(
