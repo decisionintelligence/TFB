@@ -23,6 +23,7 @@ def compress_gz(data: Dict[str, str]) -> bytes:
 
     return outbuf.getvalue()
 
+
 def compress_gzip(data: Dict[str, str]) -> bytes:
     """
     Compress data using Gzip compression.
@@ -46,7 +47,9 @@ def decompress_gzip(compressed_data: bytes) -> Dict[str, str]:
 
     with gzip.GzipFile(fileobj=compressed_buf, mode="rb") as gz:
         while True:
-            chunk = gz.read(1024)  # Read a chunk of decompressed data (adjust chunk size if needed)
+            chunk = gz.read(
+                1024
+            )  # Read a chunk of decompressed data (adjust chunk size if needed)
             if not chunk:
                 break  # No more data to read
             chunk_str = chunk.decode("utf8")
@@ -92,6 +95,4 @@ def get_compress_file_ext(method: str) -> str:
 
 
 def get_compress_method_from_ext(ext: str) -> Optional[str]:
-    return {
-        "tar.gz": "gz"
-    }.get(ext)
+    return {"tar.gz": "gz"}.get(ext)

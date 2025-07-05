@@ -19,10 +19,7 @@ class ForecastingStrategy(Strategy, metaclass=abc.ABCMeta):
     The base class for forecasting strategies
     """
 
-    REQUIRED_CONFIGS = [
-        "seed",
-        "deterministic"
-    ]
+    REQUIRED_CONFIGS = ["seed", "deterministic"]
 
     def execute(self, series_name: str, model_factory: ModelFactory) -> Any:
         """

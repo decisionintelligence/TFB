@@ -9,8 +9,11 @@ class encoder(nn.Module):
         num_experts = config.num_experts
         encoder_hidden_size = config.hidden_size
 
-        self.distribution_fit = nn.Sequential(nn.Linear(input_size, encoder_hidden_size, bias=False), nn.ReLU(),
-                                              nn.Linear(encoder_hidden_size, num_experts, bias=False))
+        self.distribution_fit = nn.Sequential(
+            nn.Linear(input_size, encoder_hidden_size, bias=False),
+            nn.ReLU(),
+            nn.Linear(encoder_hidden_size, num_experts, bias=False),
+        )
 
     def forward(self, x):
         mean = torch.mean(x, dim=-1)

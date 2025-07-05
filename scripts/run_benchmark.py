@@ -28,9 +28,9 @@ def str_to_bool(value: str) -> bool:
     """
     Converts a string to a boolean: True for 'True', '1', or 'T'; False for 'False', '0', or 'F'.
     """
-    if value.lower() in ['true', '1', 't']:
+    if value.lower() in ["true", "1", "t"]:
         return True
-    elif value.lower() in ['false', '0', 'f']:
+    elif value.lower() in ["false", "0", "f"]:
         return False
     else:
         raise ValueError("Invalid boolean value. Please enter 'True' or 'False'.")
@@ -78,9 +78,11 @@ def build_model_config(args: argparse.Namespace, config_data: Dict) -> Dict:
             {
                 "adapter": adapter,
                 "model_name": model_name,
-                "model_hyper_params": json.loads(model_hyper_params)
-                if model_hyper_params is not None
-                else {},
+                "model_hyper_params": (
+                    json.loads(model_hyper_params)
+                    if model_hyper_params is not None
+                    else {}
+                ),
             }
         )
 
@@ -164,7 +166,7 @@ if __name__ == "__main__":
         nargs="+",
         default=None,
         help="List of dataset name names entered by the user,"
-             "only takes effect when data_name_list is not specified",
+        "only takes effect when data_name_list is not specified",
     )
 
     # model_config
@@ -213,7 +215,7 @@ if __name__ == "__main__":
         type=int,
         default=None,
         help="Random seed that is set before evaluating any model-series pair, "
-             "by default, use the seed value in the config file"
+        "by default, use the seed value in the config file",
     )
     parser.add_argument(
         "--deterministic",
@@ -221,9 +223,9 @@ if __name__ == "__main__":
         default="efficient",
         choices=["full", "efficient", "none"],
         help="Specify the type of deterministic behavior for the algorithm. Options are: "
-             "'full': Enables full deterministic mode. "
-             "'efficient': Fixes only some seeds for efficiency. "
-             "'none': No deterministic behavior is applied."
+        "'full': Enables full deterministic mode. "
+        "'efficient': Fixes only some seeds for efficiency. "
+        "'none': No deterministic behavior is applied.",
     )
 
     # evaluation engine
@@ -297,7 +299,7 @@ if __name__ == "__main__":
         type=str_to_bool,
         default=None,
         help="If true, saves the model's prediction results "
-             "and the true values in evaluation result file",
+        "and the true values in evaluation result file",
     )
 
     args = parser.parse_args()

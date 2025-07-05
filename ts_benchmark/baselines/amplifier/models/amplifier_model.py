@@ -3,7 +3,6 @@ import torch
 from ..layers.RevIN import RevIN
 
 
-
 class moving_avg(nn.Module):
     """
     Moving average block to highlight the trend of time series
@@ -38,6 +37,7 @@ class series_decomp(nn.Module):
         res = x - moving_mean
         return res, moving_mean
 
+
 class AmplifierModel(nn.Module):
     def __init__(self, configs):
         super(AmplifierModel, self).__init__()
@@ -50,19 +50,23 @@ class AmplifierModel(nn.Module):
         kernel_size = 25
         self.decompsition = series_decomp(kernel_size)
 
-        self.mask_matrix = nn.Parameter(torch.ones(int(self.seq_len / 2) + 1, self.channels))
-        self.freq_linear = nn.Linear(int(self.seq_len / 2) + 1, int(self.pred_len / 2) + 1).to(torch.cfloat)
+        self.mask_matrix = nn.Parameter(
+            torch.ones(int(self.seq_len / 2) + 1, self.channels)
+        )
+        self.freq_linear = nn.Linear(
+            int(self.seq_len / 2) + 1, int(self.pred_len / 2) + 1
+        ).to(torch.cfloat)
 
         self.linear_seasonal = nn.Sequential(
             nn.Linear(self.seq_len, self.hidden_size),
             nn.LeakyReLU(),
-            nn.Linear(self.hidden_size, self.pred_len)
+            nn.Linear(self.hidden_size, self.pred_len),
         )
 
         self.linear_trend = nn.Sequential(
             nn.Linear(self.seq_len, self.hidden_size),
             nn.LeakyReLU(),
-            nn.Linear(self.hidden_size, self.pred_len)
+            nn.Linear(self.hidden_size, self.pred_len),
         )
 
         # SCI block
@@ -70,19 +74,19 @@ class AmplifierModel(nn.Module):
         self.extract_common_pattern = nn.Sequential(
             nn.Linear(self.channels, self.channels),
             nn.LeakyReLU(),
-            nn.Linear(self.channels, 1)
+            nn.Linear(self.channels, 1),
         )
 
         self.model_common_pattern = nn.Sequential(
             nn.Linear(self.seq_len, self.hidden_size),
             nn.LeakyReLU(),
-            nn.Linear(self.hidden_size, self.seq_len)
+            nn.Linear(self.hidden_size, self.seq_len),
         )
 
         self.model_spacific_pattern = nn.Sequential(
             nn.Linear(self.seq_len, self.hidden_size),
             nn.LeakyReLU(),
-            nn.Linear(self.hidden_size, self.seq_len)
+            nn.Linear(self.hidden_size, self.seq_len),
         )
 
     def forward(self, x, x_mark_enc, x_dec, x_mark_dec, mask=None):
@@ -90,7 +94,7 @@ class AmplifierModel(nn.Module):
 
         # RevIN
         z = x
-        z = self.revin_layer(z, 'norm')
+        z = self.revin_layer(z, "norm")
         x = z
 
         # Energy Amplification Block
@@ -105,10 +109,14 @@ class AmplifierModel(nn.Module):
             x = x_amplifier
             # extract common pattern
             common_pattern = self.extract_common_pattern(x)
-            common_pattern = self.model_common_pattern(common_pattern.permute(0, 2, 1)).permute(0, 2, 1)
+            common_pattern = self.model_common_pattern(
+                common_pattern.permute(0, 2, 1)
+            ).permute(0, 2, 1)
             # model specific pattern
             specififc_pattern = x - common_pattern.repeat(1, 1, C)
-            specififc_pattern = self.model_spacific_pattern(specififc_pattern.permute(0, 2, 1)).permute(0, 2, 1)
+            specififc_pattern = self.model_spacific_pattern(
+                specififc_pattern.permute(0, 2, 1)
+            ).permute(0, 2, 1)
 
             x = specififc_pattern + common_pattern.repeat(1, 1, C)
             x_amplifier = x
@@ -121,13 +129,15 @@ class AmplifierModel(nn.Module):
 
         # Energy Restoration Block
         out_amplifier_fft = torch.fft.rfft(out_amplifier, dim=1)
-        x_inverse_fft = self.freq_linear(x_inverse_fft.permute(0, 2, 1)).permute(0, 2, 1)
+        x_inverse_fft = self.freq_linear(x_inverse_fft.permute(0, 2, 1)).permute(
+            0, 2, 1
+        )
         out_fft = out_amplifier_fft - x_inverse_fft
         out = torch.fft.irfft(out_fft, dim=1)
 
         # inverse RevIN
         z = out
-        z = self.revin_layer(z, 'denorm')
+        z = self.revin_layer(z, "denorm")
         out = z
 
         return out

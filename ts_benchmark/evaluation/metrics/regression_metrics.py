@@ -2,31 +2,48 @@
 
 import numpy as np
 
-__all__ = ["mae", "mse", "rmse", "mape", "smape", "mase", 'wape', 'msmape', "mae_norm", "mse_norm", "rmse_norm", "mape_norm", "smape_norm", "mase_norm", 'wape_norm', 'msmape_norm']
+__all__ = [
+    "mae",
+    "mse",
+    "rmse",
+    "mape",
+    "smape",
+    "mase",
+    "wape",
+    "msmape",
+    "mae_norm",
+    "mse_norm",
+    "rmse_norm",
+    "mape_norm",
+    "smape_norm",
+    "mase_norm",
+    "wape_norm",
+    "msmape_norm",
+]
 
 
 def _error(actual: np.ndarray, predicted: np.ndarray, **kwargs):
-    """ Simple error """
+    """Simple error"""
     return actual - predicted
 
 
 def _percentage_error(actual: np.ndarray, predicted: np.ndarray, **kwargs):
-    """ Percentage error """
+    """Percentage error"""
     return (actual - predicted) / actual
 
 
 def mse(actual: np.ndarray, predicted: np.ndarray, **kwargs):
-    """ Mean Squared Error """
+    """Mean Squared Error"""
     return np.mean(np.square(_error(actual, predicted)))
 
 
 def rmse(actual: np.ndarray, predicted: np.ndarray, **kwargs):
-    """ Root Mean Squared Error """
+    """Root Mean Squared Error"""
     return np.sqrt(mse(actual, predicted))
 
 
 def mae(actual: np.ndarray, predicted: np.ndarray, **kwargs):
-    """ Mean Absolute Error """
+    """Mean Absolute Error"""
 
     return np.mean(np.abs(_error(actual, predicted)))
 
@@ -78,6 +95,7 @@ def smape(actual: np.ndarray, predicted: np.ndarray, **kwargs):
         * 100
     )
 
+
 def wape(actual: np.ndarray, predicted: np.ndarray, **kwargs):
     """Masked weighted absolute percentage error (WAPE)
 
@@ -89,6 +107,7 @@ def wape(actual: np.ndarray, predicted: np.ndarray, **kwargs):
     """
     loss = np.sum(np.abs(actual - predicted)) / np.sum(np.abs(actual)) * 100
     return loss
+
 
 def msmape(actual: np.ndarray, predicted: np.ndarray, epsilon: float = 0.1, **kwargs):
     """
@@ -106,28 +125,32 @@ def msmape(actual: np.ndarray, predicted: np.ndarray, epsilon: float = 0.1, **kw
     return msmape_per_series
 
 
-def _error_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object,  **kwargs):
-    """ Simple error """
+def _error_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
+    """Simple error"""
     return scaler.transform(actual) - scaler.transform(predicted)
 
 
-def _percentage_error_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
-    """ Percentage error """
-    return (scaler.transform(actual) - scaler.transform(predicted)) / scaler.transform(actual)
+def _percentage_error_norm(
+    actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs
+):
+    """Percentage error"""
+    return (scaler.transform(actual) - scaler.transform(predicted)) / scaler.transform(
+        actual
+    )
 
 
 def mse_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
-    """ Mean Squared Error """
+    """Mean Squared Error"""
     return np.mean(np.square(_error_norm(actual, predicted, scaler)))
 
 
 def rmse_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
-    """ Root Mean Squared Error """
+    """Root Mean Squared Error"""
     return np.sqrt(mse_norm(actual, predicted, scaler))
 
 
 def mae_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
-    """ Mean Absolute Error """
+    """Mean Absolute Error"""
 
     return np.mean(np.abs(_error_norm(actual, predicted, scaler)))
 
@@ -185,6 +208,7 @@ def smape_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwar
         * 100
     )
 
+
 def wape_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwargs):
     """Masked weighted absolute percentage error (WAPE)
 
@@ -199,7 +223,14 @@ def wape_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, **kwarg
     loss = np.sum(np.abs(actual - predicted)) / np.sum(np.abs(actual)) * 100
     return loss
 
-def msmape_norm(actual: np.ndarray, predicted: np.ndarray, scaler: object, epsilon: float = 0.1, **kwargs):
+
+def msmape_norm(
+    actual: np.ndarray,
+    predicted: np.ndarray,
+    scaler: object,
+    epsilon: float = 0.1,
+    **kwargs
+):
     """
     Function to calculate series wise smape values
 

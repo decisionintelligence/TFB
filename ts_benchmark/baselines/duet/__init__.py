@@ -1,5 +1,3 @@
-__all__ = [
-    "DUET"
-]
+__all__ = ["DUET"]
 
 from ts_benchmark.baselines.duet.duet import DUET

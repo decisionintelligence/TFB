@@ -70,7 +70,9 @@ class PatchTST(nn.Module):
         )
 
         # Prediction Head
-        self.head_nf = config.d_model * int((config.seq_len - self.patch_len) / self.stride + 2)
+        self.head_nf = config.d_model * int(
+            (config.seq_len - self.patch_len) / self.stride + 2
+        )
         if (
             self.task_name == "long_term_forecast"
             or self.task_name == "short_term_forecast"

@@ -1,16 +1,18 @@
 import torch
 from torch import nn
 
+
 class DEMA(nn.Module):
     """
     Double Exponential Moving Average (DEMA) block to highlight the trend of time series
     """
+
     def __init__(self, alpha, beta):
         super(DEMA, self).__init__()
         # self.alpha = nn.Parameter(alpha)    # Learnable alpha
         # self.beta = nn.Parameter(beta)      # Learnable beta
-        self.alpha = alpha.to(device='cuda')
-        self.beta = beta.to(device='cuda')
+        self.alpha = alpha.to(device="cuda")
+        self.beta = beta.to(device="cuda")
 
     def forward(self, x):
         # self.alpha.data.clamp_(0, 1)        # Clamp learnable alpha to [0, 1]

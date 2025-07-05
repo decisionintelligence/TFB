@@ -11,7 +11,11 @@ class Linear(nn.Module):
         super(Linear, self).__init__()
         self.task_name = configs.task_name
         self.seq_len = configs.seq_len
-        if self.task_name == 'classification' or self.task_name == 'anomaly_detection' or self.task_name == 'imputation':
+        if (
+            self.task_name == "classification"
+            or self.task_name == "anomaly_detection"
+            or self.task_name == "imputation"
+        ):
             self.pred_len = configs.seq_len
         else:
             self.pred_len = configs.pred_len
@@ -30,14 +34,15 @@ class Linear(nn.Module):
     def encoder(self, x):
         # x: [Batch, Input length, Channel]
         if self.individual:
-            output = torch.zeros([x.size(0), self.pred_len, x.size(2)], dtype=x.dtype).to(x.device)
+            output = torch.zeros(
+                [x.size(0), self.pred_len, x.size(2)], dtype=x.dtype
+            ).to(x.device)
             for i in range(self.channels):
                 output[:, :, i] = self.Linear[i](x[:, :, i])
             x = output
         else:
             x = self.Linear(x.permute(0, 2, 1)).permute(0, 2, 1)
         return x  # [Batch, Output length, Channel]
-
 
     def forecast(self, x_enc):
         # Encoder
@@ -62,17 +67,19 @@ class Linear(nn.Module):
         return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
+        if (
+            self.task_name == "long_term_forecast"
+            or self.task_name == "short_term_forecast"
+        ):
             dec_out = self.forecast(x_enc)
-            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
-        if self.task_name == 'imputation':
+            return dec_out[:, -self.pred_len :, :]  # [B, L, D]
+        if self.task_name == "imputation":
             dec_out = self.imputation(x_enc)
             return dec_out  # [B, L, D]
-        if self.task_name == 'anomaly_detection':
+        if self.task_name == "anomaly_detection":
             dec_out = self.anomaly_detection(x_enc)
             return dec_out  # [B, L, D]
-        if self.task_name == 'classification':
+        if self.task_name == "classification":
             dec_out = self.classification(x_enc)
             return dec_out  # [B, N]
         return None
-

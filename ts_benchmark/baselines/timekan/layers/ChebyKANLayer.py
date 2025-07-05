@@ -21,12 +21,12 @@ class ChebyKANLinear(nn.Module):
         # Since Chebyshev polynomial is defined in [-1, 1]
         # We need to normalize x to [-1, 1] using tanh
         # View and repeat input degree + 1 times
-        b,c_in = x.shape
+        b, c_in = x.shape
         if self.pre_mul:
-            mul_1 = x[:,::2]
-            mul_2 = x[:,1::2]
+            mul_1 = x[:, ::2]
+            mul_2 = x[:, 1::2]
             mul_res = mul_1 * mul_2
-            x = torch.concat([x[:,:x.shape[1]//2], mul_res])
+            x = torch.concat([x[:, : x.shape[1] // 2], mul_res])
         x = x.view((b, c_in, 1)).expand(
             -1, -1, self.degree + 1
         )  # shape = (batch_size, inputdim, self.degree + 1)
@@ -36,7 +36,7 @@ class ChebyKANLinear(nn.Module):
         x = torch.acos(x)
         # x = torch.acos(torch.clamp(x, -1 + self.epsilon, 1 - self.epsilon))
         # # Multiply by arange [0 .. degree]
-        x = x* self.arange
+        x = x * self.arange
         # Apply cos
         x = x.cos()
         # Compute the Chebyshev interpolation
@@ -45,8 +45,8 @@ class ChebyKANLinear(nn.Module):
         )  # shape = (batch_size, outdim)
         y = y.view(-1, self.outdim)
         if self.post_mul:
-            mul_1 = y[:,::2]
-            mul_2 = y[:,1::2]
+            mul_1 = y[:, ::2]
+            mul_2 = y[:, 1::2]
             mul_res = mul_1 * mul_2
-            y = torch.concat([y[:,:y.shape[1]//2], mul_res])
+            y = torch.concat([y[:, : y.shape[1] // 2], mul_res])
         return y

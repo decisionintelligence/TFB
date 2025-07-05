@@ -56,6 +56,7 @@ class Config:
             )
             setattr(self, "pred_len", self.horizon)
 
+
 class DeepForecastingModelBase(ModelBase):
     """
     Base class for deep learning model in forecasting tasks, inherited from ModelBase.

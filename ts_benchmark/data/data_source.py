@@ -58,7 +58,9 @@ class DataSource:
 
         :param series_list: The list of series names.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} does not support loading series at runtime.")
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support loading series at runtime."
+        )
 
 
 class LocalDataSource(DataSource):
@@ -159,10 +161,4 @@ class LocalForecastingDataSource(LocalDataSource):
     """
 
     def __init__(self):
-        super().__init__(
-            FORECASTING_DATASET_PATH,
-            "FORECAST_META.csv"
-        )
-
-
-
+        super().__init__(FORECASTING_DATASET_PATH, "FORECAST_META.csv")

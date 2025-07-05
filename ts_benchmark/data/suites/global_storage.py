@@ -105,7 +105,9 @@ class GlobalStorageDataPool(DataPoolImpl):
         """
         dataset_class_module = self.storage.get("dataset_class_module")
         dataset_class_name = self.storage.get("dataset_class_name")
-        dataset_class = getattr(importlib.import_module(dataset_class_module), dataset_class_name)
+        dataset_class = getattr(
+            importlib.import_module(dataset_class_module), dataset_class_name
+        )
         dataset = dataset_class()
         dataset.set_state(self.storage.get("dataset_state"))
         return dataset
