@@ -17,12 +17,29 @@ from statsmodels.tsa.stl._stl import STL
 # Constants
 DEFAULT_PERIODS = [4, 7, 12, 24, 48, 52, 96, 144, 168, 336, 672, 1008, 1440]
 TSFEATURE_NAMES = [
-    "max_kl_shift", "max_level_shift", "max_var_shift", "acf_features",
-    "arch_stat", "crossing_points", "entropy", "flat_spots", "holt_parameters",
-    "hurst", "lumpiness", "nonlinearity", "pacf_features", "stability",
-    "unitroot_kpss", "unitroot_pp", "firstmin_ac", "firstzero_ac",
-    "trev_num", "walker_propcross", "std1st_der", "histogram_mode",
-    "heterogeneity"
+    "max_kl_shift",
+    "max_level_shift",
+    "max_var_shift",
+    "acf_features",
+    "arch_stat",
+    "crossing_points",
+    "entropy",
+    "flat_spots",
+    "holt_parameters",
+    "hurst",
+    "lumpiness",
+    "nonlinearity",
+    "pacf_features",
+    "stability",
+    "unitroot_kpss",
+    "unitroot_pp",
+    "firstmin_ac",
+    "firstzero_ac",
+    "trev_num",
+    "walker_propcross",
+    "std1st_der",
+    "histogram_mode",
+    "heterogeneity",
 ]
 
 # Suppress warnings
@@ -60,7 +77,7 @@ class TimeSeriesFeatureExtractor:
         if columns[0] == "date" and not is_univariate:
             df["date"] = data.iloc[:n_points, 0]
             col_data = {
-                cols_name[j]: data.iloc[j * n_points: (j + 1) * n_points, 1].tolist()
+                cols_name[j]: data.iloc[j * n_points : (j + 1) * n_points, 1].tolist()
                 for j in range(n_cols)
             }
             df = pd.concat([df, pd.DataFrame(col_data)], axis=1)
@@ -69,7 +86,7 @@ class TimeSeriesFeatureExtractor:
 
         elif columns[0] != "date" and not is_univariate:
             col_data = {
-                cols_name[j]: data.iloc[j * n_points: (j + 1) * n_points, 0].tolist()
+                cols_name[j]: data.iloc[j * n_points : (j + 1) * n_points, 0].tolist()
                 for j in range(n_cols)
             }
             df = pd.concat([df, pd.DataFrame(col_data)], axis=1)
@@ -86,7 +103,7 @@ class TimeSeriesFeatureExtractor:
         if label_exists:
             last_col_name = df.columns[-1]
             df.rename(columns={last_col_name: "label"}, inplace=True)
-            df = df.drop(columns='label')
+            df = df.drop(columns="label")
 
         if nrows is not None and isinstance(nrows, int) and df.shape[0] >= nrows:
             df = df.iloc[:nrows, :]
@@ -98,7 +115,7 @@ class TimeSeriesFeatureExtractor:
         Initialize R environment and load required functions.
         Sets up the R environment with necessary libraries and functions for time series analysis.
         """
-        r_script = '''
+        r_script = """
         library(tidyverse)
         library(Rcatch22)
         library(forecast)
@@ -205,9 +222,9 @@ class TimeSeriesFeatureExtractor:
 
             return(all_features)
         }
-        '''
+        """
         robjects.r(r_script)
-        self.calculate_features = robjects.globalenv['calculate_features']
+        self.calculate_features = robjects.globalenv["calculate_features"]
 
     def adjust_period(self, period_value: int) -> int:
         """
@@ -224,7 +241,9 @@ class TimeSeriesFeatureExtractor:
             return 12
         if abs(period_value - 24) <= 3:
             return 24
-        if abs(period_value - 48) <= 1 or ((48 - period_value) <= 4 and (48 - period_value) >= 0):
+        if abs(period_value - 48) <= 1 or (
+            (48 - period_value) <= 4 and (48 - period_value) >= 0
+        ):
             return 48
         if abs(period_value - 52) <= 2:
             return 52
@@ -254,7 +273,9 @@ class TimeSeriesFeatureExtractor:
             return 43200
         return period_value
 
-    def fft_transfer(self, timeseries: np.ndarray, fmin: float = 0.2) -> Tuple[np.ndarray, np.ndarray]:
+    def fft_transfer(
+        self, timeseries: np.ndarray, fmin: float = 0.2
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Perform Fast Fourier Transform on time series.
         :param timeseries: Input time series data
@@ -278,6 +299,7 @@ class TimeSeriesFeatureExtractor:
         :param series: Input time series data
         :return: Number of inversions in the series
         """
+
         def merge_sort(arr):
             if len(arr) <= 1:
                 return arr, 0
@@ -368,7 +390,9 @@ class TimeSeriesFeatureExtractor:
         std_of_first_derivative = np.std(np.diff(series_value))
         inversions = self.count_inversions(series_value) / len(series_value)
         turning_points = self.count_peaks_and_valleys(series_value) / len(series_value)
-        series_in_series = self.count_series(series_value, np.median(series_value)) / len(series_value)
+        series_in_series = self.count_series(
+            series_value, np.median(series_value)
+        ) / len(series_value)
 
         return [
             skewness,
@@ -387,12 +411,27 @@ class TimeSeriesFeatureExtractor:
         :return: DataFrame containing extracted features
         """
         index_columns = [
-            "length", "period_value1", "seasonal_strength1",
-            "trend_strength1", "period_value2", "seasonal_strength2",
-            "trend_strength2", "period_value3", "seasonal_strength3",
-            "trend_strength3", "if_season", "if_trend", "ADF:p-value",
-            "KPSS:p-value", "stability", "skewness", "kurt", "rsd",
-            "std_of_first_derivative", "inversions", "turning_points",
+            "length",
+            "period_value1",
+            "seasonal_strength1",
+            "trend_strength1",
+            "period_value2",
+            "seasonal_strength2",
+            "trend_strength2",
+            "period_value3",
+            "seasonal_strength3",
+            "trend_strength3",
+            "if_season",
+            "if_trend",
+            "ADF:p-value",
+            "KPSS:p-value",
+            "stability",
+            "skewness",
+            "kurt",
+            "rsd",
+            "std_of_first_derivative",
+            "inversions",
+            "turning_points",
             "series_in_series",
         ]
         result_frame = pd.DataFrame(columns=index_columns)
@@ -403,7 +442,9 @@ class TimeSeriesFeatureExtractor:
 
         for i, col in enumerate(limited_length_df.columns):
             try:
-                ADF_P_value = [adfuller(limited_length_df[col].values, autolag="AIC")[1]]
+                ADF_P_value = [
+                    adfuller(limited_length_df[col].values, autolag="AIC")[1]
+                ]
                 KPSS_P_value = [kpss(limited_length_df[col].values, regression="c")[1]]
                 stability = [ADF_P_value[0] <= 0.05 or KPSS_P_value[0] >= 0.05]
             except:
@@ -422,7 +463,13 @@ class TimeSeriesFeatureExtractor:
             periods_list = []
             for index_j in range(len(amplitude)):
                 periods_list.append(
-                    round(periods[amplitude.tolist().index(sorted(amplitude, reverse=True)[index_j])])
+                    round(
+                        periods[
+                            amplitude.tolist().index(
+                                sorted(amplitude, reverse=True)[index_j]
+                            )
+                        ]
+                    )
                 )
 
             final_periods1 = []
@@ -455,10 +502,20 @@ class TimeSeriesFeatureExtractor:
                     temp_df["detrend"] = temp_df["original"] - temp_df["trend"]
                     temp_df["deseasonal"] = temp_df["original"] - temp_df["seasonal"]
 
-                    trend_strength = 0 if temp_df["deseasonal"].var() == 0 else \
-                        max(0, 1 - temp_df["resid"].var() / temp_df["deseasonal"].var())
-                    seasonal_strength = 0 if temp_df["detrend"].var() == 0 else \
-                        max(0, 1 - temp_df["resid"].var() / temp_df["detrend"].var())
+                    trend_strength = (
+                        0
+                        if temp_df["deseasonal"].var() == 0
+                        else max(
+                            0, 1 - temp_df["resid"].var() / temp_df["deseasonal"].var()
+                        )
+                    )
+                    seasonal_strength = (
+                        0
+                        if temp_df["detrend"].var() == 0
+                        else max(
+                            0, 1 - temp_df["resid"].var() / temp_df["detrend"].var()
+                        )
+                    )
 
                     season_dict[seasonal_strength] = [
                         period_value,
@@ -486,14 +543,14 @@ class TimeSeriesFeatureExtractor:
             col_name = [str(i)]
 
             result_list = (
-                    series_length
-                    + result_list
-                    + if_seasonal
-                    + if_trend
-                    + ADF_P_value
-                    + KPSS_P_value
-                    + stability
-                    + other_features
+                series_length
+                + result_list
+                + if_seasonal
+                + if_trend
+                + ADF_P_value
+                + KPSS_P_value
+                + stability
+                + other_features
             )
 
             result_frame.loc[len(result_frame.index)] = result_list
@@ -545,8 +602,8 @@ class StatisticalCalculator:
         num_windows = len(data) // window_size
 
         for i in range(num_windows):
-            window_data = data[i * window_size: (i + 1) * window_size]
-            hist, bin_edges = np.histogram(window_data, bins='stone', density=True)
+            window_data = data[i * window_size : (i + 1) * window_size]
+            hist, bin_edges = np.histogram(window_data, bins="stone", density=True)
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
             mu = np.mean(window_data)
@@ -691,17 +748,24 @@ class TimeSeriesProcessor:
         process_result = self.process_file(file_path)
         jsd_result = self.stat_calculator.calculate_jsd(file_path)
 
-        result = pd.concat([
-            jsd_result,
-            feature_extract_result.loc[:, ["seasonal_strength1", "trend_strength1", "ADF:p-value"]],
-            process_result
-        ], axis=1)
+        result = pd.concat(
+            [
+                jsd_result,
+                feature_extract_result.loc[
+                    :, ["seasonal_strength1", "trend_strength1", "ADF:p-value"]
+                ],
+                process_result,
+            ],
+            axis=1,
+        )
 
         if not is_univariate:
             mean_results = self._calculate_mean_results(result)
             self._save_mean_results(mean_results, file_basename)
 
-        result["DN_OutlierInclude_p_001_mdrmd"] = result["DN_OutlierInclude_p_001_mdrmd"].abs()
+        result["DN_OutlierInclude_p_001_mdrmd"] = result[
+            "DN_OutlierInclude_p_001_mdrmd"
+        ].abs()
         self._save_basic_results(result, file_basename)
 
     def _save_basic_results(self, result: pd.DataFrame, file_prefix: str) -> None:
@@ -710,12 +774,18 @@ class TimeSeriesProcessor:
         :param result: DataFrame containing feature results
         :param file_prefix: Prefix for output files
         """
-        all_features_filename = os.path.join(self.output_dir, f"All_characteristics_{file_prefix}.csv")
-        features_filename = os.path.join(self.output_dir, f"TFB_characteristics_{file_prefix}.csv")
+        all_features_filename = os.path.join(
+            self.output_dir, f"All_characteristics_{file_prefix}.csv"
+        )
+        features_filename = os.path.join(
+            self.output_dir, f"TFB_characteristics_{file_prefix}.csv"
+        )
 
         result.to_csv(all_features_filename, index=False)
         result["correlation"] = None
-        result = result[['correlation'] + [col for col in result.columns if col != 'correlation']]
+        result = result[
+            ["correlation"] + [col for col in result.columns if col != "correlation"]
+        ]
         dropandrename_dataframe(result).to_csv(features_filename, index=False)
 
         print(f"Saved results to: {all_features_filename} and {features_filename}")
@@ -731,7 +801,9 @@ class TimeSeriesProcessor:
 
         numeric_cols = result.select_dtypes(include=[np.number]).columns
         non_numeric_cols = result.select_dtypes(exclude=[np.number]).columns
-        result["DN_OutlierInclude_p_001_mdrmd"] = result["DN_OutlierInclude_p_001_mdrmd"].abs()
+        result["DN_OutlierInclude_p_001_mdrmd"] = result[
+            "DN_OutlierInclude_p_001_mdrmd"
+        ].abs()
         mean_result = result[numeric_cols].mean().to_frame().transpose()
         mean_result["correlation"] = correlation
 
@@ -743,13 +815,19 @@ class TimeSeriesProcessor:
         :param mean_result: DataFrame containing mean features
         :param file_prefix: Prefix for output files
         """
-        mean_all_features_filename = os.path.join(self.output_dir, f"mean_All_characteristics_{file_prefix}.csv")
-        mean_features_filename = os.path.join(self.output_dir, f"mean_TFB_characteristics_{file_prefix}.csv")
+        mean_all_features_filename = os.path.join(
+            self.output_dir, f"mean_All_characteristics_{file_prefix}.csv"
+        )
+        mean_features_filename = os.path.join(
+            self.output_dir, f"mean_TFB_characteristics_{file_prefix}.csv"
+        )
 
         mean_result.to_csv(mean_all_features_filename, index=False)
         dropandrename_dataframe(mean_result).to_csv(mean_features_filename, index=False)
 
-        print(f"Saved mean results to: {mean_all_features_filename} and {mean_features_filename}")
+        print(
+            f"Saved mean results to: {mean_all_features_filename} and {mean_features_filename}"
+        )
 
     def _process_directory(self, dir_path: str) -> None:
         """
@@ -757,9 +835,11 @@ class TimeSeriesProcessor:
         :param dir_path: Path to the directory containing CSV files
         """
         print(f"Processing directory: {dir_path}")
-        file_names = [f for f in os.listdir(dir_path)
-                      if os.path.isfile(os.path.join(dir_path, f))
-                      and f.lower().endswith(".csv")]
+        file_names = [
+            f
+            for f in os.listdir(dir_path)
+            if os.path.isfile(os.path.join(dir_path, f)) and f.lower().endswith(".csv")
+        ]
 
         if not file_names:
             print(f"No CSV files found in: {dir_path}")
@@ -777,18 +857,18 @@ def dropandrename_dataframe(result_df: pd.DataFrame) -> pd.DataFrame:
     :return: Processed DataFrame with renamed columns
     """
     result = result_df.loc[
-             :,
-             [
-                 "correlation",
-                 "SB_TransitionMatrix_3ac_sumdiagcov",
-                 "DN_OutlierInclude_p_001_mdrmd",
-                 "seasonal_strength1",
-                 "trend_strength1",
-                 "ADF:p-value",
-                 "short_term_jsd",
-                 "long_term_jsd",
-             ],
-             ]
+        :,
+        [
+            "correlation",
+            "SB_TransitionMatrix_3ac_sumdiagcov",
+            "DN_OutlierInclude_p_001_mdrmd",
+            "seasonal_strength1",
+            "trend_strength1",
+            "ADF:p-value",
+            "short_term_jsd",
+            "long_term_jsd",
+        ],
+    ]
 
     result.columns = [
         "Correlation",

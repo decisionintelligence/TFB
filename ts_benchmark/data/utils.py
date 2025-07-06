@@ -153,7 +153,7 @@ def read_data(path: str, nrows=None) -> pd.DataFrame:
     if columns[0] == "date" and not is_univariate:
         df["date"] = data.iloc[:n_points, 0]
         col_data = {
-            cols_name[j]: data.iloc[j * n_points: (j + 1) * n_points, 1].tolist()
+            cols_name[j]: data.iloc[j * n_points : (j + 1) * n_points, 1].tolist()
             for j in range(n_cols)
         }
         df = pd.concat([df, pd.DataFrame(col_data)], axis=1)
@@ -162,7 +162,7 @@ def read_data(path: str, nrows=None) -> pd.DataFrame:
 
     elif columns[0] != "date" and not is_univariate:
         col_data = {
-            cols_name[j]: data.iloc[j * n_points: (j + 1) * n_points, 0].tolist()
+            cols_name[j]: data.iloc[j * n_points : (j + 1) * n_points, 0].tolist()
             for j in range(n_cols)
         }
         df = pd.concat([df, pd.DataFrame(col_data)], axis=1)

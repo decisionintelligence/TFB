@@ -173,12 +173,16 @@ class Transformer_Layer(nn.Module):
 
         out = new_x + intra_out_concat + inter_out
         if self.batch_norm:
-            out = self.norm_attn(out.reshape(b * nvar, self.patch_size * self.patch_nums, self.d_model))
+            out = self.norm_attn(
+                out.reshape(b * nvar, self.patch_size * self.patch_nums, self.d_model)
+            )
         ##FFN
         out = self.dropout(out)
         out = self.ff(out) + out
         if self.batch_norm:
-            out = self.norm_ffn(out).reshape(b, self.patch_size * self.patch_nums, nvar, self.d_model)
+            out = self.norm_ffn(out).reshape(
+                b, self.patch_size * self.patch_nums, nvar, self.d_model
+            )
         return out, attention
 
 

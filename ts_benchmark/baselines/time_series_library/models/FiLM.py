@@ -12,13 +12,13 @@ def transition(N):
     Q = np.arange(N, dtype=np.float64)
     R = (2 * Q + 1)[:, None]  # / theta
     j, i = np.meshgrid(Q, Q)
-    A = np.where(i < j, -1, (-1.) ** (i - j + 1)) * R
-    B = (-1.) ** Q[:, None] * R
+    A = np.where(i < j, -1, (-1.0) ** (i - j + 1)) * R
+    B = (-1.0) ** Q[:, None] * R
     return A, B
 
 
 class HiPPO_LegT(nn.Module):
-    def __init__(self, N, dt=1.0, discretization='bilinear'):
+    def __init__(self, N, dt=1.0, discretization="bilinear"):
         """
         N: the order of the HiPPO projection
         dt: discretization step size - should be roughly inverse to the length of the sequence
@@ -32,11 +32,15 @@ class HiPPO_LegT(nn.Module):
 
         B = B.squeeze(-1)
 
-        self.register_buffer('A', torch.Tensor(A).to(device))
-        self.register_buffer('B', torch.Tensor(B).to(device))
+        self.register_buffer("A", torch.Tensor(A).to(device))
+        self.register_buffer("B", torch.Tensor(B).to(device))
         vals = np.arange(0.0, 1.0, dt)
-        self.register_buffer('eval_matrix', torch.Tensor(
-            ss.eval_legendre(np.arange(N)[:, None], 1 - 2 * vals).T).to(device))
+        self.register_buffer(
+            "eval_matrix",
+            torch.Tensor(ss.eval_legendre(np.arange(N)[:, None], 1 - 2 * vals).T).to(
+                device
+            ),
+        )
 
     def forward(self, inputs):
         """
@@ -68,22 +72,39 @@ class SpectralConv1d(nn.Module):
         self.modes = min(32, seq_len // 2)
         self.index = list(range(0, self.modes))
 
-        self.scale = (1 / (in_channels * out_channels))
+        self.scale = 1 / (in_channels * out_channels)
         self.weights_real = nn.Parameter(
-            self.scale * torch.rand(in_channels, out_channels, len(self.index), dtype=torch.float))
+            self.scale
+            * torch.rand(in_channels, out_channels, len(self.index), dtype=torch.float)
+        )
         self.weights_imag = nn.Parameter(
-            self.scale * torch.rand(in_channels, out_channels, len(self.index), dtype=torch.float))
+            self.scale
+            * torch.rand(in_channels, out_channels, len(self.index), dtype=torch.float)
+        )
 
     def compl_mul1d(self, order, x, weights_real, weights_imag):
-        return torch.complex(torch.einsum(order, x.real, weights_real) - torch.einsum(order, x.imag, weights_imag),
-                                 torch.einsum(order, x.real, weights_imag) + torch.einsum(order, x.imag, weights_real))
+        return torch.complex(
+            torch.einsum(order, x.real, weights_real)
+            - torch.einsum(order, x.imag, weights_imag),
+            torch.einsum(order, x.real, weights_imag)
+            + torch.einsum(order, x.imag, weights_real),
+        )
 
     def forward(self, x):
         B, H, E, N = x.shape
         x_ft = torch.fft.rfft(x)
-        out_ft = torch.zeros(B, H, self.out_channels, x.size(-1) // 2 + 1, device=x.device, dtype=torch.cfloat)
-        a = x_ft[:, :, :, :self.modes]
-        out_ft[:, :, :, :self.modes] = self.compl_mul1d("bjix,iox->bjox", a, self.weights_real, self.weights_imag)
+        out_ft = torch.zeros(
+            B,
+            H,
+            self.out_channels,
+            x.size(-1) // 2 + 1,
+            device=x.device,
+            dtype=torch.cfloat,
+        )
+        a = x_ft[:, :, :, : self.modes]
+        out_ft[:, :, :, : self.modes] = self.compl_mul1d(
+            "bjix,iox->bjox", a, self.weights_real, self.weights_imag
+        )
         x = torch.fft.irfft(out_ft, n=x.size(-1))
         return x
 
@@ -92,6 +113,7 @@ class FiLM(nn.Module):
     """
     Paper link: https://arxiv.org/abs/2205.08897
     """
+
     def __init__(self, configs):
         super(FiLM, self).__init__()
         self.task_name = configs.task_name
@@ -115,27 +137,42 @@ class FiLM(nn.Module):
         self.window_size = [256]
         configs.ratio = 0.5
         self.legts = nn.ModuleList(
-            [HiPPO_LegT(N=n, dt=1. / self.pred_len / i) for n in self.window_size for i in self.multiscale])
-        self.spec_conv_1 = nn.ModuleList([SpectralConv1d(in_channels=n, out_channels=n,
-                                                         seq_len=min(self.pred_len, self.seq_len),
-                                                         ratio=configs.ratio) for n in
-                                          self.window_size for _ in range(len(self.multiscale))])
+            [
+                HiPPO_LegT(N=n, dt=1.0 / self.pred_len / i)
+                for n in self.window_size
+                for i in self.multiscale
+            ]
+        )
+        self.spec_conv_1 = nn.ModuleList(
+            [
+                SpectralConv1d(
+                    in_channels=n,
+                    out_channels=n,
+                    seq_len=min(self.pred_len, self.seq_len),
+                    ratio=configs.ratio,
+                )
+                for n in self.window_size
+                for _ in range(len(self.multiscale))
+            ]
+        )
         self.mlp = nn.Linear(len(self.multiscale) * len(self.window_size), 1)
 
-        if self.task_name == 'imputation' or self.task_name == 'anomaly_detection':
-            self.projection = nn.Linear(
-                configs.d_model, configs.c_out, bias=True)
-        if self.task_name == 'classification':
+        if self.task_name == "imputation" or self.task_name == "anomaly_detection":
+            self.projection = nn.Linear(configs.d_model, configs.c_out, bias=True)
+        if self.task_name == "classification":
             self.act = F.gelu
             self.dropout = nn.Dropout(configs.dropout)
             self.projection = nn.Linear(
-                configs.enc_in * configs.seq_len, configs.num_class)
+                configs.enc_in * configs.seq_len, configs.num_class
+            )
 
     def forecast(self, x_enc, x_mark_enc, x_dec_true, x_mark_dec):
         # Normalization from Non-stationary Transformer
         means = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc - means
-        stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5).detach()
+        stdev = torch.sqrt(
+            torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5
+        ).detach()
         x_enc /= stdev
 
         x_enc = x_enc * self.affine_weight + self.affine_bias
@@ -145,13 +182,15 @@ class FiLM(nn.Module):
             x_in_len = self.multiscale[i % len(self.multiscale)] * self.pred_len
             x_in = x_enc[:, -x_in_len:]
             legt = self.legts[i]
-            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[:, :, :, jump_dist:]
+            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[
+                :, :, :, jump_dist:
+            ]
             out1 = self.spec_conv_1[i](x_in_c)
             if self.seq_len >= self.pred_len:
                 x_dec_c = out1.transpose(2, 3)[:, :, self.pred_len - 1 - jump_dist, :]
             else:
                 x_dec_c = out1.transpose(2, 3)[:, :, -1, :]
-            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len:, :].T
+            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len :, :].T
             x_decs.append(x_dec)
         x_dec = torch.stack(x_decs, dim=-1)
         x_dec = self.mlp(x_dec).squeeze(-1).permute(0, 2, 1)
@@ -167,7 +206,9 @@ class FiLM(nn.Module):
         # Normalization from Non-stationary Transformer
         means = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc - means
-        stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5).detach()
+        stdev = torch.sqrt(
+            torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5
+        ).detach()
         x_enc /= stdev
 
         x_enc = x_enc * self.affine_weight + self.affine_bias
@@ -177,13 +218,15 @@ class FiLM(nn.Module):
             x_in_len = self.multiscale[i % len(self.multiscale)] * self.pred_len
             x_in = x_enc[:, -x_in_len:]
             legt = self.legts[i]
-            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[:, :, :, jump_dist:]
+            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[
+                :, :, :, jump_dist:
+            ]
             out1 = self.spec_conv_1[i](x_in_c)
             if self.seq_len >= self.pred_len:
                 x_dec_c = out1.transpose(2, 3)[:, :, self.pred_len - 1 - jump_dist, :]
             else:
                 x_dec_c = out1.transpose(2, 3)[:, :, -1, :]
-            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len:, :].T
+            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len :, :].T
             x_decs.append(x_dec)
         x_dec = torch.stack(x_decs, dim=-1)
         x_dec = self.mlp(x_dec).squeeze(-1).permute(0, 2, 1)
@@ -199,7 +242,9 @@ class FiLM(nn.Module):
         # Normalization from Non-stationary Transformer
         means = x_enc.mean(1, keepdim=True).detach()
         x_enc = x_enc - means
-        stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5).detach()
+        stdev = torch.sqrt(
+            torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5
+        ).detach()
         x_enc /= stdev
 
         x_enc = x_enc * self.affine_weight + self.affine_bias
@@ -209,13 +254,15 @@ class FiLM(nn.Module):
             x_in_len = self.multiscale[i % len(self.multiscale)] * self.pred_len
             x_in = x_enc[:, -x_in_len:]
             legt = self.legts[i]
-            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[:, :, :, jump_dist:]
+            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[
+                :, :, :, jump_dist:
+            ]
             out1 = self.spec_conv_1[i](x_in_c)
             if self.seq_len >= self.pred_len:
                 x_dec_c = out1.transpose(2, 3)[:, :, self.pred_len - 1 - jump_dist, :]
             else:
                 x_dec_c = out1.transpose(2, 3)[:, :, -1, :]
-            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len:, :].T
+            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len :, :].T
             x_decs.append(x_dec)
         x_dec = torch.stack(x_decs, dim=-1)
         x_dec = self.mlp(x_dec).squeeze(-1).permute(0, 2, 1)
@@ -235,13 +282,15 @@ class FiLM(nn.Module):
             x_in_len = self.multiscale[i % len(self.multiscale)] * self.pred_len
             x_in = x_enc[:, -x_in_len:]
             legt = self.legts[i]
-            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[:, :, :, jump_dist:]
+            x_in_c = legt(x_in.transpose(1, 2)).permute([1, 2, 3, 0])[
+                :, :, :, jump_dist:
+            ]
             out1 = self.spec_conv_1[i](x_in_c)
             if self.seq_len >= self.pred_len:
                 x_dec_c = out1.transpose(2, 3)[:, :, self.pred_len - 1 - jump_dist, :]
             else:
                 x_dec_c = out1.transpose(2, 3)[:, :, -1, :]
-            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len:, :].T
+            x_dec = x_dec_c @ legt.eval_matrix[-self.pred_len :, :].T
             x_decs.append(x_dec)
         x_dec = torch.stack(x_decs, dim=-1)
         x_dec = self.mlp(x_dec).squeeze(-1).permute(0, 2, 1)
@@ -255,16 +304,19 @@ class FiLM(nn.Module):
         return output
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':
+        if (
+            self.task_name == "long_term_forecast"
+            or self.task_name == "short_term_forecast"
+        ):
             dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
-            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
-        if self.task_name == 'imputation':
+            return dec_out[:, -self.pred_len :, :]  # [B, L, D]
+        if self.task_name == "imputation":
             dec_out = self.imputation(x_enc, x_mark_enc, x_dec, x_mark_dec, mask)
             return dec_out  # [B, L, D]
-        if self.task_name == 'anomaly_detection':
+        if self.task_name == "anomaly_detection":
             dec_out = self.anomaly_detection(x_enc)
             return dec_out  # [B, L, D]
-        if self.task_name == 'classification':
+        if self.task_name == "classification":
             dec_out = self.classification(x_enc, x_mark_enc)
             return dec_out  # [B, N]
         return None

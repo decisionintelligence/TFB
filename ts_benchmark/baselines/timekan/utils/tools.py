@@ -4,7 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 import copy
 
-plt.switch_backend('agg')
+plt.switch_backend("agg")
 
 
 def adjust_learning_rate(optimizer, epoch, args):
@@ -63,12 +63,13 @@ class EarlyStopping:
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
+
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
 
-class StandardScaler():
+class StandardScaler:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -80,34 +81,34 @@ class StandardScaler():
         return (data * self.std) + self.mean
 
 
-def save_to_csv(true, preds=None, name='./pic/test.pdf'):
+def save_to_csv(true, preds=None, name="./pic/test.pdf"):
     """
     Results visualization
     """
-    data = pd.DataFrame({'true': true, 'preds': preds})
-    data.to_csv(name, index=False, sep=',')
+    data = pd.DataFrame({"true": true, "preds": preds})
+    data.to_csv(name, index=False, sep=",")
 
 
-def visual(true, preds=None, name='./pic/test.pdf'):
+def visual(true, preds=None, name="./pic/test.pdf"):
     """
     Results visualization
     """
     plt.figure()
-    plt.plot(true, label='GroundTruth', linewidth=2)
+    plt.plot(true, label="GroundTruth", linewidth=2)
     if preds is not None:
-        plt.plot(preds, label='Prediction', linewidth=2)
+        plt.plot(preds, label="Prediction", linewidth=2)
     plt.legend()
-    plt.savefig(name, bbox_inches='tight')
+    plt.savefig(name, bbox_inches="tight")
 
 
-def visual_weights(weights, name='./pic/test.pdf'):
+def visual_weights(weights, name="./pic/test.pdf"):
     """
     Weights visualization
     """
     fig, ax = plt.subplots()
     # im = ax.imshow(weights, cmap='plasma_r')
-    im = ax.imshow(weights, cmap='YlGnBu')
-    fig.colorbar(im, pad=0.03, location='top')
+    im = ax.imshow(weights, cmap="YlGnBu")
+    fig.colorbar(im, pad=0.03, location="top")
     plt.savefig(name, dpi=500, pad_inches=0.02)
     plt.close()
 

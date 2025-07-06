@@ -4,18 +4,20 @@ import math
 
 from ..layers.decomp import DECOMP
 from ..layers.network import Network
+
 # from layers.network_mlp import NetworkMLP # For ablation study with MLP-only stream
 # from layers.network_cnn import NetworkCNN # For ablation study with CNN-only stream
 from ..layers.revin import RevIN
+
 
 class xPatchModel(nn.Module):
     def __init__(self, configs):
         super(xPatchModel, self).__init__()
 
         # Parameters
-        seq_len = configs.seq_len   # lookback window L
-        pred_len = configs.pred_len # prediction length (96, 192, 336, 720)
-        c_in = configs.enc_in       # input channels
+        seq_len = configs.seq_len  # lookback window L
+        pred_len = configs.pred_len  # prediction length (96, 192, 336, 720)
+        c_in = configs.enc_in  # input channels
 
         # Patching
         patch_len = configs.patch_len
@@ -24,12 +26,14 @@ class xPatchModel(nn.Module):
 
         # Normalization
         self.revin = configs.revin
-        self.revin_layer = RevIN(c_in,affine=True,subtract_last=False)
+        self.revin_layer = RevIN(c_in, affine=True, subtract_last=False)
 
         # Moving Average
         self.ma_type = configs.ma_type
-        alpha = configs.alpha       # smoothing factor for EMA (Exponential Moving Average)
-        beta = configs.beta         # smoothing factor for DEMA (Double Exponential Moving Average)
+        alpha = configs.alpha  # smoothing factor for EMA (Exponential Moving Average)
+        beta = (
+            configs.beta
+        )  # smoothing factor for DEMA (Double Exponential Moving Average)
 
         self.decomp = DECOMP(self.ma_type, alpha, beta)
         self.net = Network(seq_len, pred_len, patch_len, stride, padding_patch)
@@ -41,9 +45,11 @@ class xPatchModel(nn.Module):
 
         # Normalization
         if self.revin:
-            x = self.revin_layer(x, 'norm')
+            x = self.revin_layer(x, "norm")
 
-        if self.ma_type == 'reg':   # If no decomposition, directly pass the input to the network
+        if (
+            self.ma_type == "reg"
+        ):  # If no decomposition, directly pass the input to the network
             x = self.net(x, x)
             # x = self.net_mlp(x) # For ablation study with MLP-only stream
             # x = self.net_cnn(x) # For ablation study with CNN-only stream
@@ -53,6 +59,6 @@ class xPatchModel(nn.Module):
 
         # Denormalization
         if self.revin:
-            x = self.revin_layer(x, 'denorm')
+            x = self.revin_layer(x, "denorm")
 
         return x

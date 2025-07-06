@@ -5,6 +5,3 @@ __all__ = [
 
 
 from ts_benchmark.baselines.pathformer.pathformer import Pathformer
-
-
-

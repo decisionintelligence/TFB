@@ -3,7 +3,14 @@ import torch.nn as nn
 
 
 class Normalize(nn.Module):
-    def __init__(self, num_features: int, eps=1e-5, affine=False, subtract_last=False, non_norm=False):
+    def __init__(
+        self,
+        num_features: int,
+        eps=1e-5,
+        affine=False,
+        subtract_last=False,
+        non_norm=False,
+    ):
         """
         :param num_features: the number of features or channels
         :param eps: a value added for numerical stability
@@ -19,10 +26,10 @@ class Normalize(nn.Module):
             self._init_params()
 
     def forward(self, x, mode: str):
-        if mode == 'norm':
+        if mode == "norm":
             self._get_statistics(x)
             x = self._normalize(x)
-        elif mode == 'denorm':
+        elif mode == "denorm":
             x = self._denormalize(x)
         else:
             raise NotImplementedError
@@ -39,7 +46,9 @@ class Normalize(nn.Module):
             self.last = x[:, -1, :].unsqueeze(1)
         else:
             self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
-        self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
+        self.stdev = torch.sqrt(
+            torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps
+        ).detach()
 
     def _normalize(self, x):
         if self.non_norm:

@@ -28,4 +28,4 @@ def fix_all_random_seed(seed: Optional[int] = 2021) -> NoReturn:
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.enabled = False
 
-    os.environ['PYTHONHASHSEED'] = str(1)
+    os.environ["PYTHONHASHSEED"] = str(1)

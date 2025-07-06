@@ -107,7 +107,9 @@ def _get_report_metrics(
             list(report_metrics[not_matching]),
         )
     actual_report_metrics = record_metrics[matching_matrix.any(axis=0)]
-    actual_report_metrics = [metric for metric in report_metrics if metric in actual_report_metrics]
+    actual_report_metrics = [
+        metric for metric in report_metrics if metric in actual_report_metrics
+    ]
     return np.array(actual_report_metrics)
 
 

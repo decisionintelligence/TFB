@@ -4,5 +4,3 @@ __all__ = [
 
 
 from ts_benchmark.baselines.self_impl.VAR.VAR import VAR_model
-
-

@@ -77,8 +77,9 @@ class ExponentialSmoothing(nn.Module):
         # \alpha^t for all t = 1, 2, ..., T
         init_weight = self.weight ** (powers + 1)
 
-        return rearrange(init_weight, 'h t -> 1 t h 1'), \
-               rearrange(weight, 'h t -> 1 t h 1')
+        return rearrange(init_weight, "h t -> 1 t h 1"), rearrange(
+            weight, "h t -> 1 t h 1"
+        )
 
     @property
     def weight(self):
@@ -86,7 +87,7 @@ class ExponentialSmoothing(nn.Module):
 
 
 class Feedforward(nn.Module):
-    def __init__(self, d_model, dim_feedforward, dropout=0.1, activation='sigmoid'):
+    def __init__(self, d_model, dim_feedforward, dropout=0.1, activation="sigmoid"):
         # Implementation of Feedforward model
         super().__init__()
         self.linear1 = nn.Linear(d_model, dim_feedforward, bias=False)
@@ -113,7 +114,9 @@ class GrowthLayer(nn.Module):
         self.es = ExponentialSmoothing(self.d_head, self.nhead, dropout=dropout)
         self.out_proj = nn.Linear(self.d_head * self.nhead, self.d_model)
 
-        assert self.d_head * self.nhead == self.d_model, "d_model must be divisible by nhead"
+        assert (
+            self.d_head * self.nhead == self.d_model
+        ), "d_model must be divisible by nhead"
 
     def forward(self, inputs):
         """
@@ -122,11 +125,11 @@ class GrowthLayer(nn.Module):
         """
         b, t, d = inputs.shape
         values = self.in_proj(inputs).view(b, t, self.nhead, -1)
-        values = torch.cat([repeat(self.z0, 'h d -> b 1 h d', b=b), values], dim=1)
+        values = torch.cat([repeat(self.z0, "h d -> b 1 h d", b=b), values], dim=1)
         values = values[:, 1:] - values[:, :-1]
         out = self.es(values)
-        out = torch.cat([repeat(self.es.v0, '1 1 h d -> b 1 h d', b=b), out], dim=1)
-        out = rearrange(out, 'b t h d -> b t (h d)')
+        out = torch.cat([repeat(self.es.v0, "1 1 h d -> b 1 h d", b=b), out], dim=1)
+        out = rearrange(out, "b t h d -> b t (h d)")
         return self.out_proj(out)
 
 
@@ -145,34 +148,39 @@ class FourierLayer(nn.Module):
         x_freq = fft.rfft(x, dim=1)
 
         if t % 2 == 0:
-            x_freq = x_freq[:, self.low_freq:-1]
-            f = fft.rfftfreq(t)[self.low_freq:-1]
+            x_freq = x_freq[:, self.low_freq : -1]
+            f = fft.rfftfreq(t)[self.low_freq : -1]
         else:
-            x_freq = x_freq[:, self.low_freq:]
-            f = fft.rfftfreq(t)[self.low_freq:]
+            x_freq = x_freq[:, self.low_freq :]
+            f = fft.rfftfreq(t)[self.low_freq :]
 
         x_freq, index_tuple = self.topk_freq(x_freq)
-        f = repeat(f, 'f -> b f d', b=x_freq.size(0), d=x_freq.size(2))
-        f = rearrange(f[index_tuple], 'b f d -> b f () d').to(x_freq.device)
+        f = repeat(f, "f -> b f d", b=x_freq.size(0), d=x_freq.size(2))
+        f = rearrange(f[index_tuple], "b f d -> b f () d").to(x_freq.device)
 
         return self.extrapolate(x_freq, f, t)
 
     def extrapolate(self, x_freq, f, t):
         x_freq = torch.cat([x_freq, x_freq.conj()], dim=1)
         f = torch.cat([f, -f], dim=1)
-        t_val = rearrange(torch.arange(t + self.pred_len, dtype=torch.float),
-                          't -> () () t ()').to(x_freq.device)
+        t_val = rearrange(
+            torch.arange(t + self.pred_len, dtype=torch.float), "t -> () () t ()"
+        ).to(x_freq.device)
 
-        amp = rearrange(x_freq.abs() / t, 'b f d -> b f () d')
-        phase = rearrange(x_freq.angle(), 'b f d -> b f () d')
+        amp = rearrange(x_freq.abs() / t, "b f d -> b f () d")
+        phase = rearrange(x_freq.angle(), "b f d -> b f () d")
 
         x_time = amp * torch.cos(2 * math.pi * f * t_val + phase)
 
-        return reduce(x_time, 'b f t d -> b t d', 'sum')
+        return reduce(x_time, "b f t d -> b t d", "sum")
 
     def topk_freq(self, x_freq):
-        values, indices = torch.topk(x_freq.abs(), self.k, dim=1, largest=True, sorted=True)
-        mesh_a, mesh_b = torch.meshgrid(torch.arange(x_freq.size(0)), torch.arange(x_freq.size(2)))
+        values, indices = torch.topk(
+            x_freq.abs(), self.k, dim=1, largest=True, sorted=True
+        )
+        mesh_a, mesh_b = torch.meshgrid(
+            torch.arange(x_freq.size(0)), torch.arange(x_freq.size(2))
+        )
         index_tuple = (mesh_a.unsqueeze(1), indices, mesh_b.unsqueeze(1))
         x_freq = x_freq[index_tuple]
 
@@ -198,14 +206,25 @@ class LevelLayer(nn.Module):
         season = season.view(b, t, self.c_out, 1)
         level = level.view(b, t, self.c_out, 1)
         out = self.es(level - season, aux_values=growth)
-        out = rearrange(out, 'b t h d -> b t (h d)')
+        out = rearrange(out, "b t h d -> b t (h d)")
         return out
 
 
 class EncoderLayer(nn.Module):
 
-    def __init__(self, d_model, nhead, c_out, seq_len, pred_len, k, dim_feedforward=None, dropout=0.1,
-                 activation='sigmoid', layer_norm_eps=1e-5):
+    def __init__(
+        self,
+        d_model,
+        nhead,
+        c_out,
+        seq_len,
+        pred_len,
+        k,
+        dim_feedforward=None,
+        dropout=0.1,
+        activation="sigmoid",
+        layer_norm_eps=1e-5,
+    ):
         super().__init__()
         self.d_model = d_model
         self.nhead = nhead
@@ -220,7 +239,9 @@ class EncoderLayer(nn.Module):
         self.level_layer = LevelLayer(d_model, c_out, dropout=dropout)
 
         # Implementation of Feedforward model
-        self.ff = Feedforward(d_model, dim_feedforward, dropout=dropout, activation=activation)
+        self.ff = Feedforward(
+            d_model, dim_feedforward, dropout=dropout, activation=activation
+        )
         self.norm1 = nn.LayerNorm(d_model, eps=layer_norm_eps)
         self.norm2 = nn.LayerNorm(d_model, eps=layer_norm_eps)
 
@@ -229,12 +250,12 @@ class EncoderLayer(nn.Module):
 
     def forward(self, res, level, attn_mask=None):
         season = self._season_block(res)
-        res = res - season[:, :-self.pred_len]
+        res = res - season[:, : -self.pred_len]
         growth = self._growth_block(res)
         res = self.norm1(res - growth[:, 1:])
         res = self.norm2(res + self.ff(res))
 
-        level = self.level_layer(level, growth[:, :-1], season[:, :-self.pred_len])
+        level = self.level_layer(level, growth[:, :-1], season[:, : -self.pred_len])
         return res, level, growth, season
 
     def _growth_block(self, x):
@@ -273,12 +294,12 @@ class DampingLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        x = repeat(x, 'b 1 d -> b t d', t=self.pred_len)
+        x = repeat(x, "b 1 d -> b t d", t=self.pred_len)
         b, t, d = x.shape
 
         powers = torch.arange(self.pred_len).to(self._damping_factor.device) + 1
         powers = powers.view(self.pred_len, 1)
-        damping_factors = self.damping_factor ** powers
+        damping_factors = self.damping_factor**powers
         damping_factors = damping_factors.cumsum(dim=0)
         x = x.view(b, t, self.nhead, -1)
         x = self.dropout(x) * damping_factors.unsqueeze(-1)
@@ -305,7 +326,7 @@ class DecoderLayer(nn.Module):
         growth_horizon = self.growth_damping(growth[:, -1:])
         growth_horizon = self.dropout1(growth_horizon)
 
-        seasonal_horizon = season[:, -self.pred_len:]
+        seasonal_horizon = season[:, -self.pred_len :]
         return growth_horizon, seasonal_horizon
 
 

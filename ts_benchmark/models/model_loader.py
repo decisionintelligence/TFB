@@ -86,7 +86,11 @@ def get_model_info(model_config: Dict) -> Union[Dict, Callable]:
     :raises AttributeError: If the specified `model_name` cannot be found in the imported module.
     """
     model_name_candidates = [
-        model_config["model_name"][7:] if model_config["model_name"].startswith("global.") else None,
+        (
+            model_config["model_name"][7:]
+            if model_config["model_name"].startswith("global.")
+            else None
+        ),
         "ts_benchmark.baselines." + model_config["model_name"],
         model_config["model_name"],
     ]

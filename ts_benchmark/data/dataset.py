@@ -133,7 +133,11 @@ class Dataset:
         :return: True if the series and its meta-info are both contained in the dataset,
             False otherwise.
         """
-        return self.has_series(name) and self._metadata is not None and name in self._metadata.index
+        return (
+            self.has_series(name)
+            and self._metadata is not None
+            and name in self._metadata.index
+        )
 
     def get_state(self) -> Dict:
         """

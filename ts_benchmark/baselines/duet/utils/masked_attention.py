@@ -22,11 +22,7 @@ class EncoderLayer(nn.Module):
         self.activation = F.relu if activation == "relu" else F.gelu
 
     def forward(self, x, attn_mask=None, tau=None, delta=None):
-        new_x, attn = self.attention(
-            x, x, x,
-            attn_mask=attn_mask,
-            tau=tau, delta=delta
-        )
+        new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
         x = x + self.dropout(new_x)
 
         y = x = self.norm1(x)
@@ -40,14 +36,18 @@ class Encoder(nn.Module):
     def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
         super(Encoder, self).__init__()
         self.attn_layers = nn.ModuleList(attn_layers)
-        self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
+        self.conv_layers = (
+            nn.ModuleList(conv_layers) if conv_layers is not None else None
+        )
         self.norm = norm_layer
 
     def forward(self, x, attn_mask=None, tau=None, delta=None):
         # x [B, L, D]
         attns = []
         if self.conv_layers is not None:
-            for i, (attn_layer, conv_layer) in enumerate(zip(self.attn_layers, self.conv_layers)):
+            for i, (attn_layer, conv_layer) in enumerate(
+                zip(self.attn_layers, self.conv_layers)
+            ):
                 delta = delta if i == 0 else None
                 x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
                 x = conv_layer(x)
@@ -66,7 +66,14 @@ class Encoder(nn.Module):
 
 
 class FullAttention(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
+    def __init__(
+        self,
+        mask_flag=True,
+        factor=5,
+        scale=None,
+        attention_dropout=0.1,
+        output_attention=False,
+    ):
         super(FullAttention, self).__init__()
         self.scale = scale
         self.mask_flag = mask_flag
@@ -76,7 +83,7 @@ class FullAttention(nn.Module):
     def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
         B, L, H, E = queries.shape
         _, S, _, D = values.shape
-        scale = self.scale or 1. / sqrt(E)
+        scale = self.scale or 1.0 / sqrt(E)
 
         scores = torch.einsum("blhe,bshe->bhls", queries, keys)
 
@@ -101,8 +108,7 @@ class FullAttention(nn.Module):
 
 
 class AttentionLayer(nn.Module):
-    def __init__(self, attention, d_model, n_heads, d_keys=None,
-                 d_values=None):
+    def __init__(self, attention, d_model, n_heads, d_keys=None, d_values=None):
         super(AttentionLayer, self).__init__()
 
         d_keys = d_keys or (d_model // n_heads)
@@ -125,12 +131,7 @@ class AttentionLayer(nn.Module):
         values = self.value_projection(values).view(B, S, H, -1)
 
         out, attn = self.inner_attention(
-            queries,
-            keys,
-            values,
-            attn_mask,
-            tau=tau,
-            delta=delta
+            queries, keys, values, attn_mask, tau=tau, delta=delta
         )
         out = out.view(B, L, -1)
 
@@ -141,7 +142,9 @@ class Mahalanobis_mask(nn.Module):
     def __init__(self, input_size):
         super(Mahalanobis_mask, self).__init__()
         frequency_size = input_size // 2 + 1
-        self.A = nn.Parameter(torch.randn(frequency_size, frequency_size), requires_grad=True)
+        self.A = nn.Parameter(
+            torch.randn(frequency_size, frequency_size), requires_grad=True
+        )
 
     def calculate_prob_distance(self, X):
         XF = torch.abs(torch.fft.rfft(X, dim=-1))
@@ -179,7 +182,7 @@ class Mahalanobis_mask(nn.Module):
     def bernoulli_gumbel_rsample(self, distribution_matrix):
         b, c, d = distribution_matrix.shape
 
-        flatten_matrix = rearrange(distribution_matrix, 'b c d -> (b c d) 1')
+        flatten_matrix = rearrange(distribution_matrix, "b c d -> (b c d) 1")
         r_flatten_matrix = 1 - flatten_matrix
 
         log_flatten_matrix = torch.log(flatten_matrix / r_flatten_matrix)
@@ -188,7 +191,9 @@ class Mahalanobis_mask(nn.Module):
         new_matrix = torch.concat([log_flatten_matrix, log_r_flatten_matrix], dim=-1)
         resample_matrix = gumbel_softmax(new_matrix, hard=True)
 
-        resample_matrix = rearrange(resample_matrix[..., 0], '(b c d) -> b c d', b=b, c=c, d=d)
+        resample_matrix = rearrange(
+            resample_matrix[..., 0], "(b c d) -> b c d", b=b, c=c, d=d
+        )
         return resample_matrix
 
     def forward(self, X):

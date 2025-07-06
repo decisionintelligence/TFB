@@ -1,10 +1,11 @@
 import torch
 from torch import nn
 
+
 class NetworkMLP(nn.Module):
     def __init__(self, seq_len, pred_len):
         super(NetworkMLP, self).__init__()
-        
+
         # Parameters
         self.pred_len = pred_len
 
@@ -22,14 +23,14 @@ class NetworkMLP(nn.Module):
 
     def forward(self, x):
         # x: [Batch, Input, Channel]
-        
-        x = x.permute(0,2,1) # to [Batch, Channel, Input]
-        
+
+        x = x.permute(0, 2, 1)  # to [Batch, Channel, Input]
+
         # Channel split
-        B = x.shape[0] # Batch size
-        C = x.shape[1] # Channel size
-        I = x.shape[2] # Input size
-        x = torch.reshape(x, (B*C, I)) # [Batch and Channel, Input]
+        B = x.shape[0]  # Batch size
+        C = x.shape[1]  # Channel size
+        I = x.shape[2]  # Input size
+        x = torch.reshape(x, (B * C, I))  # [Batch and Channel, Input]
 
         # Linear Stream
         # MLP
@@ -44,8 +45,8 @@ class NetworkMLP(nn.Module):
         x = self.fc3(x)
 
         # Channel concatination
-        x = torch.reshape(x, (B, C, self.pred_len)) # [Batch, Channel, Output]
+        x = torch.reshape(x, (B, C, self.pred_len))  # [Batch, Channel, Output]
 
-        x = x.permute(0,2,1) # to [Batch, Output, Channel]
+        x = x.permute(0, 2, 1)  # to [Batch, Output, Channel]
 
         return x
