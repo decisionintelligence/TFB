@@ -3,10 +3,13 @@
   <h2>TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods</h2>
 </div>
 <div align="center">
-[English](./README.md) |
-[简体中文](./README_CN.md)
+
+
+
 [**English**](./README.md) **|**
 [**简体中文**](./README_CN.md)
+
+</div>
 
 </div>
 
