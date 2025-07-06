@@ -146,7 +146,7 @@
 
   
 
-- 除了这些方法，您还可以实现其他六种方法：**_adjust_lr**、**save_checkpoint**、**_init_criterion_and_optimizer**、**_post_process** 和 **_init_early_stopping**。有关该方法的详细信息，请参阅 **[DeepForecastingModelBase](https://github.com/decisionintelligence/TFB/blob/master/ts_benchmark/baselines/deep_forecasting_model_base.py)**
+- 除了这些方法，您还可以实现其他五种方法：**_adjust_lr**、**save_checkpoint**、**_init_criterion_and_optimizer**、**_post_process** 和 **_init_early_stopping**。有关该方法的详细信息，请参阅 **[DeepForecastingModelBase](https://github.com/decisionintelligence/TFB/blob/master/ts_benchmark/baselines/deep_forecasting_model_base.py)**
 
   
 

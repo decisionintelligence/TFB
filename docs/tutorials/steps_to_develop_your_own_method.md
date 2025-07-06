@@ -134,7 +134,7 @@
       return out_loss
   ```
 
-- In addition to these methods, you can also implement six other methods: **_adjust_lr**, **save_checkpoint**, **_init_criterion_and_optimizer**, **_post_process**, and **_init_early_stopping**. For detailed information about these methods, refer to **[DeepForecastingModelBase](https://github.com/decisionintelligence/TFB/blob/master/ts_benchmark/baselines/deep_forecasting_model_base.py)**.
+- In addition to these methods, you can also implement five other methods: **_adjust_lr**, **save_checkpoint**, **_init_criterion_and_optimizer**, **_post_process**, and **_init_early_stopping**. For detailed information about these methods, refer to **[DeepForecastingModelBase](https://github.com/decisionintelligence/TFB/blob/master/ts_benchmark/baselines/deep_forecasting_model_base.py)**.
 
 **Now, let's put it all together:**
 
@@ -207,6 +207,8 @@ class DUET(DeepForecastingModelBase):
             out_loss["additional_loss"] = loss_importance
         return out_loss
 ```
+
+
 
 ### 4. Define Adapter Class Interface
 
