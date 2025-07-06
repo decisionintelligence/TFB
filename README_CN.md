@@ -1,7 +1,7 @@
 
 <div align="center">
   <img src="docs/figures/TFB-LOGO.png" width="80%">
-  <h2>时间序列预测方法的全面公平基准测试.</h2>
+  <h2>TFB: 时间序列预测方法的全面公平基准测试.</h2>
 </div>
 
 <div align="center">

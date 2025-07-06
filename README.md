@@ -1,6 +1,6 @@
 <div align="center">
   <img src="docs/figures/TFB-LOGO.png" width="80%">
-  <h2>A Fair and Scalable Time Series Forecasting Benchmark and Toolkit.</h2>
+  <h2>TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods</h2>
 </div>
 
 <div align="center">
