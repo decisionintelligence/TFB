@@ -2,16 +2,14 @@
   <img src="docs/figures/TFB-LOGO.png" width="80%">
   <h2>TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods</h2>
 </div>
-
 <div align="center">
+[English](./README.md) |
+[简体中文](./README_CN.md)
 [**English**](./README.md) **|**
 [**简体中文**](./README_CN.md)
 
 </div>
 
----
-
-<div align="center">
 
 [![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB) 
 
