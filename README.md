@@ -4,7 +4,6 @@
 </div>
 
 <div align="center">
-
 [**English**](./README.md) **|**
 [**简体中文**](./README_CN.md)
 
@@ -23,7 +22,7 @@
 > 
 > 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
 
-🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark (TAB) and Time Series Foundation Model Benchmark (TSFM-Bench).**
+🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark ([TAB](https://github.com/decisionintelligence/TAB)) and Time Series Foundation Model Benchmark ([TSFM-Bench](https://github.com/decisionintelligence/TSFM-Bench)).**
 
 🚩 **News** (2025.04) **TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.**
 
@@ -49,7 +48,7 @@
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
   - [ ] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
-        
+    
   - [ ] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
 
   - [ ] **HDMixer** - HDMixer: Hierarchical Dependency with Extendable Patch for Multivariate Time Series Forecasting [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer).
@@ -188,10 +187,12 @@ You can find answer [here](./docs/tutorials/steps_to_train_models_with_multi_gpu
 
 6. How to predict only a subset of input variables?
    
+
 You can find answer [here](./docs/tutorials/steps_to_predict_only_a_subset_of_input_variables.md).
 
 7. Is there code in TFB's code base to compute the characteristics of the dataset?
    
+
 TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.
 
 ## Citation

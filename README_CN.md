@@ -24,9 +24,9 @@
 > 
 > 2、我们重新测试了一些算法的结果，这些结果可能与TFB论文中的结果有所不同。您可以在[scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts)文件夹中找到我们最终为每个数据集上的每个算法选择的超参数，以及它们对应的算法测试结果可以在[OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)上找到！
 
-🚩 **新闻** (2025.06) **我们还开源了时间序列异常检测基准(TAB)和时间序列基础模型基准(TSFM-Bench)。**
+🚩 **新闻** (2025.06) **我们还开源了时间序列异常检测基准([TAB](https://github.com/decisionintelligence/TAB))和时间序列基础模型基准([TSFM-Bench](https://github.com/decisionintelligence/TSFM-Bench))。**
 
-🚩 **新闻** (2025.04) **TFB已开源用于计算时间序列特征的[代码](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py)，如趋势、季节性、平稳性、移动、转换、相关性等。提供了[中文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md)和[英文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md)文档。**
+🚩 **新闻** (2025.04) **TFB已开源用于计算时间序列特征的[代码](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py)，如趋势、季节性、平稳性、漂移性、转移性、相关性等。提供了[中文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md)和[英文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md)文档。**
 
 🚩 **新闻** (2025.04) **[DUET](https://arxiv.org/pdf/2412.10859)发布了统一超参数的长期预测任务结果，其中输入长度固定为96。点击[这里](https://github.com/decisionintelligence/DUET/blob/main/figures/DUET_unified_seq_len_96.pdf)查看结果，点击[这里](https://github.com/decisionintelligence/DUET/blob/main/scripts/multivariate_forecast/DUET_unified_seq_len_96.sh)查看重现结果的脚本。**
 
@@ -47,8 +47,9 @@
 🚩 **新闻** (2024.05) **一些介绍（中文）：[介绍1](https://mp.weixin.qq.com/s/5BscuAWIn-tzla2rzW1IsQ)，[介绍2](https://mp.weixin.qq.com/s/IPY2QwJ68YIrclMi2JtkMA)，[介绍3](https://mp.weixin.qq.com/s/D4SBwwVjHvuksaQ0boXjNw)，[介绍4](https://mp.weixin.qq.com/s/OfZJtd3H3-TCkvBGATt0mA)，[介绍5](https://mp.weixin.qq.com/s/pjTN15vHL5UxjL1mhJxguw)，[介绍6](https://mp.weixin.qq.com/s/ghJ3xN38pB-sDb0hiWjW7w)，和[介绍7](https://mp.weixin.qq.com/s/J8SRsN4W0FNMtlLpULhwKg)。**
 
 **新增的基线方法。** ☑ 表示其代码已经包含在此仓库中，且其性能结果已包含在[OpenTS](https://decisionintelligence.github.io/OpenTS/)排行榜中。☒ 表示仅其代码已包含在此仓库中。
+
   - [ ] **TimeKAN** - TimeKAN: 基于KAN的频率分解学习架构用于长期时间序列预测 [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[代码]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan)。
-        
+    
   - [ ] **xPatch** - xPatch: 具有指数季节-趋势分解的双流时间序列预测 [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[代码]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch)。
 
   - [ ] **HDMixer** - HDMixer: 用于多变量时间序列预测的具有可扩展补丁的分层依赖 [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[代码]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer)。
@@ -83,13 +84,13 @@ TFB是一个专为时间序列预测研究者设计的开源库。
 
 我们提供了一个干净的代码库，用于端到端评估时间序列预测模型，在各种评估策略和指标下将它们的性能与基线算法进行比较。
 
-下图提供了TFB流水线的可视化概述。
+下图提供了TFB测评框架的可视化概述。
 
 <div align="center">
 <img alt="Logo" src="docs/figures/Pipeline.png" width="80%"/>
 </div>
 
-下表提供了TFB的关键功能与其他时间序列预测库的比较的可视化概述。
+下表提供了TFB的关键功能与其他时间序列预测库的比较概述。
 
 ![image-20240514151134923](docs/figures/Comparison_with_Related_Libraries.png)
 
@@ -109,6 +110,7 @@ pip install -r requirements.txt
 
 > [!IMPORTANT]
 > 如果您想重现[scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts)中的结果，请使用`requirements-docker.txt`文件而不是`requirements.txt`。这是因为`requirements-docker.txt`锁定了包的版本，而`requirements.txt`提供版本范围，这可能导致不同的依赖版本并影响重现的准确性。
+>
 > ```shell
 > pip install -r requirements-docker.txt
 > ```
@@ -144,7 +146,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 我们提供了关于如何在自己的时间序列上评估的教程，您可以[点击这里](./docs/tutorials/steps_to_evaluate_your_own_time_series.md)。
 
 ## 时间序列代码漏洞drop-last说明
-现有方法的实现经常在测试阶段采用`Drop Last技巧`。为了加速测试，通常将数据分成批次。但是，如果我们丢弃最后一个实例少于批大小的不完整批次，这会导致不公平的比较。例如，在图4中，ETTh2的测试序列长度为2,880，我们需要使用大小为512的回看窗口预测336个未来时间步。如果我们选择批大小为32、64和128，最后一个批次的样本数分别为17、49和113。**除非所有方法使用相同的批大小，否则丢弃最后一批测试样本是不公平的，因为测试集的实际使用长度不一致。**表2显示了PatchTST、DLinear和FEDformer在ETTh2上使用不同批大小并打开"Drop Last"技巧的测试结果。**我们观察到，当改变批大小时，方法的性能会发生变化。**
+现有方法的实现经常在测试阶段采用`Drop Last技巧`。为了加速测试，通常将数据分成批次。但是，如果我们丢弃最后一个少于批大小的不完整批次，这会导致不公平的比较。例如，在图4中，ETTh2的测试序列长度为2,880，我们需要使用大小为512的回看窗口预测336个未来时间步。如果我们选择批大小为32、64和128，最后一个批次的样本数分别为17、49和113。**除非所有方法使用相同的批大小，否则丢弃最后一批测试样本是不公平的，因为测试集的实际使用长度不一致。**表2显示了PatchTST、DLinear和FEDformer在ETTh2上使用不同批大小并打开"Drop Last"技巧的测试结果。**我们观察到，当改变批大小时，方法的性能会发生变化。**
 
 **因此，TFB呼吁测试过程避免使用drop-last操作以确保公平性，TFB在测试期间也没有使用drop-last操作。**
 
@@ -186,7 +188,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 
 7. TFB的代码库中是否有计算数据集特征的代码？
 
-TFB已开源用于计算时间序列特征的[代码](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py)，如趋势、季节性、平稳性、移动、转换、相关性等。提供了[中文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md)和[英文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md)文档。
+TFB已开源用于计算时间序列特征的[代码](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py)，如趋势、季节性、平稳性、漂移性、转移性、相关性等。提供了[中文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md)和[英文](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md)文档。
 
 ## 引用
 
@@ -230,4 +232,4 @@ TFB已开源用于计算时间序列特征的[代码](https://github.com/decisio
 
 我们邀请您加入微信上的OpenTS社区。我们在微信上建立了一个群聊，您可以通过扫描[二维码](./docs/figures/QR.png)获得访问权限。通过加入社区，您可以获得OpenTS的最新更新，分享您的想法，并与其他成员讨论。
 
-希望加入的朋友可以先扫描[二维码](./docs/figures/QR.png)通过微信联系我。**添加时请在备注中注明您的姓名和研究方向**。申请通过后，我们会邀请您加入群聊。进群后，请将群昵称更新为“**姓名+学校/机构+研究方向**”。一周内未更新备注的成员将被管理员定期清理。
+希望加入的朋友可以先扫描[二维码](./docs/figures/QR.png)通过微信联系我。**添加时请在备注中注明您的姓名和研究方向**。申请通过后，我们会邀请您加入群聊。进群后，请将群昵称更新为“**姓名+学校/机构+研究方向**”。
