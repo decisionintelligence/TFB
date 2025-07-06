@@ -35,6 +35,7 @@ MODEL_HYPER_PARAMS = {
     "noisy_gating": True,
     "k": 1,
     "CI": True,
+    "parallel_strategy": "DP"
 }
 
 
