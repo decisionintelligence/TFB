@@ -11,6 +11,8 @@
 
 </div>
 
+<div align="center">
+
 </div>
 
 
@@ -25,7 +27,7 @@
 
 🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark ([TAB](https://github.com/decisionintelligence/TAB)) and Time Series Foundation Model Benchmark ([TSFM-Bench](https://github.com/decisionintelligence/TSFM-Bench)).**
 
-🚩 **News** (2025.04) **TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, stationarity, shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.**
+🚩 **News** (2025.04) **TFB has open-sourced the [code](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Characteristics_Extractor.py) for computing time series characteristics, such as trend, seasonality, [stationarity](), shifting, transition, correlation, and more. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/characteristics_extractor/Readme_en.md) documentation are provided.**
 
 🚩 **News** (2025.04) **[DUET](https://arxiv.org/pdf/2412.10859) has released the results of a long-term forecasting task with unified hyperparameters, where the input length is fixed at 96 for all experiments. Click [here](https://github.com/decisionintelligence/DUET/blob/main/figures/DUET_unified_seq_len_96.pdf) to view the results, and click [here](https://github.com/decisionintelligence/DUET/blob/main/scripts/multivariate_forecast/DUET_unified_seq_len_96.sh) to view the script for reproducing the results.**
 
