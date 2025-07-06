@@ -140,7 +140,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
 ## 开发自己方法的步骤
-我们提供了关于如何开发自己方法的教程，您可以[点击这里](./docs/tutorials/steps_to_develop_your_own_method.md)。
+我们提供了关于如何开发自己方法的[中文](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_develop_your_own_method_chn.md)和[英文](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_develop_your_own_method.md)教程.
 
 ## 在自己的时间序列上评估的步骤
 我们提供了关于如何在自己的时间序列上评估的教程，您可以[点击这里](./docs/tutorials/steps_to_evaluate_your_own_time_series.md)。

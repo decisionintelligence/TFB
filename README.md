@@ -145,7 +145,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 ```
 
 ## Steps to develop your own method
-We provide tutorial about how to develop your own method, you can [click here](./docs/tutorials/steps_to_develop_your_own_method.md).
+We provide tutorial about how to develop your own method. Both [Chinese](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_develop_your_own_method_chn.md) and [English](https://github.com/decisionintelligence/TFB/blob/master/docs/tutorials/steps_to_develop_your_own_method.md) documentation are provided.
 
 
 ## Steps to evaluate on your own time series
