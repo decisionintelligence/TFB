@@ -3,7 +3,7 @@
   <h2>TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods</h2>
 </div>
 <div align="center">
-
+<div align="center">
 
 
 [**English**](./README.md) **|**
