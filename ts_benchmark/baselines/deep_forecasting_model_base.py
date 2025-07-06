@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 # Default hyper parameters
 DEFAULT_HYPER_PARAMS = {
     "use_amp": 0,
-    "loss": "type3",
+    "loss": "MSE",
     "batch_size": 256,
     "lradj": "type3",
-    "lr": 0.02,
+    "lr": 0.0001,
     "num_workers": 0,
     "patience": 10,
     "num_epochs": 100,
