@@ -1,12 +1,22 @@
 <div align="center">
-<img alt="Logo" src="docs/figures/TFB-LOGO.png" width="80%"/>
+  <img src="docs/figures/TFB-LOGO.png" width="80%">
+  <h2>A Fair and Scalable Time Series Forecasting Benchmark and Toolkit.</h2>
 </div>
 
+<div align="center">
 
-[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB)  
+[**English**](./README.md) **|**
+[**简体中文**](./README_CN.md)
 
-# TFB: Towards Comprehensive and Fair Benchmarking of Time Series Forecasting Methods
+</div>
 
+---
+
+<div align="center">
+
+[![PVLDB](https://img.shields.io/badge/PVLDB'24-TFB-orange)](https://arxiv.org/pdf/2403.20150.pdf)  [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-blue)](https://pytorch.org/)  ![Stars](https://img.shields.io/github/stars/decisionintelligence/TFB) 
+
+</div>
 
 > [!IMPORTANT]
 > 1、If you find this project helpful, please don't forget to give it a ⭐ Star to show your support. Thank you!
@@ -220,6 +230,9 @@ If you have any questions or suggestions, feel free to contact:
 
 - [Xiangfei Qiu](https://qiu69.github.io/) (xfqiu@stu.ecnu.edu.cn)
 - [Xingjian Wu](https://ccloud0525.github.io/) (xjwu@stu.ecnu.edu.cn)
+- Zhengyu Li (lizhengyu@stu.ecnu.edu.cn)
+- Junkai Lu (jklu@stu.ecnu.edu.cn)
+- Wanghui Qiu (onehui@stu.ecnu.edu.cn)
 
 
 Or describe it in Issues.
