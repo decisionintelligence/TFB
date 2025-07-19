@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 import torch
-
+from ts_benchmark.baselines.xpatch.utils.tools import adjust_learning_rate
 from ts_benchmark.baselines.xpatch.models.xPatch import xPatchModel
 from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
@@ -47,6 +47,9 @@ class xPatch(DeepForecastingModelBase):
 
     def _init_model(self):
         return xPatchModel(self.config)
+
+    def _adjust_lr(self, optimizer, epoch, config):
+        adjust_learning_rate(optimizer, epoch, config)
 
     def _post_process(self, output, target):
         self.ratio = np.array(
