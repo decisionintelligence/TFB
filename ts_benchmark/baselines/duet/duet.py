@@ -60,7 +60,7 @@ class DUET(DeepForecastingModelBase):
     def _init_model(self):
         return DUETModel(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         output, loss_importance = self.model(input)
         out_loss = {"output": output}
         if self.model.training:

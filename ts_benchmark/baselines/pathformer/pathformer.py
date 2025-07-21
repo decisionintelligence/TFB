@@ -75,15 +75,25 @@ class Pathformer(DeepForecastingModelBase):
     def model_name(self):
         return "Pathformer"
 
-    def _init_criterion_and_optimizer(self):
+    def _init_criterion(self):
         if self.config.loss == "MSE":
             criterion = nn.MSELoss()
         elif self.config.loss == "MAE":
             criterion = nn.L1Loss()
         else:
             criterion = nn.HuberLoss(delta=0.5)
+        return criterion
 
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
+    def _init_optimizer(self, CovariateFusion=None):
+        if CovariateFusion is not None:
+            optimizer = optim.Adam(
+                [
+                    {"params": self.model.parameters(), "lr": self.config.lr},
+                    {"params": CovariateFusion.parameters(), "lr": self.config.lr},
+                ]
+            )
+        else:
+            optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         train_steps = len(self.train_data_loader)
         self.scheduler = lr_scheduler.OneCycleLR(
             optimizer=optimizer,
@@ -92,7 +102,6 @@ class Pathformer(DeepForecastingModelBase):
             epochs=self.config.num_epochs,
             max_lr=self.config.lr,
         )
-        return criterion, optimizer
 
     def _adjust_lr(self, optimizer, epoch, config):
         adjust_learning_rate(optimizer, self.scheduler, epoch, config, printout=False)
@@ -102,7 +111,7 @@ class Pathformer(DeepForecastingModelBase):
     def _init_model(self):
         return PathformerModel(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         output, balance_loss = self.model(input)
 
         return {"output": output}

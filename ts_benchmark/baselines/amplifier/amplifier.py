@@ -42,16 +42,14 @@ class Amplifier(DeepForecastingModelBase):
     def model_name(self):
         return "Amplifier"
 
-    def _init_criterion_and_optimizer(self):
+    def _init_criterion(self):
         criterion = nn.MSELoss()
-
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
-        return criterion, optimizer
+        return criterion
 
     def _init_model(self):
         return AmplifierModel(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         dec_inp = torch.zeros_like(target[:, -self.config.pred_len :, :]).float()
         dec_inp = (
             torch.cat([target[:, : self.config.label_len, :], dec_inp], dim=1)

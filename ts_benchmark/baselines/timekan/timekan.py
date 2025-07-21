@@ -72,7 +72,7 @@ class TimeKAN(DeepForecastingModelBase):
     def _init_model(self):
         return TimeKANModeL(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         output = self.model(input)
 
         return {"output": output}

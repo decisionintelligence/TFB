@@ -87,7 +87,7 @@ class ModelBase(metaclass=abc.ABCMeta):
 
     @annotate(not_implemented_batch=True)
     def batch_forecast(
-        self, horizon: int, batch_maker: BatchMaker, **kwargs
+        self, horizon: int, batch_maker: BatchMaker, exog_future, i, **kwargs
     ) -> np.ndarray:
         """
         Perform batch forecasting with the model.

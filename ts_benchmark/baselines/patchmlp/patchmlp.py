@@ -57,7 +57,7 @@ class PatchMLP(DeepForecastingModelBase):
     def _init_model(self):
         return PatchMLPModel(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         dec_inp = torch.zeros_like(target[:, -self.config.pred_len :, :]).float()
         dec_inp = (
             torch.cat([target[:, : self.config.label_len, :], dec_inp], dim=1)

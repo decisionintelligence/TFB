@@ -89,8 +89,19 @@ class PDF(DeepForecastingModelBase):
             criterion = nn.L1Loss()
         else:
             criterion = nn.HuberLoss(delta=0.5)
+        return criterion
 
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
+    def _init_optimizer(self, CovariateFusion=None):
+        if CovariateFusion is not None:
+            optimizer = optim.Adam(
+                [
+                    {"params": self.model.parameters(), "lr": self.config.lr},
+                    {"params": CovariateFusion.parameters(), "lr": self.config.lr},
+                ]
+            )
+        else:
+            optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
+        # optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
         train_steps = len(self.train_data_loader)
         self.scheduler = lr_scheduler.OneCycleLR(
             optimizer=optimizer,
@@ -99,12 +110,12 @@ class PDF(DeepForecastingModelBase):
             epochs=self.config.num_epochs,
             max_lr=self.config.lr,
         )
-        return criterion, optimizer
+        return optimizer
 
     def _init_model(self):
         return PDF_model(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         output = self.model(input)
 
         return {"output": output}

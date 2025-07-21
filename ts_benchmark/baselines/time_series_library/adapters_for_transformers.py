@@ -78,7 +78,7 @@ class TransformerAdapter(DeepForecastingModelBase):
     def _init_model(self):
         return self.model_class(self.config)
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         # decoder input
         dec_input = torch.zeros_like(target[:, -self.config.horizon :, :]).float()
         dec_input = (

@@ -81,7 +81,7 @@ class HDMixer(DeepForecastingModelBase):
         target = target * ratio
         return output, target
 
-    def _process(self, input, target, input_mark, target_mark):
+    def _process(self, input, target, input_mark, target_mark, exog_future=None):
         output, PaEN_Loss = self.model(input)
         out_loss = {"output": output}
         if self.model.training:

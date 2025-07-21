@@ -402,12 +402,19 @@ class RollingForecast(ForecastingStrategy):
         all_predicts = []
         total_inference_time = 0
         predict_batch_maker = RollingForecastPredictBatchMaker(batch_maker)
+        exog_futures = batch_maker.make_batch_eval(horizon)["covariates"].get(
+            "exog", None
+        )
+        i = 0
         while predict_batch_maker.has_more_batches():
             start_inference_time = time.time()
-            predicts = model.batch_forecast(horizon, predict_batch_maker)
+            predicts = model.batch_forecast(
+                horizon, predict_batch_maker, exog_futures, i
+            )
             end_inference_time = time.time()
             total_inference_time += end_inference_time - start_inference_time
             all_predicts.append(predicts)
+            i = i + 1
 
         all_predicts = np.concatenate(all_predicts, axis=0)
         targets = batch_maker.make_batch_eval(horizon)["target"]

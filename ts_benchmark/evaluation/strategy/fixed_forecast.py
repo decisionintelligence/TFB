@@ -67,9 +67,10 @@ class FixedForecast(ForecastingStrategy):
         target_train_valid_data, exog_train_valid_data = split_channel(
             train_valid_data, target_channel
         )
-        target_test_data, _ = split_channel(test_data, target_channel)
+        target_test_data, future_covariates = split_channel(test_data, target_channel)
         covariates = {}
         covariates["exog"] = exog_train_valid_data
+        covariates["exog_future"] = future_covariates
 
         start_fit_time = time.time()
         fit_method = model.forecast_fit if hasattr(model, "forecast_fit") else model.fit

@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from ts_benchmark.baselines.time_series_library.utils.timefeatures import (
     time_features,
 )
+from torch import nn
 from ts_benchmark.utils.data_processing import split_time
 
 
@@ -64,6 +65,59 @@ class EarlyStopping:
             self.val_loss_min = val_loss
             self.counter = 0
         return improved
+
+class EMA(nn.Module):
+    """
+    Exponential Moving Average (EMA) block to highlight the trend of time series
+    """
+
+    def __init__(self, alpha):
+        super(EMA, self).__init__()
+        self.alpha = alpha
+
+    def forward(self, x):
+        _, t, _ = x.shape
+        powers = torch.flip(torch.arange(t, dtype=torch.double), dims=(0,))
+        weights = torch.pow((1 - self.alpha), powers).to("cuda")
+        divisor = weights.clone()
+        weights[1:] = weights[1:] * self.alpha
+        weights = weights.reshape(1, t, 1)
+        divisor = divisor.reshape(1, t, 1)
+        x = torch.cumsum(x * weights, dim=1)
+        x = torch.div(x, divisor)
+        return x.to(torch.float32)
+
+class DECOMP(nn.Module):
+    """
+    Series decomposition block
+    """
+
+    def __init__(self, alpha):
+        super(DECOMP, self).__init__()
+        self.ma = EMA(alpha)
+
+    def forward(self, x):
+        moving_average = self.ma(x)
+        res = x - moving_average
+        return res, moving_average
+
+class DBLoss(nn.Module):
+    """自定义分解损失函数（趋势+季节双损失）"""
+
+    def __init__(self, alpha, beta):
+        super().__init__()
+        self.decomp = DECOMP(alpha)
+        self.beta = beta
+        self.mse = nn.MSELoss(reduction="mean")
+        self.mae = nn.L1Loss(reduction="mean")
+
+    def forward(self, pred, target):
+        pred_season, pred_trend = self.decomp(pred)
+        target_season, target_trend = self.decomp(target)
+
+        season_loss = self.mse(pred_season, target_season)
+        trend_loss = self.mae(pred_trend, target_trend)
+        return self.beta * season_loss + (1 - self.beta) * trend_loss
 
 
 class SlidingWindowDataLoader:
