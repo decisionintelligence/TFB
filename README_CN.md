@@ -168,7 +168,7 @@ sh ./scripts/multivariate_forecast/ILI_script/DLinear.sh
 
 2. 如何获取模型的预测值和目标值？
 
-我们提供了关于如何获取模型的预测值和目标值的教程，您可以[点击这里](./docs/tutorials/steps_to_get_predict_and_actual_data.md)。
+我们提供了关于如何获取模型的预测值和目标值的教程，您可以[点击这里](./docs/tutorials/steps_to_get_predict_and_actual_data_chn.md)。
 
 3. 脚本编写示例。
 

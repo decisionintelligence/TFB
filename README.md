@@ -173,7 +173,7 @@ Such as: **'{"d_ff": 512, "d_model": 256, "horizon": 24}' ---> {\\"d_ff\\":512,\
 
 2. How to get models' predicted values and the target values？
 
-We provide tutorial about how to get the models' predicted values and the target values, you can [click here](./docs/tutorials/steps_to_get_predict_and_actual_data.md).
+We provide tutorial about how to get the models' predicted values and the target values. Both [Chinese](./docs/tutorials/steps_to_get_predict_and_actual_data_chn.md) and [English](./docs/tutorials/steps_to_get_predict_and_actual_data.md) documentation are provided.
 
 3. Examples of script writing.
 

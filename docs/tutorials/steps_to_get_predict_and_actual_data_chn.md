@@ -1,13 +1,13 @@
-## Steps to get the model's predicted values and the target values
+## 获取模型预测值和目标值的步骤
 
-1. If you want to save the model's predicted values and the target values, you should set `--save-true-pred` to `True` when running the benchmark.
-Such as:
+1. 如果你想保存模型的预测值和目标值，在运行 benchmark 时应将 `--save-true-pred` 设置为 `True`。例如：
+
 ```shell
 python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ILI.csv" --strategy-args '{"horizon":60}' --model-name "time_series_library.DLinear" --model-hyper-params '{"batch_size": 64, "d_ff": 512, "d_model": 256, "lr": 0.01, "horizon": 60, "seq_len": 104}' --adapter "transformer_adapter"  --gpus 0  --num-workers 1  --timeout 60000  --save-path "your_result_path" --save-true-pred True
 ```
-2. After the benchmark finishes running, the predicted values and target values are saved in the result file. For example, if you set `--save-path "your_result_path"`, the result file will be located at `/result/your_result_path`.
-3. The result file is in `.tar.gz` format. You need to extract this file to access the results. 
-4. The predicted values are stored in the `"inference_data"` column, while the target values are in the `"actual_data"` column. However, you may notice that they appear as garbled code because they are encoded in base64. You can use the function below to get the decoded predicted and target values.
+2. Benchmark 运行完成后，预测值和目标值会保存在结果文件中。例如，如果你设置了 `--save-path "your_result_path"`，结果文件将位于 `/result/your_result_path`。
+3. 结果文件是 `.tar.gz` 格式，你需要先解压这个文件才能访问结果内容。
+4. 预测值存储在 `"inference_data"` 列中，目标值存储在 `"actual_data"` 列中。但你可能会发现它们是乱码，这是因为它们是通过 base64 编码的。你可以使用下面的函数来解码预测值和目标值。
 
 ```python
 import base64
@@ -91,7 +91,7 @@ def decode_data(filepath: str):
 your_result_csv_path = r"/path/to/your_result.csv"
 decode_data(your_result_csv_path)
 ```
-The decoded results will be saved in the following directory structure:
+解码后的结果将按照以下目录结构保存：
 ```
 {dataset}_{model_name}_{model_params}
 └── {timestamp}
