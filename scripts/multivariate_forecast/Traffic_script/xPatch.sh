@@ -1,0 +1,8 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Traffic.csv" --strategy-args '{"horizon": 96}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 96, "lr": 0.001, "lradj": "type3", "norm": true, "seq_len": 512}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Traffic/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Traffic.csv" --strategy-args '{"horizon": 192}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 192, "lr": 0.0001, "lradj": "sigmoid", "norm": true, "seq_len": 512}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Traffic/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Traffic.csv" --strategy-args '{"horizon": 336}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 336, "lr": 0.0001, "lradj": "sigmoid", "norm": true, "seq_len": 512}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Traffic/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Traffic.csv" --strategy-args '{"horizon": 720}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 720, "lr": 0.0001, "lradj": "sigmoid", "norm": true, "seq_len": 512}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Traffic/xPatch"
+

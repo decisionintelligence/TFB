@@ -1,0 +1,8 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Exchange.csv" --strategy-args '{"horizon": 96}' --model-name "amplifier.Amplifier" --model-hyper-params '{"SCI": 0, "batch_size": 256, "hidden_size": 64, "horizon": 96, "label_len": 48, "lr": 0.02, "norm": true, "seq_len": 96}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Exchange/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Exchange.csv" --strategy-args '{"horizon": 192}' --model-name "amplifier.Amplifier" --model-hyper-params '{"SCI": 0, "batch_size": 256, "hidden_size": 512, "horizon": 192, "label_len": 48, "lr": 0.02, "norm": true, "seq_len": 96}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Exchange/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Exchange.csv" --strategy-args '{"horizon": 336}' --model-name "amplifier.Amplifier" --model-hyper-params '{"SCI": 0, "batch_size": 256, "hidden_size": 512, "horizon": 336, "label_len": 48, "lr": 0.03, "norm": true, "seq_len": 96}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Exchange/Amplifier"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "Exchange.csv" --strategy-args '{"horizon": 720}' --model-name "amplifier.Amplifier" --model-hyper-params '{"SCI": 0, "batch_size": 256, "hidden_size": 512, "horizon": 720, "label_len": 48, "lr": 0.03, "norm": true, "seq_len": 96}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "Exchange/Amplifier"
+

@@ -1,0 +1,8 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "FRED-MD.csv" --strategy-args '{"horizon": 24}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 24, "loss": "MAE", "lr": 0.001, "lradj": "type3", "ma_type": "ema", "norm": true, "seq_len": 104}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "FRED-MD/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "FRED-MD.csv" --strategy-args '{"horizon": 36}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 36, "loss": "MAE", "lr": 0.0001, "lradj": "sigmoid", "ma_type": "ema", "norm": true, "seq_len": 104}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "FRED-MD/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "FRED-MD.csv" --strategy-args '{"horizon": 48}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 48, "loss": "MAE", "lr": 0.001, "lradj": "type3", "ma_type": "ema", "norm": true, "seq_len": 104}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "FRED-MD/xPatch"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "FRED-MD.csv" --strategy-args '{"horizon": 60}' --model-name "xpatch.xPatch" --model-hyper-params '{"alpha": 0.3, "batch_size": 64, "beta": 0.3, "enc_in": 7, "horizon": 60, "loss": "MAE", "lr": 0.001, "lradj": "type3", "ma_type": "ema", "norm": true, "seq_len": 104}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "FRED-MD/xPatch"
+
