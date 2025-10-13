@@ -50,15 +50,15 @@
 
 
 **Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
-  - [ ] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
+  - [x] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
     
-  - [ ] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
+  - [x] **xPatch** - xPatch: Dual-Stream Time Series Forecasting with Exponential Seasonal-Trend Decomposition [[AAAI 2025]](https://arxiv.org/pdf/2412.17323), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/xpatch).
 
   - [ ] **HDMixer** - HDMixer: Hierarchical Dependency with Extendable Patch for Multivariate Time Series Forecasting [[AAAI 2024]](https://ojs.aaai.org/index.php/AAAI/article/view/29155), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/hdmixer).
 
-  - [ ] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/patchmlp).
+  - [x] **PatchMLP** - PatchMLP: Unlocking the Power of Patch: Patch-Based MLP for Long-Term Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2405.13575), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/patchmlp).
     
-  - [ ] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/amplifier).
+  - [x] **Amplifier** - Amplifier: Bringing Attention to Neglected Low-Energy Components in Time Series Forecasting [[AAAI 2025]](https://arxiv.org/pdf/2501.17216), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/amplifier).
     
   - [x] **DUET** - DUET: Dual Clustering Enhanced Multivariate Time Series Forecasting [[KDD 2025]](https://arxiv.org/pdf/2412.10859), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/duet).
 
