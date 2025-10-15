@@ -23,7 +23,7 @@
 > [!IMPORTANT]
 > 1、If you find this project helpful, please don't forget to give it a ⭐ Star to show your support. Thank you!
 > 
-> 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/leaderboards/multivariate_time_series/)!
+> 2、We have retested the results of some algorithms, which may differ from those in the TFB paper. You can find the hyperparameters we ultimately selected for each algorithm on each dataset in the [scripts](https://github.com/decisionintelligence/TFB/tree/master/scripts) folder, and their corresponding algorithm test results can be found on the [OpenTS](https://decisionintelligence.github.io/OpenTS/result/#multivariate_forecasting)!
 
 🚩 **News** (2025.06) **We have also open-sourced the Time Series Anomaly Detection Benchmark ([TAB](https://github.com/decisionintelligence/TAB)) and Time Series Foundation Model Benchmark ([TSFM-Bench](https://github.com/decisionintelligence/TSFM-Bench)).**
 
