@@ -234,7 +234,7 @@ If you have any questions or suggestions, feel free to contact:
 
 - [Xiangfei Qiu](https://qiu69.github.io/) (xfqiu@stu.ecnu.edu.cn)
 - [Xingjian Wu](https://ccloud0525.github.io/) (xjwu@stu.ecnu.edu.cn)
-- Zhengyu Li (lizhengyu@stu.ecnu.edu.cn)
+- [Zhengyu Li](https://devcrafterlzy.github.io/) (lizhengyu@stu.ecnu.edu.cn)
 - Junkai Lu (jklu@stu.ecnu.edu.cn)
 - Wanghui Qiu (onehui@stu.ecnu.edu.cn)
 
