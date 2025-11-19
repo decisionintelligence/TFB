@@ -51,6 +51,8 @@ MODEL_HYPER_PARAMS = {
     "use_norm": True,
     "parallel_strategy": "DP",
     "task_name": "short_term_forecast",
+    "alpha": 1,
+    "beta": 0.5,
 }
 
 
