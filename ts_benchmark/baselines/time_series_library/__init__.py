@@ -22,6 +22,7 @@ __all__ = [
     "Triformer",
     "TimeMixer",
     "CrossLinear",
+    "TimePerceiver"
 ]
 
 
@@ -49,3 +50,4 @@ from ts_benchmark.baselines.time_series_library.models.Transformer import Transf
 from ts_benchmark.baselines.time_series_library.patchs.Triformer import Triformer
 from ts_benchmark.baselines.time_series_library.models.TimeMixer import TimeMixer
 from ts_benchmark.baselines.time_series_library.models.CrossLinear import CrossLinear
+from ts_benchmark.baselines.time_series_library.models.TimePerceiver import TimePerceiver

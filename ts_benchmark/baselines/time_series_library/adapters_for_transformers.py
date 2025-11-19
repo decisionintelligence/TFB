@@ -53,6 +53,16 @@ MODEL_HYPER_PARAMS = {
     "task_name": "short_term_forecast",
     "alpha": 1,
     "beta": 0.5,
+    "query_share":1,
+    "num_latents":8,
+    "latent_dim":128,
+    "latent_d_ff":256,
+    "use_latent":1,
+    "generalized":1,
+    "standard":0,
+    "num_latent_blocks":1,
+    "separate_ratio":1.0
+    
 }
 
 
