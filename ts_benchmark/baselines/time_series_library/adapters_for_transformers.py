@@ -61,8 +61,12 @@ MODEL_HYPER_PARAMS = {
     "generalized":1,
     "standard":0,
     "num_latent_blocks":1,
-    "separate_ratio":1.0
-    
+    "separate_ratio":1.0,
+    "num_map":4,
+    "kernel_size":8,
+    "conv_stride":4,
+    "use_pi": False,
+    "period": 168
 }
 
 
