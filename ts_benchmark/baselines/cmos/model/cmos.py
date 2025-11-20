@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import math
 
 
-class CMoS(nn.Module):
+class CMoSModel(nn.Module):
     def __init__(self, configs) -> None:
         super().__init__()
 
@@ -58,7 +58,7 @@ class CMoS(nn.Module):
 
         self.dropout = nn.Dropout(configs.dropout)
 
-    def forward(self, x, x_mark_enc, x_dec, x_mark_dec, mask=None):
+    def forward(self, x, mask=None):
         # input size: b, seq_len, c
         x = x.transpose(-2, -1)
 
