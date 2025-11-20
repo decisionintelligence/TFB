@@ -49,7 +49,7 @@
 
 
 
-**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS](https://decisionintelligence.github.io/OpenTS/) leaderboard. ☒ means that just their codes have already been included into this repo.
+**Newly added baselines.** ☑ means that their codes have already been included into this repo, and their performance results have been included in the  [OpenTS-Bench](https://decisionintelligence.github.io/OpenTS/leaderboards/#multivariate_forecasting) leaderboard. ☒ means that just their codes have already been included into this repo.
   - [ ] **TimeBridge** - TimeBridge: Non-Stationarity Matters for Long-term Time Series Forecasting [[ICML 2025]](https://arxiv.org/pdf/2410.04442), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timebridge).
         
   - [x] **TimeKAN** - TimeKAN: KAN-based Frequency Decomposition Learning Architecture for Long-term Time Series Forecasting [[ICLR 2025]](https://arxiv.org/pdf/2502.06910), [[Code]](https://github.com/decisionintelligence/TFB/tree/master/ts_benchmark/baselines/timekan).
