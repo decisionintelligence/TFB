@@ -2,7 +2,6 @@ from ts_benchmark.baselines.timebase.model.timebase import TimeBaseModel
 from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 MODEL_HYPER_PARAMS = {
-    
     "enc_in": 1,
     "dec_in": 1,
     "c_out": 1,
@@ -40,6 +39,8 @@ MODEL_HYPER_PARAMS = {
     "use_orthogonal": 1,
     "use_period_norm": 1,
 }
+
+
 class TimeBase(DeepForecastingModelBase):
     """
     TimeBase adapter class.
@@ -55,15 +56,18 @@ class TimeBase(DeepForecastingModelBase):
         Args:
             configs: Configuration object containing model parameters.
         """
-        super(TimeBase, self).__init__(MODEL_HYPER_PARAMS,**kwargs)
+        super(TimeBase, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
+
     def _init_model(self):
         return TimeBaseModel(self.config)
+
     @property
     def model_name(self):
         return "TimeBase"
+
     def _process(self, input, target, input_mark, target_mark):
         if self.config.use_orthogonal:
-            output,orthogonal_loss = self.model(input)
+            output, orthogonal_loss = self.model(input)
         else:
             output = self.model(input)
             orthogonal_loss = 0

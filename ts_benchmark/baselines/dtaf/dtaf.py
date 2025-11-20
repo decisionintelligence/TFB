@@ -58,6 +58,7 @@ MODEL_HYPER_PARAMS = {
     "use_norm": True,
 }
 
+
 class DTAF(DeepForecastingModelBase):
     """
     DTAF adapter class.
@@ -65,21 +66,33 @@ class DTAF(DeepForecastingModelBase):
 
     def __init__(self, **kwargs):
         super(DTAF, self).__init__(MODEL_HYPER_PARAMS, **kwargs)
+
     @property
     def model_name(self):
         return "DTAF"
+
     def _init_model(self):
         return DTAF_Model(self.config)
+
     def klLoss(self, stables, sample_num):
         """
-            输入: patches of shape [B, N, D]
-            输出: KL divergence 矩阵, shape [B, N, N]
-            """
+        输入: patches of shape [B, N, D]
+        输出: KL divergence 矩阵, shape [B, N, N]
+        """
 
         # new 采样
         if sample_num > 0:
-            shuffle = torch.randint(low=0, high=stables.shape[0], size=(stables.shape[0],), device=stables.device).unsqueeze(
-                -1).unsqueeze(-1)[:sample_num].repeat(1, stables.shape[1], stables.shape[2])
+            shuffle = (
+                torch.randint(
+                    low=0,
+                    high=stables.shape[0],
+                    size=(stables.shape[0],),
+                    device=stables.device,
+                )
+                .unsqueeze(-1)
+                .unsqueeze(-1)[:sample_num]
+                .repeat(1, stables.shape[1], stables.shape[2])
+            )
             stables = torch.gather(stables, dim=0, index=shuffle)
         # 转换成概率分布
         probs = stables.softmax(dim=-1)  # [B, N, D]
@@ -94,12 +107,21 @@ class DTAF(DeepForecastingModelBase):
         kl = kl.sum(dim=-1)  # [B, N, N]
 
         return kl.mean(dim=-1).mean(dim=-1).mean(dim=-1)
+
     def _process(self, input, target, input_mark, target_mark):
         output, stables = self.model(input)
         output_r, stables_r = self.model(input)
         target = target[:, -self.config.horizon :, :]
         output = output[:, -self.config.horizon :, :]
-        addtional_loss =-nn.L1Loss()(output,target)/2+nn.L1Loss()(output_r, target)/2 + self.config.r_dropout * nn.MSELoss()(output, output_r) + self.config.kl * (self.klLoss(stables, self.config.sample_num) + self.klLoss(stables_r, self.config.sample_num))
+        addtional_loss = (
+            -nn.L1Loss()(output, target) / 2
+            + nn.L1Loss()(output_r, target) / 2
+            + self.config.r_dropout * nn.MSELoss()(output, output_r)
+            + self.config.kl
+            * (
+                self.klLoss(stables, self.config.sample_num)
+                + self.klLoss(stables_r, self.config.sample_num)
+            )
+        )
         # (a+b)/2 = a-a/2 + b/2
         return {"output": output, "addtional_loss": addtional_loss}
-        

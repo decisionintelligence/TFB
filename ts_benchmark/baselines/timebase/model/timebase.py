@@ -2,13 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+
+
 def cal_orthogonal_loss(matrix):
-    gram_matrix = torch.matmul(matrix.transpose(-2, -1), matrix) 
+    gram_matrix = torch.matmul(matrix.transpose(-2, -1), matrix)
     one_diag = torch.diagonal(gram_matrix, dim1=-2, dim2=-1)
-    two_diag = torch.diag_embed(one_diag)  
-    off_diagonal = gram_matrix - two_diag  
-    loss = torch.norm(off_diagonal, dim=(-2, -1)) 
+    two_diag = torch.diag_embed(one_diag)
+    off_diagonal = gram_matrix - two_diag
+    loss = torch.norm(off_diagonal, dim=(-2, -1))
     return loss.mean()
+
+
 class TimeBaseModel(nn.Module):
     def __init__(self, configs):
         super(TimeBaseModel, self).__init__()
@@ -20,7 +24,7 @@ class TimeBaseModel(nn.Module):
         self.enc_in = configs.enc_in
         self.period_len = configs.period_len
         self.pad_seq_len = 0
-        self.basis_num  = configs.basis_num
+        self.basis_num = configs.basis_num
 
         self.seg_num_x = self.seq_len // self.period_len
         self.seg_num_y = self.pred_len // self.period_len
@@ -49,13 +53,13 @@ class TimeBaseModel(nn.Module):
         if self.use_period_norm:
             period_mean = torch.mean(x, dim=-1, keepdim=True)
             x = x - period_mean
-            return x, {'period_mean': period_mean}
+            return x, {"period_mean": period_mean}
         else:
             x = x.reshape(b, c, -1)
             mean = torch.mean(x, dim=-1, keepdim=True)
             x = x - mean
             x = x.reshape(-1, self.period_len, self.seg_num_x)
-            return x, {'mean': mean}
+            return x, {"mean": mean}
 
     def _denormalize_output(self, x, norm_stats, b, c):
         """
@@ -63,18 +67,18 @@ class TimeBaseModel(nn.Module):
         output: x_denorm
         """
         if self.use_period_norm:
-            x = x + norm_stats['period_mean']
+            x = x + norm_stats["period_mean"]
         else:
             x = x.reshape(b, c, -1)
-            x = x + norm_stats['mean']
+            x = x + norm_stats["mean"]
             x = x.reshape(-1, self.period_len, self.seg_num_y)
         return x
 
     def forward(self, x):
-        '''
+        """
         x: b t c
         out: b t c
-        '''
+        """
         b, t, c = x.shape
         batch_size = b
         x = x.permute(0, 2, 1)  # b c t
@@ -82,11 +86,15 @@ class TimeBaseModel(nn.Module):
         # Padding
         if self.pad_seq_len > 0:
             pad_start = (self.seg_num_x - 1) * self.period_len
-            x = torch.cat([x, x[:, :, pad_start - self.pad_seq_len:pad_start]], dim=-1)
+            x = torch.cat(
+                [x, x[:, :, pad_start - self.pad_seq_len : pad_start]], dim=-1
+            )
 
         # Reshape
         x = x.reshape(batch_size, self.enc_in, self.seg_num_x, self.period_len)
-        x = x.permute(0, 1, 3, 2).reshape(-1, self.period_len, self.seg_num_x)  # (bc, p, n)
+        x = x.permute(0, 1, 3, 2).reshape(
+            -1, self.period_len, self.seg_num_x
+        )  # (bc, p, n)
 
         # Normalize
         x, norm_stats = self._normalize_input(x, b, c)
@@ -94,8 +102,12 @@ class TimeBaseModel(nn.Module):
         # Basis transformation
         if self.individual:
             x = x.reshape(b, c, self.period_len, self.seg_num_x)
-            x_pred = torch.zeros([b, c, self.period_len, self.seg_num_y], dtype=x.dtype, device=x.device)
-            x_basis = torch.zeros([b, c, self.period_len, self.basis_num], dtype=x.dtype, device=x.device)
+            x_pred = torch.zeros(
+                [b, c, self.period_len, self.seg_num_y], dtype=x.dtype, device=x.device
+            )
+            x_basis = torch.zeros(
+                [b, c, self.period_len, self.basis_num], dtype=x.dtype, device=x.device
+            )
             for i in range(self.enc_in):
                 x_basis[:, i, :, :] = self.ts2basis[i](x[:, i, :, :])
                 x_pred[:, i, :, :] = self.basis2ts[i](x_basis[:, i, :, :])
@@ -109,11 +121,13 @@ class TimeBaseModel(nn.Module):
         x = self._denormalize_output(x, norm_stats, b, c)
 
         # Reshape back
-        x = x.reshape(batch_size, self.enc_in, self.period_len, self.seg_num_y).permute(0, 1, 3, 2)
+        x = x.reshape(batch_size, self.enc_in, self.period_len, self.seg_num_y).permute(
+            0, 1, 3, 2
+        )
         x = x.reshape(batch_size, self.enc_in, -1).permute(0, 2, 1)  # b t c
 
         if self.use_orthogonal:
             orthogonal_loss = cal_orthogonal_loss(x_basis)
-            return x[:, :self.pred_len, :], orthogonal_loss
+            return x[:, : self.pred_len, :], orthogonal_loss
         else:
-            return x[:, :self.pred_len, :]
+            return x[:, : self.pred_len, :]
