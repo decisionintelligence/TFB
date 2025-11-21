@@ -101,7 +101,10 @@ class CrossLinearModel(nn.Module):
         y_out = y_out.permute(0, 2, 1)
         return y_out
 
-    def forward(self, x_enc, ):
+    def forward(
+        self,
+        x_enc,
+    ):
         if (
             self.task_name == "long_term_forecast"
             or self.task_name == "short_term_forecast"

@@ -1,4 +1,4 @@
-from ts_benchmark.baselines.crosslinear.model.cross_linear import CrossLinearModel
+from ts_benchmark.baselines.crosslinear.model.crosslinear_model import CrossLinearModel
 from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 MODEL_HYPER_PARAMS = {
@@ -34,8 +34,9 @@ MODEL_HYPER_PARAMS = {
     "patience": 3,
     "alpha": 1,
     "beta": 0.5,
-    
 }
+
+
 class CrossLinear(DeepForecastingModelBase):
     """
     CrossLinear adapter class.
@@ -59,6 +60,7 @@ class CrossLinear(DeepForecastingModelBase):
     @property
     def model_name(self):
         return "CrossLinear"
+
     def _process(self, input, target, input_mark, target_mark):
         output = self.model(input)
 
