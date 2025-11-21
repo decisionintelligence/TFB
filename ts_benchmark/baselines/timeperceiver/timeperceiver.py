@@ -1,4 +1,6 @@
-from ts_benchmark.baselines.timeperceiver.model.timeperceiver import TimePerceiverModel
+from ts_benchmark.baselines.timeperceiver.model.timeperceiver_model import (
+    TimePerceiverModel,
+)
 from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 MODEL_HYPER_PARAMS = {
@@ -32,14 +34,15 @@ MODEL_HYPER_PARAMS = {
     "itr": 1,
     "distil": True,
     "patience": 3,
-    "query_share":1,
-    "num_latents":8,
-    "latent_dim":128,
-    "latent_d_ff":256,
-    "use_latent":1,
-    "num_latent_blocks":1,
-    
+    "query_share": 1,
+    "num_latents": 8,
+    "latent_dim": 128,
+    "latent_d_ff": 256,
+    "use_latent": 1,
+    "num_latent_blocks": 1,
 }
+
+
 class TimePerceiver(DeepForecastingModelBase):
     """
     TimePerceiver adapter class.
@@ -63,6 +66,7 @@ class TimePerceiver(DeepForecastingModelBase):
     @property
     def model_name(self):
         return "TimePerceiver"
+
     def _process(self, input, target, input_mark, target_mark):
         output = self.model(input)
 

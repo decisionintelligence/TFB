@@ -1,4 +1,4 @@
-from ts_benchmark.baselines.cmos.model.cmos import CMoSModel
+from ts_benchmark.baselines.cmos.model.cmos_model import CMoSModel
 from ts_benchmark.baselines.deep_forecasting_model_base import DeepForecastingModelBase
 
 MODEL_HYPER_PARAMS = {
@@ -32,13 +32,14 @@ MODEL_HYPER_PARAMS = {
     "itr": 1,
     "distil": True,
     "patience": 3,
-    "num_map":4,
-    "kernel_size":8,
-    "conv_stride":4,
+    "num_map": 4,
+    "kernel_size": 8,
+    "conv_stride": 4,
     "use_pi": False,
-    "period": 168
-    
+    "period": 168,
 }
+
+
 class CMoS(DeepForecastingModelBase):
     """
     CMoS adapter class.
@@ -62,6 +63,7 @@ class CMoS(DeepForecastingModelBase):
     @property
     def model_name(self):
         return "CMoS"
+
     def _process(self, input, target, input_mark, target_mark):
         output = self.model(input)
 
