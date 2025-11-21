@@ -5,9 +5,9 @@ from typing import Sequence
 import math
 
 
-class TimePerceiver(nn.Module):
+class TimePerceiverModel(nn.Module):
     def __init__(self, configs):
-        super(TimePerceiver, self).__init__()
+        super(TimePerceiverModel, self).__init__()
         self.patch_size = configs.patch_len
         self.past_patch_num = configs.seq_len // configs.patch_len
         self.future_patch_num = configs.pred_len // configs.patch_len
@@ -82,7 +82,7 @@ class TimePerceiver(nn.Module):
 
         self.output_projection = nn.Linear(self.embed_dim, configs.patch_len)
 
-    def forward(self, inputs, x_mark_enc, x_dec, x_mark_dec, indices=None, mask=None):
+    def forward(self, inputs, indices=None, mask=None):
         # RevIN
         means = inputs.mean(1, keepdim=True).detach()
         inputs = inputs - means
