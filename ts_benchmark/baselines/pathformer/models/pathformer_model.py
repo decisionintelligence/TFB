@@ -9,6 +9,7 @@ from ..layers.Layer import WeightGenerator, CustomLinear
 from ..layers.RevIN import RevIN
 from functools import reduce
 from operator import mul
+from ts_benchmark.utils.get_device import get_device
 
 
 class PathformerModel(nn.Module):
@@ -35,7 +36,7 @@ class PathformerModel(nn.Module):
 
         # self.start_fc = nn.Linear(in_features=self.seq_len, out_features=self.d_model*self.seq_len)
         self.AMS_lists = nn.ModuleList()
-        self.device = torch.device("cuda:{}".format(configs.gpu))
+        self.device = get_device()
 
         for num in range(self.layer_nums):
             self.AMS_lists.append(

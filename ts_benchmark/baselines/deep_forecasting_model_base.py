@@ -10,6 +10,7 @@ import logging
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 from torch.utils.data import DataLoader
+from ts_benchmark.utils.get_device import get_device
 
 from ts_benchmark.baselines.utils import EarlyStopping, adjust_learning_rate
 from ts_benchmark.baselines.utils import (
@@ -75,6 +76,7 @@ class DeepForecastingModelBase(ModelBase):
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
+        self.check_point = None
 
     def _init_model(self):
         """
@@ -326,7 +328,7 @@ class DeepForecastingModelBase(ModelBase):
         config = self.config
         total_loss = []
         self.model.eval()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = get_device()
         with torch.no_grad():
             for input, target, input_mark, target_mark in valid_data_loader:
                 input, target, input_mark, target_mark = (
@@ -435,7 +437,9 @@ class DeepForecastingModelBase(ModelBase):
         if config.use_amp == 1:
             scaler = torch.cuda.amp.GradScaler()
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        device = get_device()
+
 
         self.early_stopping = self._init_early_stopping()
         self.model.to(device)
@@ -543,7 +547,7 @@ class DeepForecastingModelBase(ModelBase):
             test, config, timeenc=1, batch_size=1, shuffle=False, drop_last=False
         )
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = get_device()
         self.model.to(device)
         self.model.eval()
 
@@ -607,7 +611,7 @@ class DeepForecastingModelBase(ModelBase):
 
         if self.model is None:
             raise ValueError("Model not trained. Call the fit() function first.")
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = get_device()
         self.model.to(device)
         self.model.eval()
 
