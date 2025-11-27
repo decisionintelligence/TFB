@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from ..layers.Autoformer_EncDec import series_decomp, series_decomp_multi
 from ..layers.Embed import DataEmbedding
+from ts_benchmark.utils.get_device import get_device
 
 
 class MIC(nn.Module):
@@ -218,7 +219,7 @@ class MICN(nn.Module):
             c_out=configs.c_out,
             conv_kernel=conv_kernel,
             isometric_kernel=isometric_kernel,
-            device=torch.device("cuda:0"),
+            device=get_device(),
         )
         if (
             self.task_name == "long_term_forecast"

@@ -3,6 +3,7 @@ import torch.nn as nn
 from ..layer.Embed import PatchEmbedding
 from ..layer.Linear_extractor import Linear_extractor
 from ..layer.kan import KAN, KANLinear
+from ts_benchmark.utils.get_device import get_device
 
 
 class Expert(nn.Module):
@@ -40,7 +41,7 @@ class TFS(nn.Module):
         self.gate = nn.Linear(input_dim, 1)
         if self.configs.aggregated_norm == 1:
             self.norm = nn.LayerNorm(input_dim)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = get_device()
 
         if configs.expert_num > 0:
             self.moe = MOE(
@@ -104,7 +105,7 @@ class Predict(nn.Module):
 class DTAF(nn.Module):
     def __init__(self, configs):
         super(DTAF, self).__init__()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = get_device()
         self.config = configs
         self.patch_num = int(
             (self.config.seq_len - self.config.patch_len) / self.config.stride + 2
