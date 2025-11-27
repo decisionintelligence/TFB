@@ -436,10 +436,8 @@ class DeepForecastingModelBase(ModelBase):
         if config.use_amp == 1:
             scaler = torch.cuda.amp.GradScaler()
 
-        # Old code:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # New code for macOS support:
+        # Support  multiple GPUs
         if torch.cuda.is_available():
             device = torch.device("cuda")
         elif torch.backends.mps.is_available():
