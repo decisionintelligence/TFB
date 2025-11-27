@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from scipy import signal
 from scipy import special as ss
-from ts_benchmark.utils.random_utils import get_device
+from ts_benchmark.utils.get_device import get_device
 
 device = get_device()
 

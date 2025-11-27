@@ -9,7 +9,7 @@ from ..layers.Layer import WeightGenerator, CustomLinear
 from ..layers.RevIN import RevIN
 from functools import reduce
 from operator import mul
-from ts_benchmark.utils.random_utils import get_device
+from ts_benchmark.utils.get_device import get_device
 
 
 class PathformerModel(nn.Module):

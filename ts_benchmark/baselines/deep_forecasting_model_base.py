@@ -10,7 +10,7 @@ import logging
 from sklearn.preprocessing import StandardScaler
 from torch import optim
 from torch.utils.data import DataLoader
-from ts_benchmark.utils.random_utils import get_device
+from ts_benchmark.utils.get_device import get_device
 
 from ts_benchmark.baselines.utils import EarlyStopping, adjust_learning_rate
 from ts_benchmark.baselines.utils import (
