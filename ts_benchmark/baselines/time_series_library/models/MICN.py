@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from ..layers.Autoformer_EncDec import series_decomp, series_decomp_multi
 from ..layers.Embed import DataEmbedding
-from ts_benchmark.utils.random_utils import get_device
+from ts_benchmark.utils.get_device import get_device
 
 
 class MIC(nn.Module):

@@ -3,7 +3,7 @@ import torch.nn as nn
 from ..layer.Embed import PatchEmbedding
 from ..layer.Linear_extractor import Linear_extractor
 from ..layer.kan import KAN, KANLinear
-from ts_benchmark.utils.random_utils import get_device
+from ts_benchmark.utils.get_device import get_device
 
 
 class Expert(nn.Module):
