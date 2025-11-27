@@ -36,11 +36,7 @@ class PathformerModel(nn.Module):
 
         # self.start_fc = nn.Linear(in_features=self.seq_len, out_features=self.d_model*self.seq_len)
         self.AMS_lists = nn.ModuleList()
-        # Use get_device() but allow GPU selection if specified
-        if hasattr(configs, 'gpu') and configs.gpu is not None:
-            self.device = torch.device("cuda:{}".format(configs.gpu))
-        else:
-            self.device = get_device()
+        self.device = get_device()
 
         for num in range(self.layer_nums):
             self.AMS_lists.append(
