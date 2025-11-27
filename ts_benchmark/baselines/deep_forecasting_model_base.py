@@ -75,6 +75,7 @@ class DeepForecastingModelBase(ModelBase):
         self.scaler = StandardScaler()
         self.seq_len = self.config.seq_len
         self.win_size = self.config.seq_len
+        self.check_point = None
 
     def _init_model(self):
         """
@@ -435,7 +436,17 @@ class DeepForecastingModelBase(ModelBase):
         if config.use_amp == 1:
             scaler = torch.cuda.amp.GradScaler()
 
+        # Old code:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # New code for macOS support:
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
+
 
         self.early_stopping = self._init_early_stopping()
         self.model.to(device)
