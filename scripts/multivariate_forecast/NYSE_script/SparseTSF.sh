@@ -1,0 +1,8 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "NYSE.csv" --strategy-args '{"horizon": 24}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 24, "loss": "MSE", "lr": 0.02, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 36}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "NYSE/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "NYSE.csv" --strategy-args '{"horizon": 36}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 36, "loss": "MSE", "lr": 0.02, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 36}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "NYSE/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "NYSE.csv" --strategy-args '{"horizon": 48}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 48, "loss": "MSE", "lr": 0.02, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 36}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "NYSE/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "NYSE.csv" --strategy-args '{"horizon": 60}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 60, "loss": "MSE", "lr": 0.02, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 36}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "NYSE/SparseTSF"
+

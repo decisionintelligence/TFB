@@ -1,0 +1,8 @@
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh2.csv" --strategy-args '{"horizon": 96}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 96, "loss": "MSE", "lr": 0.02, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 528}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh2/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh2.csv" --strategy-args '{"horizon": 192}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 192, "loss": "MSE", "lr": 0.002, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 528}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh2/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh2.csv" --strategy-args '{"horizon": 336}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 336, "loss": "MSE", "lr": 0.002, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 528}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh2/SparseTSF"
+
+python ./scripts/run_benchmark.py --config-path "rolling_forecast_config.json" --data-name-list "ETTh2.csv" --strategy-args '{"horizon": 720}' --model-name "sparsetsf.SparseTSF" --model-hyper-params '{"batch_size": 256, "horizon": 720, "loss": "MSE", "lr": 0.002, "norm": true, "num_epochs": 30, "patience": 5, "period_len": 4, "seq_len": 528}' --gpus 0 --num-workers 1 --timeout 60000 --save-path "ETTh2/SparseTSF"
+
