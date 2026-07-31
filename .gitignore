@@ -6,3 +6,5 @@ result/
 *.DS_Store
 venv/
 **/__pycache__/
+.claude/
+sweep/
