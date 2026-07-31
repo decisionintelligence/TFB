@@ -240,7 +240,7 @@ If you have any questions or suggestions, feel free to contact:
 - [Xingjian Wu](https://ccloud0525.github.io/) (xjwu@stu.ecnu.edu.cn)
 - [Hanyin Cheng](https://chy181.github.io/) (hycheng@stu.ecnu.edu.cn)
 - [Zhengyu Li](https://devcrafterlzy.github.io/) (lizhengyu@stu.ecnu.edu.cn)
-- [Junkai Lu](https://pandajunk.github.io/zh/) (jklu@stu.ecnu.edu.cn)
+- [Junkai Lu](https://pandajunk.github.io/) (jklu@stu.ecnu.edu.cn)
 - Wanghui Qiu (onehui@stu.ecnu.edu.cn)
 
 
