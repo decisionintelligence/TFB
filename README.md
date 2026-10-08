@@ -241,7 +241,7 @@ If you have any questions or suggestions, feel free to contact:
 - [Hanyin Cheng](https://chy181.github.io/) (hycheng@stu.ecnu.edu.cn)
 - [Zhengyu Li](https://devcrafterlzy.github.io/) (lizhengyu@stu.ecnu.edu.cn)
 - [Junkai Lu](https://pandajunk.github.io/) (jklu@stu.ecnu.edu.cn)
-- Wanghui Qiu (onehui@stu.ecnu.edu.cn)
+- [Wanghui Qiu](https://onejue.github.io/) (onehui@stu.ecnu.edu.cn)
 
 
 Or describe it in Issues.
