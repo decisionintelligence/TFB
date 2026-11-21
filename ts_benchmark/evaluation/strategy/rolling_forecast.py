@@ -103,6 +103,8 @@ class RollingForecastEvalBatchMaker:
         :param win_size: The size of each window.
         :return: A batch of data.
         """
+        if np.any(index_list < 0):
+            raise ValueError("Batch window starts before the beginning of the series.")
         windows = sliding_window_view(data, window_shape=(win_size, *data.shape[1:]))
         data_batch = windows[index_list]
         data_batch = np.squeeze(data_batch, axis=tuple(range(1, np.ndim(data))))
